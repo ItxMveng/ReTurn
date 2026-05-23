@@ -1,0 +1,90 @@
+# ============================================================
+# DocRetour — .gitignore
+# Flutter + Python/FastAPI + Docker monorepo
+# ============================================================
+
+# ── Environment variables ────────────────────────────────────
+.env
+*.env
+!*.env.example
+
+# ── Flutter / Dart ───────────────────────────────────────────
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/.pub-cache/
+mobile/.pub/
+mobile/pubspec.lock
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/captures/
+mobile/android/key.properties
+mobile/ios/.symlinks/
+mobile/ios/Flutter/Flutter.framework
+mobile/ios/Flutter/Flutter.podspec
+mobile/ios/Pods/
+mobile/ios/flutter_export_environment.sh
+mobile/*.iml
+mobile/coverage/
+mobile/**/*.g.dart
+mobile/**/*.freezed.dart
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+*.egg
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# ── Docker local volumes ─────────────────────────────────────
+infra/volumes/
+
+# ── IDE ──────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*.sublime-workspace
+
+# ── OS — Windows ─────────────────────────────────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ── OS — macOS ───────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Firebase secrets ────────────────────────────────────────
+mobile/GoogleService-Info.plist
+mobile/android/app/google-services.json
+mobile/lib/firebase_options.dart
+
+# ── Claude AI local config ───────────────────────────────────
+.claude/
+
+# ── Misc ─────────────────────────────────────────────────────
+*.log
+*.bak
+*.tmp

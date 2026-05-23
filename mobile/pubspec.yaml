@@ -1,0 +1,75 @@
+name: docretour
+description: Application mobile de restitution documentaire sécurisée
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  # Navigation
+  go_router: ^13.2.0
+  # HTTP
+  dio: ^5.4.3+1
+  # Stockage local offline
+  hive_flutter: ^1.1.0
+  # Stockage sécurisé (tokens JWT)
+  flutter_secure_storage: ^9.2.2
+  # OCR on-device
+  google_mlkit_text_recognition: ^0.13.0
+  # Géolocalisation
+  geolocator: ^11.0.0
+  # Caméra et images
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+  # Biométrie
+  local_auth: ^2.3.0
+  # Notifications
+  flutter_local_notifications: ^17.1.2
+  # WebSocket messagerie
+  web_socket_channel: ^2.4.0
+  # Firebase
+  firebase_core: ^2.30.1
+  firebase_auth: ^4.19.5
+  firebase_messaging: ^14.9.4
+  google_sign_in: ^6.2.1
+  # Deep links / email
+  url_launcher: ^6.3.0
+  # Utilitaires
+  intl: ^0.20.2
+  logger: ^2.3.0
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  generate: false
+  assets:
+    - assets/images/
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_ReTurn.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0D2B1F"
+  adaptive_icon_foreground: "assets/images/logo_ReTurn-removebg.png"
