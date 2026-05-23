@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -27,6 +27,7 @@ class DeclarationCreate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     location_description: str | None = None
+    event_date: date | None = None  # date of loss (for "lost") or find (for "found")
 
     @field_validator("document_type")
     @classmethod
@@ -41,6 +42,7 @@ class DeclarationUpdate(BaseModel):
     owner_name: str | None = None
     description: str | None = None
     location_description: str | None = None
+    event_date: date | None = None
     status: StatusType | None = None
 
 
@@ -55,6 +57,7 @@ class DeclarationRead(BaseModel):
     latitude: float | None
     longitude: float | None
     location_description: str | None
+    event_date: date | None
     photo_urls: list[str]
     status: str
     created_at: datetime

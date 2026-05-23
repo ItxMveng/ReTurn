@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
-from sqlalchemy import DateTime, Float, ForeignKey, JSON, String, func
+from sqlalchemy import Date, DateTime, Float, ForeignKey, JSON, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,6 +40,10 @@ class Declaration(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="active", nullable=False, index=True
     )
+    # Date of the event (loss date for "lost", find date for "found")
+    # Used for temporal coherence in matching: found_date >= lost_date
+    event_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,6 +44,13 @@ class Match(Base):
     score: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False, index=True
+    )
+    # Double confirmation (F-33): both parties must confirm to trigger restitution
+    confirmed_by_owner: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    confirmed_by_finder: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

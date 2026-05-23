@@ -21,6 +21,7 @@ class UserRead(BaseModel):
     region: str | None = None
     address: str | None = None
     avatar_url: str | None = None
+    score_reputation: float
     is_active: bool
     is_verified: bool
     is_profile_complete: bool

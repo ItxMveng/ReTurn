@@ -3,7 +3,7 @@ from datetime import datetime, date
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Date, String, func
+from sqlalchemy import Boolean, DateTime, Date, Float, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,7 +31,7 @@ class User(Base):
     )
     full_name: Mapped[str] = mapped_column(String(100), nullable=False, default="")
 
-    # Personal info fields (required for lost declarations)
+    # Personal info fields
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     national_id_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -40,6 +40,11 @@ class User(Base):
     address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     fcm_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    # Reputation score (F-05): 0.0-10.0, default 5.0, updated after each restitution
+    score_reputation: Mapped[float] = mapped_column(
+        Float, nullable=False, default=5.0, server_default="5.0"
+    )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -56,8 +61,6 @@ class User(Base):
 
     @property
     def is_profile_complete(self) -> bool:
-        # Required: full_name, date_of_birth, gender, city (place of birth)
-        # Optional: national_id_number, region, address
         return bool(
             self.full_name
             and self.date_of_birth
