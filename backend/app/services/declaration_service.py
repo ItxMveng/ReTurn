@@ -1,13 +1,25 @@
 import uuid
+from datetime import datetime
 
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.declaration import Declaration
 from app.models.user import User
 from app.schemas.declaration import DeclarationCreate, DeclarationUpdate
 from app.services import storage_service
+
+
+async def count_active(db: AsyncSession, user_id: uuid.UUID) -> int:
+    """Return the number of active declarations for a user (used for F-15 limit)."""
+    result = await db.execute(
+        select(func.count()).where(
+            Declaration.user_id == user_id,
+            Declaration.status == "active",
+        )
+    )
+    return result.scalar_one()
 
 
 async def create_declaration(
@@ -41,16 +53,29 @@ async def create_declaration(
     return decl
 
 
-async def list_declarations(
-    db: AsyncSession, user_id: uuid.UUID, skip: int = 0, limit: int = 20
+async def list_declarations_cursor(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 20,
+    cursor: str | None = None,
 ) -> list[Declaration]:
-    result = await db.execute(
+    """
+    Cursor-based pagination on created_at (ISO 8601 string).
+    Returns declarations created BEFORE the cursor datetime, newest first.
+    """
+    query = (
         select(Declaration)
         .where(Declaration.user_id == user_id)
         .order_by(Declaration.created_at.desc())
-        .offset(skip)
         .limit(limit)
     )
+    if cursor:
+        try:
+            cursor_dt = datetime.fromisoformat(cursor)
+            query = query.where(Declaration.created_at < cursor_dt)
+        except ValueError:
+            pass  # invalid cursor → ignore, return first page
+    result = await db.execute(query)
     return list(result.scalars().all())
 
 

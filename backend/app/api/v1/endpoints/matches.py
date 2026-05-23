@@ -10,7 +10,8 @@ from app.core.dependencies import get_current_user
 from app.core.redis_client import get_redis
 from app.models.match import Match
 from app.models.user import User
-from app.schemas.match import MatchAction, MatchRead
+from app.schemas.match import MatchAction, MatchConfirmResponse, MatchRead
+from app.services import restitution_service
 from app.services.notification_service import (
     clear_notifications,
     get_pending_notifications,
@@ -65,33 +66,77 @@ async def get_match(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Match)
-        .options(
-            selectinload(Match.declaration_found),
-            selectinload(Match.declaration_lost),
-        )
-        .where(
-            Match.id == match_id,
-            or_(
-                Match.user_found_id == current_user.id,
-                Match.user_lost_id == current_user.id,
-            ),
-        )
-    )
-    match = result.scalar_one_or_none()
-    if not match:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match introuvable")
+    match = await _get_match_or_404(db, match_id, current_user.id)
     return match
 
 
-@router.post("/{match_id}/action", response_model=MatchRead)
+@router.post("/{match_id}/action", response_model=MatchConfirmResponse)
 async def act_on_match(
     match_id: uuid.UUID,
     body: MatchAction,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    match = await _get_match_or_404(db, match_id, current_user.id)
+
+    if match.status not in ("pending", "confirmed"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ce match est déjà '{match.status}'",
+        )
+
+    if body.action == "ignored":
+        match.status = "ignored"
+        db.add(match)
+        await db.flush()
+        return MatchConfirmResponse(
+            match_id=match.id,
+            confirmed_by_owner=match.confirmed_by_owner,
+            confirmed_by_finder=match.confirmed_by_finder,
+            both_confirmed=False,
+        )
+
+    # action == "confirmed": track which side confirmed
+    is_owner = match.user_lost_id == current_user.id
+    is_finder = match.user_found_id == current_user.id
+
+    if is_owner:
+        match.confirmed_by_owner = True
+    elif is_finder:
+        match.confirmed_by_finder = True
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé")
+
+    both_confirmed = match.confirmed_by_owner and match.confirmed_by_finder
+    if both_confirmed:
+        match.status = "confirmed"
+
+    db.add(match)
+    await db.flush()
+
+    restitution_id: uuid.UUID | None = None
+    if both_confirmed:
+        restitution = await restitution_service.create_restitution(db, match.id)
+        restitution_id = restitution.id
+
+    return MatchConfirmResponse(
+        match_id=match.id,
+        confirmed_by_owner=match.confirmed_by_owner,
+        confirmed_by_finder=match.confirmed_by_finder,
+        both_confirmed=both_confirmed,
+        restitution_id=restitution_id,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+async def _get_match_or_404(
+    db: AsyncSession,
+    match_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Match:
     result = await db.execute(
         select(Match)
         .options(
@@ -101,20 +146,15 @@ async def act_on_match(
         .where(
             Match.id == match_id,
             or_(
-                Match.user_found_id == current_user.id,
-                Match.user_lost_id == current_user.id,
+                Match.user_found_id == user_id,
+                Match.user_lost_id == user_id,
             ),
         )
     )
     match = result.scalar_one_or_none()
     if not match:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match introuvable")
-    if match.status not in ("pending",):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Ce match est déjà '{match.status}'",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match introuvable",
         )
-    match.status = body.action
-    db.add(match)
-    await db.flush()
     return match
