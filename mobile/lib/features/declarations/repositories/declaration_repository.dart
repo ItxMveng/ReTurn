@@ -12,11 +12,13 @@ class DeclarationRepository {
   DeclarationRepository(this._dio);
   final Dio _dio;
 
+  /// Types de documents supportés (CNI, Passeport, Permis…)
   Future<List<String>> getDocumentTypes() async {
     final res = await _dio.get('/api/v1/declarations/document-types');
     return List<String>.from(res.data as List);
   }
 
+  /// Crée une nouvelle déclaration (trouvé ou perdu) avec photos optionnelles
   Future<Declaration> createDeclaration({
     required String declarationType,
     required String documentType,
@@ -36,18 +38,19 @@ class DeclarationRepository {
       if (description != null) 'description': description,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
-      if (locationDescription != null) 'location_description': locationDescription,
+      if (locationDescription != null)
+        'location_description': locationDescription,
       if (photoPaths.isNotEmpty)
         'photos': [
           for (final p in photoPaths)
             await MultipartFile.fromFile(p, filename: p.split('/').last),
         ],
     });
-
     final res = await _dio.post('/api/v1/declarations/', data: formData);
     return Declaration.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// Liste les déclarations de l'utilisateur connecté
   Future<List<Declaration>> listMyDeclarations() async {
     final res = await _dio.get('/api/v1/declarations/');
     return (res.data as List)
@@ -55,6 +58,33 @@ class DeclarationRepository {
         .toList();
   }
 
+  /// [P-D] Détail d'une déclaration par son ID — manquait dans la version précédente
+  /// Utilisé par DeclarationDetailScreen pour afficher les infos complètes
+  Future<Declaration> getDeclarationById(String id) async {
+    final res = await _dio.get('/api/v1/declarations/$id');
+    return Declaration.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Supprime une déclaration (soft-delete côté backend)
   Future<void> deleteDeclaration(String id) =>
       _dio.delete('/api/v1/declarations/$id');
+
+  /// Recherche publique de déclarations (pour le matching manuel)
+  Future<List<Declaration>> searchDeclarations({
+    String? documentType,
+    String? declarationType,
+    String? query,
+  }) async {
+    final res = await _dio.get(
+      '/api/v1/declarations/search',
+      queryParameters: {
+        if (documentType != null) 'document_type': documentType,
+        if (declarationType != null) 'declaration_type': declarationType,
+        if (query != null) 'q': query,
+      },
+    );
+    return (res.data as List)
+        .map((e) => Declaration.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
