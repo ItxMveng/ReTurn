@@ -42,8 +42,6 @@ async def verify_firebase_token_endpoint(
     phone_number: str | None = decoded.get("phone_number")
     email: str | None = decoded.get("email")
 
-    # Les connexions Google n'ont pas de phone_number dans le token Firebase.
-    # On utilise l'email comme identifiant de repli pour créer le compte.
     identifier = phone_number or email
     if not identifier:
         raise HTTPException(
@@ -64,7 +62,12 @@ async def request_otp(body: OTPRequest, redis=Depends(get_redis)):
     code = await create_otp(redis, body.phone_number)
     # TODO: envoyer le code via SMS (Twilio / Orange CM)
     logger.info("OTP demandé pour %s", body.phone_number)
-    return {"detail": "Code OTP envoyé", "debug_code": code if settings.DEBUG else None}
+    # SECURITY FIX: debug_code uniquement en mode DEBUG ET hors production
+    expose_code = settings.DEBUG and settings.ENVIRONMENT != "production"
+    return {
+        "detail": "Code OTP envoyé",
+        "debug_code": code if expose_code else None,
+    }
 
 
 @router.post("/otp/verify", response_model=TokenResponse)
@@ -75,7 +78,10 @@ async def verify_otp_endpoint(
 ):
     valid = await verify_otp(redis, body.phone_number, body.otp_code)
     if not valid:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code OTP invalide ou expiré")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code OTP invalide ou expiré",
+        )
 
     user, is_new = await get_or_create_user(db, body.phone_number)
     tokens = await issue_tokens(user)
@@ -84,21 +90,34 @@ async def verify_otp_endpoint(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_tokens(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+async def refresh_tokens(
+    body: RefreshRequest,
+    db: AsyncSession = Depends(get_db),
+):
     try:
-        payload = jwt.decode(body.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            body.refresh_token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
         if payload.get("type") != "refresh":
-            raise ValueError
+            raise ValueError("Not a refresh token")
         user_id: str = payload["sub"]
     except (JWTError, ValueError, KeyError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token invalide")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token invalide",
+        )
 
     from sqlalchemy import select
     import uuid
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
     user = result.scalar_one_or_none()
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur introuvable",
+        )
 
     return await issue_tokens(user)
 

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,10 +14,41 @@ from app.core.redis_client import close_redis
 from app.core.ws_manager import redis_subscriber
 import app.models  # noqa: F401 — ensures all models are registered with Base
 
-_subscriber_task: asyncio.Task | None = None
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_subscriber_task: asyncio.Task | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown lifecycle."""
+    global _subscriber_task
+    logger.info(
+        "Starting DocRetour API v%s [%s]",
+        settings.APP_VERSION,
+        settings.ENVIRONMENT,
+    )
+    init_firebase()
+    logger.info("Firebase Admin SDK ready.")
+    await create_tables()
+    logger.info("Database tables verified.")
+    _subscriber_task = asyncio.create_task(
+        redis_subscriber(settings.REDIS_URL)
+    )
+    logger.info("Redis WebSocket subscriber started.")
+
+    yield  # <-- app is running
+
+    if _subscriber_task:
+        _subscriber_task.cancel()
+        try:
+            await _subscriber_task
+        except asyncio.CancelledError:
+            pass
+    await close_redis()
+    logger.info("DocRetour API shut down cleanly.")
+
 
 app = FastAPI(
     title="DocRetour API",
@@ -24,41 +56,23 @@ app = FastAPI(
     description="API de restitution sécurisée de documents perdus au Cameroun.",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 _cors_origins = settings.CORS_ORIGINS
+# Allow all origins only in non-production environments
 _allow_all = settings.ENVIRONMENT != "production"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if _allow_all else _cors_origins,
-    allow_credentials=not _allow_all,  # credentials incompatible with wildcard origin
+    # credentials=True is incompatible with wildcard origin
+    allow_credentials=not _allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(v1_router)
-
-
-@app.on_event("startup")
-async def startup():
-    global _subscriber_task
-    logger.info("Starting DocRetour API v%s [%s]", settings.APP_VERSION, settings.ENVIRONMENT)
-    init_firebase()
-    logger.info("Firebase Admin SDK prêt.")
-    await create_tables()
-    logger.info("Database tables verified.")
-    _subscriber_task = asyncio.create_task(redis_subscriber(settings.REDIS_URL))
-    logger.info("Redis WebSocket subscriber started.")
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    global _subscriber_task
-    if _subscriber_task:
-        _subscriber_task.cancel()
-    await close_redis()
-    logger.info("DocRetour API shutting down.")
 
 
 @app.get("/health", tags=["health"])

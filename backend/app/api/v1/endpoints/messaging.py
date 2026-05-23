@@ -17,7 +17,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal
+from app.core.database import AsyncSessionLocal, get_db
 from app.core.dependencies import get_current_user
 from app.core.redis_client import get_redis
 from app.core.ws_manager import broadcast, register, unregister
@@ -32,13 +32,13 @@ from app.schemas.verification import VerificationRead
 router = APIRouter(prefix="/messaging", tags=["messaging"])
 
 
-# ── REST: history & verification ────────────────────────────────────────────
+# ── REST: history & verification ─────────────────────────────────────────────
 
 @router.get("/{match_id}/messages", response_model=list[MessageRead])
 async def get_history(
     match_id: uuid.UUID,
     limit: int = Query(50, le=100),
-    db: AsyncSession = Depends(AsyncSessionLocal),
+    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal (not a valid Depends)
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -50,7 +50,7 @@ async def get_history(
 @router.post("/{match_id}/verify", response_model=VerificationRead)
 async def request_verification(
     match_id: uuid.UUID,
-    db: AsyncSession = Depends(AsyncSessionLocal),
+    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -64,7 +64,7 @@ async def request_verification(
 async def submit_selfie(
     match_id: uuid.UUID,
     selfie: UploadFile = File(...),
-    db: AsyncSession = Depends(AsyncSessionLocal),
+    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -83,14 +83,14 @@ async def submit_selfie(
 @router.get("/{match_id}/verify", response_model=VerificationRead | None)
 async def get_verification_status(
     match_id: uuid.UUID,
-    db: AsyncSession = Depends(AsyncSessionLocal),
+    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
     return await verification_service.get_verification(db, match_id, current_user.id)
 
 
-# ── WebSocket ────────────────────────────────────────────────────────────────
+# ── WebSocket ─────────────────────────────────────────────────────────────────
 
 @router.websocket("/{match_id}/ws")
 async def websocket_chat(
@@ -98,7 +98,6 @@ async def websocket_chat(
     ws: WebSocket,
     token: str = Query(...),
 ):
-    # Authenticate via query param token
     user = await _authenticate_ws(token)
     if user is None:
         await ws.close(code=4001)
@@ -114,7 +113,6 @@ async def websocket_chat(
     match_key = str(match_id)
     register(match_key, ws)
 
-    # Send system welcome
     await ws.send_text(json.dumps({
         "type": "system",
         "content": f"Connecté au chat du match {match_id}",
@@ -133,8 +131,7 @@ async def websocket_chat(
                 continue
 
             async with AsyncSessionLocal() as db:
-                from app.core.redis_client import get_redis as _get_redis
-                redis = await _get_redis()
+                redis = await get_redis()
                 msg = await messaging_service.save_message(
                     db, redis, match_id, user.id, content, msg_type
                 )
@@ -149,7 +146,6 @@ async def websocket_chat(
                 )
                 await broadcast(match_key, outgoing.model_dump_json())
 
-                # Push FCM to the OTHER participant
                 match_obj = await _get_match(db, match_id, user.id)
                 if match_obj:
                     other_id = (
@@ -174,7 +170,7 @@ async def websocket_chat(
         unregister(match_key, ws)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _assert_participant(
     db: AsyncSession, match_id: uuid.UUID, user_id: uuid.UUID
@@ -217,6 +213,9 @@ async def _authenticate_ws(token: str) -> User | None:
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(
-            select(User).where(User.id == uuid.UUID(user_id), User.is_active == True)  # noqa: E712
+            select(User).where(
+                User.id == uuid.UUID(user_id),
+                User.is_active == True,  # noqa: E712
+            )
         )
         return result.scalar_one_or_none()
