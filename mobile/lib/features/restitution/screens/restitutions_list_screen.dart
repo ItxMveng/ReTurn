@@ -53,36 +53,43 @@ class RestitutionsListScreen extends ConsumerWidget {
 }
 
 // ── Tab list ────────────────────────────────────────────────────────────────
-class _RestitutionTab extends StatelessWidget {
+class _RestitutionTab extends ConsumerWidget {
   const _RestitutionTab({required this.items, required this.emptyLabel});
   final List<Restitution> items;
   final String emptyLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.assignment_turned_in_outlined,
-                size: 56,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25)),
+            Icon(
+              Icons.assignment_turned_in_outlined,
+              size: 56,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.25),
+            ),
             const SizedBox(height: 16),
-            Text(emptyLabel,
-                style: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.5))),
+            Text(
+              emptyLabel,
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.5),
+              ),
+            ),
           ],
         ),
       );
     }
+    // Consumer pour avoir accès à ref dans le callback onRefresh
     return RefreshIndicator(
-      onRefresh: () async {
-        // Le parent gère le refresh via ref.invalidate
-      },
+      onRefresh: () => ref.read(restitutionListProvider.notifier).refresh(),
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: items.length,
@@ -153,7 +160,7 @@ class _RestitutionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Restitution #${restitution.id.substring(0, 8)}',
+                      'Restitution #${restitution.id.length >= 8 ? restitution.id.substring(0, 8) : restitution.id}',
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 14),
                     ),
@@ -175,8 +182,7 @@ class _RestitutionCard extends StatelessWidget {
                                 fontWeight: FontWeight.w600),
                           ),
                         ),
-                        if (restitution.meetingLocation != null) ...
-                        [
+                        if (restitution.meetingLocation != null) ...[
                           const SizedBox(width: 8),
                           Icon(Icons.location_on_outlined,
                               size: 13,

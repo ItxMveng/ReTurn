@@ -8,6 +8,21 @@ import 'package:docretour/l10n/app_localizations.dart';
 import 'package:docretour/shared/models/declaration.dart';
 import 'package:docretour/shared/widgets/document_type_dropdown.dart';
 
+// Provider dédié pour fetch un match individuel si absent du cache
+final _singleMatchProvider =
+    FutureProvider.family.autoDispose<dynamic, String>((ref, id) async {
+  // On essaie d'abord le cache de la liste
+  final cached = ref
+      .watch(matchListProvider)
+      .valueOrNull
+      ?.where((m) => m.id == id)
+      .firstOrNull;
+  if (cached != null) return cached;
+  // Sinon fetch direct via le repository
+  final repo = ref.read(matchRepositoryProvider);
+  return repo.getMatch(id);
+});
+
 class MatchDetailScreen extends ConsumerWidget {
   final String matchId;
   const MatchDetailScreen({super.key, required this.matchId});
@@ -16,17 +31,7 @@ class MatchDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
-    final asyncMatches = ref.watch(matchListProvider);
-    final match = asyncMatches.valueOrNull
-        ?.where((m) => m.id == matchId)
-        .firstOrNull;
-
-    if (match == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Détail du match')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    final asyncMatch = ref.watch(_singleMatchProvider(matchId));
 
     return Scaffold(
       appBar: AppBar(
@@ -34,135 +39,327 @@ class MatchDetailScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         title: const Text('Détail du match'),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _scoreColor(match.scorePercent).withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: _scoreColor(match.scorePercent), width: 1),
+          asyncMatch.whenOrNull(
+            data: (match) => Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _scoreColor(match?.scorePercent ?? 0)
+                    .withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: _scoreColor(match?.scorePercent ?? 0), width: 1),
+              ),
+              child: Text(
+                '${match?.scorePercent ?? 0}%',
+                style: TextStyle(
+                    color: _scoreColor(match?.scorePercent ?? 0),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
+              ),
             ),
-            child: Text(
-              '${match.scorePercent}%',
-              style: TextStyle(
-                  color: _scoreColor(match.scorePercent),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13),
-            ),
-          ),
+          ) ??
+              const SizedBox.shrink(),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (match.declarationFound != null)
-              _DeclarationCard(
-                  declaration: match.declarationFound!, type: 'found'),
-            const SizedBox(height: 16),
-            Row(
+      body: asyncMatch.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(child: Divider(color: cs.outline)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: kGreen.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.compare_arrows,
-                        color: kGreen, size: 22),
-                  ),
+                Icon(Icons.error_outline, size: 48, color: cs.error),
+                const SizedBox(height: 12),
+                Text('Impossible de charger ce match.',
+                    style: TextStyle(color: cs.onSurface)),
+                const SizedBox(height: 8),
+                Text(e.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurface.withValues(alpha: 0.5))),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () =>
+                      ref.invalidate(_singleMatchProvider(matchId)),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Réessayer'),
                 ),
-                Expanded(child: Divider(color: cs.outline)),
               ],
             ),
-            const SizedBox(height: 16),
-            if (match.declarationLost != null)
-              _DeclarationCard(
-                  declaration: match.declarationLost!, type: 'lost'),
-            const SizedBox(height: 32),
-            if (match.status == 'confirmed') ...[
-              ElevatedButton.icon(
-                onPressed: () => context.push(
-                  '/matches/${match.id}/chat',
-                  extra: documentTypeLabel(
-                    match.declarationFound?.documentType ??
-                        match.declarationLost?.documentType ??
-                        '',
-                  ),
-                ),
-                icon: const Icon(Icons.chat_outlined),
-                label: Text(l.matchOpenChat),
-              ),
-            ] else if (match.isPending) ...[
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await ref
-                      .read(matchListProvider.notifier)
-                      .confirm(match.id);
-                  if (context.mounted) context.pop();
-                },
-                icon: const Icon(Icons.check_circle_outline),
-                label: Text(l.matchConfirmThis),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => context.push(
-                  '/matches/${match.id}/chat',
-                  extra: documentTypeLabel(
-                    match.declarationFound?.documentType ??
-                        match.declarationLost?.documentType ??
-                        '',
-                  ),
-                ),
-                icon: const Icon(Icons.chat_outlined),
-                label: Text(l.matchOpenChat),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await ref
-                      .read(matchListProvider.notifier)
-                      .ignore(match.id);
-                  if (context.mounted) context.pop();
-                },
-                icon: const Icon(Icons.cancel_outlined,
-                    color: Color(0xFFEF4444)),
-                label: Text(l.matchIgnore,
-                    style: const TextStyle(color: Color(0xFFEF4444))),
-                style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFEF4444))),
-              ),
-            ] else
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: Text(
-                    'Statut : ${match.status}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
+        data: (match) {
+          if (match == null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_off,
+                      size: 56,
+                      color: cs.onSurface.withValues(alpha: 0.2)),
+                  const SizedBox(height: 12),
+                  Text('Match introuvable',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface)),
+                  const SizedBox(height: 16),
+                  TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Retour')),
+                ],
+              ),
+            );
+          }
+          return _MatchDetailBody(match: match, matchId: matchId, l: l);
+        },
       ),
     );
   }
 
   Color _scoreColor(int p) =>
       p >= 80 ? kGreen : p >= 60 ? const Color(0xFFF59E0B) : Colors.grey;
+}
+
+// ── Body ─────────────────────────────────────────────────────────────────────
+class _MatchDetailBody extends ConsumerWidget {
+  final dynamic match;
+  final String matchId;
+  final AppLocalizations l;
+  const _MatchDetailBody(
+      {required this.match, required this.matchId, required this.l});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final isActionLoading = ref.watch(
+      _actionLoadingProvider(matchId),
+    );
+
+    Future<void> doConfirm() async {
+      ref.read(_actionLoadingProvider(matchId).notifier).state = true;
+      try {
+        await ref.read(matchListProvider.notifier).confirm(matchId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle,
+                      color: Colors.white, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(l.matchConfirmedSuccess)),
+                ],
+              ),
+              backgroundColor: kGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          context.pop();
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur : $e'),
+              backgroundColor: cs.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        ref.read(_actionLoadingProvider(matchId).notifier).state = false;
+      }
+    }
+
+    Future<void> doIgnore() async {
+      ref.read(_actionLoadingProvider(matchId).notifier).state = true;
+      try {
+        await ref.read(matchListProvider.notifier).ignore(matchId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.info_outline,
+                      color: Colors.white, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(l.matchIgnoredSuccess)),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          context.pop();
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur : $e'),
+              backgroundColor: cs.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        ref.read(_actionLoadingProvider(matchId).notifier).state = false;
+      }
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (match.declarationFound != null)
+            _DeclarationCard(
+                declaration: match.declarationFound!, type: 'found'),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: Divider(color: cs.outline)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: kGreen.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.compare_arrows,
+                      color: kGreen, size: 22),
+                ),
+              ),
+              Expanded(child: Divider(color: cs.outline)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (match.declarationLost != null)
+            _DeclarationCard(
+                declaration: match.declarationLost!, type: 'lost'),
+          const SizedBox(height: 32),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: isActionLoading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: CircularProgressIndicator(color: kGreen),
+                    ),
+                  )
+                : _Actions(
+                    match: match,
+                    matchId: matchId,
+                    l: l,
+                    onConfirm: doConfirm,
+                    onIgnore: doIgnore,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final _actionLoadingProvider =
+    StateProvider.family<bool, String>((ref, _) => false);
+
+class _Actions extends StatelessWidget {
+  final dynamic match;
+  final String matchId;
+  final AppLocalizations l;
+  final VoidCallback onConfirm;
+  final VoidCallback onIgnore;
+  const _Actions({
+    required this.match,
+    required this.matchId,
+    required this.l,
+    required this.onConfirm,
+    required this.onIgnore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (match.status == 'confirmed') {
+      return ElevatedButton.icon(
+        onPressed: () => context.push(
+          '/matches/$matchId/chat',
+          extra: documentTypeLabel(
+            match.declarationFound?.documentType ??
+                match.declarationLost?.documentType ??
+                '',
+          ),
+        ),
+        icon: const Icon(Icons.chat_outlined),
+        label: Text(l.matchOpenChat),
+      );
+    }
+    if (match.isPending) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            onPressed: onConfirm,
+            icon: const Icon(Icons.check_circle_outline),
+            label: Text(l.matchConfirmThis),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => context.push(
+              '/matches/$matchId/chat',
+              extra: documentTypeLabel(
+                match.declarationFound?.documentType ??
+                    match.declarationLost?.documentType ??
+                    '',
+              ),
+            ),
+            icon: const Icon(Icons.chat_outlined),
+            label: Text(l.matchOpenChat),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onIgnore,
+            icon: const Icon(Icons.cancel_outlined,
+                color: Color(0xFFEF4444)),
+            label: Text(l.matchIgnore,
+                style: const TextStyle(color: Color(0xFFEF4444))),
+            style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFEF4444))),
+          ),
+        ],
+      );
+    }
+    return Center(
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Text(
+          'Statut : ${match.status}',
+          style: const TextStyle(color: Colors.grey),
+        ),
+      ),
+    );
+  }
 }
 
 class _DeclarationCard extends StatelessWidget {
