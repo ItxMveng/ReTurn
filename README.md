@@ -103,16 +103,16 @@ ReTurn/
 │           │   │   └── declarations_provider.dart
 │           │   └── widgets/declaration_card.dart
 │           ├── matches/
-│           │   ├── models/match.dart              # ✨ Nouveau
+│           │   ├── models/match.dart
 │           │   ├── pages/
 │           │   │   ├── matches_list_page.dart
 │           │   │   └── match_detail_page.dart
-│           │   ├── providers/matches_provider.dart # ✨ Nouveau
-│           │   └── repositories/matches_repository.dart # ✨ Nouveau
+│           │   ├── providers/matches_provider.dart
+│           │   └── repositories/matches_repository.dart
 │           ├── matching/
-│           │   ├── providers/matching_provider.dart    # ✨ Nouveau
-│           │   ├── repositories/matching_repository.dart # ✨ Nouveau
-│           │   └── screens/matching_screen.dart         # ✨ Nouveau
+│           │   ├── providers/matching_provider.dart
+│           │   ├── repositories/matching_repository.dart
+│           │   └── screens/matching_screen.dart
 │           ├── messaging/pages/
 │           │   ├── conversations_page.dart
 │           │   └── chat_page.dart
@@ -125,7 +125,7 @@ ReTurn/
 │           ├── splash/
 │           └── support/support_screen.dart
 ├── admin/
-│   └── index.html                    # ✨ Dashboard admin web (standalone)
+│   └── index.html                    # Dashboard admin web (standalone)
 ├── infra/
 └── docs/
 ```
@@ -140,79 +140,113 @@ Interface d'administration **100 % statique** (`admin/index.html`) — aucun bui
 
 | Section | Capacités |
 |---------|----------|
-| **Vue d'ensemble** | KPIs (utilisateurs, déclarations, matchs, restitutions, signalements, note), graphique activité 30 j, donut matchs, tableau activité récente |
-| **Utilisateurs** | Liste paginable, recherche, filtre (actif / banni / admin), bannir / rétablir |
+| **Vue d'ensemble** | KPIs en temps réel (utilisateurs, déclarations, matchs, restitutions, signalements, note moyenne), graphique activité 30 j dynamique, donut répartition matchs dynamique, tableau activité récente |
+| **Utilisateurs** | Liste paginable, recherche, filtre (actif / banni / admin), **vue détail complète** (historique, stats), bannir / rétablir, **promouvoir admin** |
 | **Déclarations** | Liste, recherche, filtre type, flag suspect, suppression, export CSV |
-| **Matchs** | Score coloré, statut, liens déclarations |
-| **Restitutions** | Statut, note, dates |
+| **Matchs** | Score coloré (vert ≥80 %, orange ≥50 %, rouge <50 %), statut, liens déclarations |
+| **Restitutions** | Statut, note, dates d'initiation et de complétion |
 | **Signalements** | Résolution en 1 clic |
-| **Zones certifiées** | Création / suppression |
-| **Audit Logs** | Historique actions admin |
+| **Zones certifiées** | **Formulaire de création complet** (nom, ville, lat/lon, rayon, certification), suppression |
+| **Audit Logs** | Historique chronologique des actions admin |
+| **Mode démo** | Double-clic sur le logo → accès immédiat sans backend |
+| **Mode sombre** | Bascule clair/sombre intégrée |
 
 ### Lancer le dashboard admin
 
-#### Option 1 — Serveur de développement local (recommandé)
+#### ✅ Option 1 — Python (recommandé, zéro dépendance)
 
 ```bash
 # Depuis la racine du projet
 cd admin
 python3 -m http.server 3000
-# Ouvrir http://localhost:3000
 ```
 
-#### Option 2 — Avec Node.js
+> Ouvrir **http://localhost:3000** dans le navigateur.
+
+#### Option 2 — Node.js / npx
 
 ```bash
 npx serve admin -l 3000
-# Ouvrir http://localhost:3000
 ```
 
-#### Option 3 — Ouvrir directement dans le navigateur
+#### Option 3 — Ouvrir directement (mode démo uniquement)
 
 ```bash
-open admin/index.html   # macOS
-start admin/index.html  # Windows
-xdg-open admin/index.html  # Linux
+open admin/index.html       # macOS
+start admin/index.html      # Windows
+xdg-open admin/index.html   # Linux
 ```
 
-> ⚠️ L'ouverture directe (`file://`) désactive les appels API (CORS). Utilisez un serveur local pour les données réelles.
+> ⚠️ En `file://`, les appels API sont bloqués par CORS. Utilisez un serveur local pour les données réelles.
 
-### Connexion admin
+---
 
-Le dashboard se connecte à l'API FastAPI. Deux modes :
+### Se connecter en mode développement (mock data)
 
-**Mode développement (mock data — sans backend)**
-- Double-cliquer sur le logo ReTurn dans l'écran de login pour bypasser l'authentification
-- Les données mock s'affichent immédiatement
+Pas besoin de backend. Deux options :
 
-**Mode production (API réelle)**
+**Option A — Double-clic sur le logo ReTurn** dans l'écran de login
+- Accès immédiat avec email `admin@return.cm`
+- Toutes les sections affichent des données fictives réalistes
+
+**Option B — Saisir n'importe quel email + mot de passe valides**
+- Si l'API n'est pas joignable, le dashboard bascule automatiquement en mode mock
+
+---
+
+### Se connecter en mode production (API réelle)
+
+**Étape 1 — Démarrer le backend**
+
 ```bash
-# 1. S'assurer que le backend tourne
+# Infrastructure (PostgreSQL, Redis, MinIO)
 docker compose -f infra/docker-compose.yml up -d
-cd backend && alembic upgrade head && uvicorn app.main:app --reload
 
-# 2. Créer un compte admin en base
-# Via psql ou pgAdmin :
-UPDATE users SET is_admin = true WHERE phone = '+237XXXXXXXXX';
+# Migrations
+cd backend && alembic upgrade head
 
-# 3. Se connecter dans le dashboard
-# URL API par défaut : http://localhost:8000
-# Email + mot de passe du compte admin
+# API
+uvicorn app.main:app --reload
+# → http://localhost:8000
 ```
 
-**Changer l'URL de l'API (optionnel)**
+**Étape 2 — Créer votre premier compte admin**
 
-Ajouter avant la balise `</body>` dans `admin/index.html` :
+Inscrivez-vous d'abord via l'API (ou l'app mobile), puis promouvez le compte en admin :
+
+```sql
+-- Via psql, pgAdmin ou DBeaver
+UPDATE users SET is_admin = true WHERE phone = '+237XXXXXXXXX';
+-- ou par email :
+UPDATE users SET is_admin = true WHERE email = 'votre@email.com';
+```
+
+Alternativement, depuis le dashboard lui-même (si vous êtes déjà admin) :
+> **Utilisateurs → trouver le compte → bouton "Promouvoir admin"**
+
+**Étape 3 — Se connecter**
+
+Ouvrir **http://localhost:3000**, saisir l'email et le mot de passe du compte admin.
+
+---
+
+### Configurer l'URL de l'API
+
+Par défaut le dashboard pointe vers `http://localhost:8000`. Pour changer :
+
 ```html
+<!-- Ajouter avant </body> dans admin/index.html -->
 <script>window.RETURN_API_URL = 'https://api.return.cm';</script>
 ```
 
-Ou via un fichier `.env` si servi derrière Nginx :
+Ou via Nginx en production :
+
 ```nginx
 location /admin {
   root /var/www/return;
   try_files $uri $uri/ /admin/index.html;
-  add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net";
+  add_header Content-Security-Policy
+    "default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net";
 }
 ```
 
@@ -274,6 +308,7 @@ location /admin {
 | `GET` | `/admin/export/declarations` | Export CSV |
 | `GET/PATCH/DELETE` | `/admin/users/{id}` | Gestion utilisateurs |
 | `PATCH` | `/admin/users/{id}/ban` | Bannir |
+| `PATCH` | `/admin/users/{id}/unban` | Rétablir |
 | `PATCH` | `/admin/users/{id}/promote` | Promouvoir admin |
 | `GET/DELETE/PATCH` | `/admin/declarations/{id}` | Modération déclarations |
 | `GET` | `/admin/matches` | Tous les matchs |
@@ -322,17 +357,17 @@ pytest -v
 # 1. Variables d'environnement
 cp backend/.env.example backend/.env
 
-# 2. Démarrer l'infrastructure
+# 2. Infrastructure (PostgreSQL, Redis, MinIO)
 docker compose -f infra/docker-compose.yml up -d
 
-# 3. Appliquer les migrations
+# 3. Migrations
 cd backend && alembic upgrade head
 
-# 4. Lancer l'API
+# 4. API FastAPI
 uvicorn app.main:app --reload
 
-# 5. Lancer le dashboard admin
-cd admin && python3 -m http.server 3000
+# 5. Dashboard Admin
+cd ../admin && python3 -m http.server 3000
 ```
 
 | Service | URL |
@@ -356,4 +391,4 @@ cd admin && python3 -m http.server 3000
 | S5 | Restitutions, signalements, réputation | ✅ |
 | S6 | Backoffice admin (F-40→F-44, audit, zones, stats) | ✅ |
 | S7 | Application mobile Flutter | ✅ |
-| S8 | Dashboard admin web (standalone HTML) | ✅ |
+| S8 | Dashboard admin web — complet (modal zone, détail user, promouvoir, graphiques dynamiques) | ✅ |
