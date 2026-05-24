@@ -14,6 +14,8 @@ import '../../features/declarations/presentation/pages/declaration_detail_page.d
 import '../../features/matches/presentation/pages/matches_list_page.dart';
 import '../../features/matches/presentation/pages/match_detail_page.dart';
 import '../../features/matches/presentation/pages/restitution_detail_page.dart';
+import '../../features/messaging/presentation/pages/messaging_list_page.dart';
+import '../../features/messaging/presentation/pages/conversation_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../widgets/scaffold_with_nav_bar.dart';
@@ -30,14 +32,14 @@ GoRouter appRouter(Ref ref) {
     initialLocation: '/splash',
     redirect: (context, state) => _redirect(authState, state.matchedLocation),
     routes: [
-      // ── Splash ───────────────────────────────────────────────────────
+      // ── Splash ──
       GoRoute(
         path: '/splash',
         name: RouteNames.splash,
         builder: (_, __) => const _SplashPage(),
       ),
 
-      // ── Auth ─────────────────────────────────────────────────────────
+      // ── Auth ──
       GoRoute(
         path: '/login',
         name: RouteNames.login,
@@ -57,18 +59,15 @@ GoRouter appRouter(Ref ref) {
         },
       ),
 
-      // ── App principale (shell avec bottom nav) ────────────────────────
+      // ── App principale (shell avec bottom nav) ──
       ShellRoute(
         builder: (context, state, child) => ScaffoldWithNavBar(child: child),
         routes: [
-          // Home
           GoRoute(
             path: '/home',
             name: RouteNames.home,
             builder: (_, __) => const HomePage(),
           ),
-
-          // Déclarations
           GoRoute(
             path: '/declarations',
             name: RouteNames.declarations,
@@ -88,8 +87,6 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-
-          // Matches
           GoRoute(
             path: '/matches',
             name: RouteNames.matches,
@@ -104,8 +101,6 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-
-          // Restitutions (accessible depuis match-detail)
           GoRoute(
             path: '/restitutions/:id',
             name: RouteNames.restitutionDetail,
@@ -113,24 +108,21 @@ GoRouter appRouter(Ref ref) {
               id: state.pathParameters['id']!,
             ),
           ),
-
-          // Messagerie
+          // ✅ Messagerie — vraies pages
           GoRoute(
             path: '/messaging',
             name: RouteNames.messaging,
-            builder: (_, __) => const _PlaceholderPage(title: 'Messagerie'),
+            builder: (_, __) => const MessagingListPage(),
             routes: [
               GoRoute(
                 path: ':matchId',
                 name: RouteNames.conversation,
-                builder: (_, state) => _PlaceholderPage(
-                  title: 'Conversation ${state.pathParameters["matchId"]!}',
+                builder: (_, state) => ConversationPage(
+                  matchId: state.pathParameters['matchId']!,
                 ),
               ),
             ],
           ),
-
-          // Profil
           GoRoute(
             path: '/profile',
             name: RouteNames.profile,
@@ -149,43 +141,33 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-// ── Logique de redirection centralisée ──────────────────────────────────────
 String? _redirect(AuthState authState, String location) {
   const publicRoutes = ['/login', '/register', '/otp-verify', '/splash'];
   final isPublic = publicRoutes.any((r) => location.startsWith(r));
-
   return authState.when(
-    initial:         () => null,
-    checking:        () => null,
-    loading:         () => null,
-    authenticated:   (_) => isPublic ? '/home' : null,
+    initial: () => null, checking: () => null, loading: () => null,
+    authenticated: (_) => isPublic ? '/home' : null,
     unauthenticated: () => isPublic ? null : '/login',
-    error:           (_) => isPublic ? null : '/login',
+    error: (_) => isPublic ? null : '/login',
   );
 }
 
-// ── Splash page ─────────────────────────────────────────────────────────────
 class _SplashPage extends ConsumerWidget {
   const _SplashPage();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     authState.whenOrNull(
-      authenticated:   (_) => Future.microtask(() => context.goNamed(RouteNames.home)),
+      authenticated: (_) => Future.microtask(() => context.goNamed(RouteNames.home)),
       unauthenticated: () => Future.microtask(() => context.goNamed(RouteNames.login)),
     );
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
-// ── Placeholder pour les pages non encore implémentées ──────────────────────
 class _PlaceholderPage extends StatelessWidget {
   const _PlaceholderPage({required this.title});
   final String title;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
