@@ -46,74 +46,102 @@ docretour/
 ├── mobile/                   # Application Flutter (Dart)
 │   ├── lib/
 │   │   ├── core/             # Config, thème, router, utils
-│   │   ├── features/         # Modules métier (auth, déclarations, matching…)
-│   │   └── shared/           # Widgets et modèles réutilisables
+│   │   │   └── router/
+│   │   │       └── app_router.dart    # GoRouter complet — toutes routes
+│   │   ├── features/
+│   │   │   ├── auth/              # Authentification OTP + JWT
+│   │   │   ├── declarations/
+│   │   │   │   └── repositories/
+│   │   │   │       └── declaration_repository.dart  # +getById, +searchDeclarations
+│   │   │   ├── home/
+│   │   │   │   └── screens/
+│   │   │   │       └── home_screen.dart  # +carte Restitutions + badge compteur
+│   │   │   ├── matching/
+│   │   │   │   └── repositories/
+│   │   │   │       └── match_repository.dart  # listMatches, actOnMatch, notifications
+│   │   │   ├── messaging/          # Chat WebSocket + vérification identité
+│   │   │   ├── profile/
+│   │   │   │   └── repositories/
+│   │   │   │       └── profile_repository.dart  # fetchProfile, updateAvatar, FCM
+│   │   │   └── restitution/          # 🔵 NOUVEAU — cycle complet de restitution
+│   │   │       ├── repositories/
+│   │   │       │   └── restitution_repository.dart
+│   │   │       ├── providers/
+│   │   │       │   └── restitution_provider.dart
+│   │   │       └── screens/
+│   │   │           ├── restitutions_list_screen.dart
+│   │   │           └── restitution_detail_screen.dart
+│   │   └── shared/
+│   │       ├── models/
+│   │       │   ├── restitution.dart      # +isActive, +canRate, +statusLabel
+│   │       │   └── user_profile.dart     # Source of truth + reputationScore
+│   │       └── widgets/                  # Widgets réutilisables
 │   └── pubspec.yaml
 ├── backend/                  # API REST FastAPI (Python 3.12)
-│   ├── alembic.ini           # Config Alembic (migrations)
+│   ├── alembic.ini
 │   ├── alembic/
-│   │   ├── env.py            # Environnement async Alembic
+│   │   ├── env.py
 │   │   └── versions/
-│   │       ├── 001_initial_schema.py          # Schéma initial complet
-│   │       ├── 002_add_event_date_reputation.py  # event_date, score_reputation, confirmed_by_*
-│   │       └── 003_add_restitutions_table.py  # Table restitutions
+│   │       ├── 001_initial_schema.py
+│   │       ├── 002_add_event_date_reputation.py
+│   │       └── 003_add_restitutions_table.py
 │   ├── app/
 │   │   ├── api/v1/
-│   │   │   ├── router.py     # Routeur principal (tous les endpoints enregistrés)
+│   │   │   ├── router.py
 │   │   │   └── endpoints/
-│   │   │       ├── auth.py          # S1 — Authentification OTP + JWT
-│   │   │       ├── declarations.py  # S2 — Déclarations (+ event_date, F-15, pagination cursor)
-│   │   │       ├── matches.py       # S3 — Matching + double-confirmation + création restitution
-│   │   │       ├── messaging.py     # S4 — Messagerie temps réel (WebSocket + Redis pub/sub)
-│   │   │       ├── profile.py       # S4 — Profil utilisateur + DELETE RGPD (F-04)
-│   │   │       └── restitutions.py  # S4 — Cycle de restitution complet (nouveau)
+│   │   │       ├── auth.py
+│   │   │       ├── declarations.py
+│   │   │       ├── matches.py
+│   │   │       ├── messaging.py
+│   │   │       ├── profile.py
+│   │   │       └── restitutions.py
 │   │   ├── core/
-│   │   │   ├── config.py     # Variables d'environnement (pydantic-settings)
-│   │   │   ├── database.py   # Engine async SQLAlchemy + Base
-│   │   │   ├── dependencies.py # get_current_user, JWT decode
-│   │   │   └── redis_client.py # Connexion Redis async
+│   │   │   ├── config.py
+│   │   │   ├── database.py
+│   │   │   ├── dependencies.py
+│   │   │   └── redis_client.py
 │   │   ├── models/
-│   │   │   ├── __init__.py   # Import de tous les modèles (requis pour Alembic)
-│   │   │   ├── user.py       # +score_reputation (float, défaut 5.0)
-│   │   │   ├── declaration.py # +event_date (date)
-│   │   │   ├── match.py      # +confirmed_by_owner, +confirmed_by_finder
-│   │   │   ├── message.py
-│   │   │   ├── restitution.py # Nouveau — cycle complet de remise physique
-│   │   │   └── verification.py
+│   │   │   ├── user.py | declaration.py | match.py
+│   │   │   ├── message.py | restitution.py | verification.py
+│   │   │   └── __init__.py
 │   │   ├── schemas/
-│   │   │   ├── auth.py
-│   │   │   ├── declaration.py  # +event_date dans Create/Update/Read
-│   │   │   ├── match.py        # +MatchConfirmResponse (confirmed_by_*, restitution_id)
-│   │   │   ├── message.py
-│   │   │   ├── restitution.py  # Nouveau — RestitutionRead, RestitutionUpdate, RestitutionRating
-│   │   │   ├── user.py         # +score_reputation dans UserRead
-│   │   │   └── verification.py
+│   │   │   ├── auth.py | declaration.py | match.py
+│   │   │   └── message.py | restitution.py | user.py | verification.py
 │   │   └── services/
-│   │       ├── auth_service.py
-│   │       ├── declaration_service.py  # +count_active(), +list_declarations_cursor()
-│   │       ├── matching_service.py     # Algorithme Jaro-Winkler + Haversine
-│   │       ├── messaging_service.py
-│   │       ├── notification_service.py
-│   │       ├── otp_service.py
-│   │       ├── restitution_service.py  # Nouveau — lifecycle complet + réputation
-│   │       ├── storage_service.py      # MinIO upload/delete
-│   │       └── verification_service.py
+│   │       ├── auth_service.py | declaration_service.py | matching_service.py
+│   │       └── messaging_service.py | notification_service.py | otp_service.py
+│   │           restitution_service.py | storage_service.py | verification_service.py
 │   ├── tests/
-│   │   ├── conftest.py         # Fixtures partagées (SQLite in-memory, fake Redis, mock MinIO)
-│   │   ├── test_auth.py        # Tests auth_service
-│   │   ├── test_declarations.py # Tests F-15, pagination cursor, CRUD
-│   │   ├── test_matching.py    # Tests score components + compute_score
-│   │   └── test_restitution.py # Tests cycle restitution + réputation
+│   │   ├── conftest.py
+│   │   ├── test_auth.py
+│   │   ├── test_declarations.py
+│   │   ├── test_matching.py
+│   │   └── test_restitution.py
 │   ├── pytest.ini
 │   ├── requirements.txt
 │   └── Dockerfile
-├── infra/                     # Orchestration Docker
-│   ├── docker-compose.yml       # Dev local
-│   ├── docker-compose.prod.yml  # Production
-│   ├── nginx/                   # Reverse proxy
-│   └── postgres/                # Script d'init SQL
-└── docs/api/                  # Documentation OpenAPI exportée
+├── infra/
+│   ├── docker-compose.yml
+│   ├── docker-compose.prod.yml
+│   ├── nginx/
+│   └── postgres/
+└── docs/api/
 ```
+
+---
+
+## Mobile Flutter — Fonctionnalités
+
+| Feature | Écran(s) | Statut |
+|---------|----------|--------|
+| Authentification OTP | `PhoneInputScreen`, `OtpVerifyScreen` | ✅ |
+| Configuration profil | `ProfileSetupScreen` | ✅ |
+| Accueil | `HomeScreen` (+carte Restitutions, badge) | ✅ |
+| Déclarations | `DeclarationsListScreen`, `DeclarationFormScreen`, `DeclarationDetailScreen` | ✅ |
+| Matching | `MatchesListScreen`, `MatchDetailScreen` | ✅ |
+| Messagerie | `ChatScreen`, `IdentityVerificationScreen` | ✅ |
+| Restitutions | `RestitutionsListScreen`, `RestitutionDetailScreen` | ✅ |
+| Paramètres / Support | `SettingsScreen`, `SupportScreen` | ✅ |
 
 ---
 
@@ -133,7 +161,7 @@ docretour/
 | GET | `/` | Récupérer son profil |
 | PATCH | `/` | Modifier son profil |
 | PATCH | `/avatar` | Mettre à jour l'avatar |
-| **DELETE** | **`/`** | **Suppression compte (RGPD F-04)** |
+| DELETE | `/` | Suppression compte (RGPD F-04) |
 
 ### Déclarations (`/api/v1/declarations`)
 | Méthode | Endpoint | Description |
@@ -150,17 +178,19 @@ docretour/
 |---------|----------|-------------|
 | GET | `/` | Lister ses matchs |
 | GET | `/{id}` | Détail d'un match |
-| POST | `/{id}/action` | Confirmer ou ignorer (double-confirmation, crée la restitution automatiquement) |
+| POST | `/{id}/action` | Confirmer ou ignorer (double-confirmation, crée la restitution) |
 | GET | `/notifications` | Notifications en attente |
 | DELETE | `/notifications` | Vider les notifications |
 
-### Restitutions (`/api/v1/restitutions`) — *nouveau*
+### Restitutions (`/api/v1/restitutions`)
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
+| GET | `/` | Lister ses restitutions |
 | GET | `/{id}` | Détail d'une restitution |
 | PATCH | `/{id}` | Modifier lieu de RDV / statut |
 | POST | `/{id}/photos` | Uploader une photo preuve |
-| POST | `/{id}/rate` | Noter la restitution (1-5★ → met à jour score_reputation) |
+| POST | `/{id}/rate` | Noter la restitution (1–5★ → met à jour score_reputation) |
+| POST | `/{id}/dispute` | Signaler un litige |
 
 ### Messagerie (`/api/v1/messaging`)
 | Méthode | Endpoint | Description |
@@ -171,30 +201,50 @@ docretour/
 
 ---
 
+## Routes Flutter (GoRouter)
+
+| Route | Écran | Auth requise |
+|-------|-------|--------------|
+| `/splash` | `SplashScreen` | Non |
+| `/onboarding` | `OnboardingScreen` | Non |
+| `/auth/phone` | `PhoneInputScreen` | Non |
+| `/auth/otp` | `OtpVerifyScreen` | Non |
+| `/profile/setup` | `ProfileSetupScreen` | Oui |
+| `/home` | `HomeScreen` | Oui |
+| `/declarations` | `DeclarationsListScreen` | Oui |
+| `/declarations/new/:type` | `DeclarationFormScreen` | Oui |
+| `/declarations/:id` | `DeclarationDetailScreen` | Oui |
+| `/matches` | `MatchesListScreen` | Oui |
+| `/matches/:id` | `MatchDetailScreen` | Oui |
+| `/matches/:id/chat` | `ChatScreen` | Oui |
+| `/matches/:id/verify` | `IdentityVerificationScreen` | Oui |
+| `/restitutions` | `RestitutionsListScreen` | Oui |
+| `/restitutions/:id` | `RestitutionDetailScreen` | Oui |
+| `/settings` | `SettingsScreen` | Oui |
+| `/support` | `SupportScreen` | Oui |
+
+---
+
 ## Migrations de base de données (Alembic)
 
 ```bash
-# Depuis le dossier backend/ (ou dans le conteneur Docker)
-
 # Appliquer toutes les migrations
 alembic upgrade head
 
 # Voir l'état actuel
 alembic current
 
-# Créer une nouvelle migration automatique
+# Créer une nouvelle migration
 alembic revision --autogenerate -m "description"
 
-# Rollback d'une migration
+# Rollback
 alembic downgrade -1
 ```
-
-### Historique des migrations
 
 | Révision | Description |
 |----------|-------------|
 | `001` | Schéma initial : users, declarations, matches, messages, identity_verifications |
-| `002` | Ajout `event_date` (declarations), `score_reputation` (users), `confirmed_by_owner/finder` (matches) |
+| `002` | Ajout `event_date`, `score_reputation`, `confirmed_by_owner/finder` |
 | `003` | Nouvelle table `restitutions` |
 
 ---
@@ -216,10 +266,10 @@ pytest tests/test_matching.py -v
 Les tests utilisent **SQLite in-memory** + mocks MinIO/Redis : aucun service externe requis.
 
 | Fichier | Ce qui est testé |
-|---------|-----------------|
+|---------|----------------|
 | `test_auth.py` | Création utilisateur, lookup téléphone, génération JWT |
 | `test_declarations.py` | Limite F-15, pagination cursor, CRUD complet |
-| `test_matching.py` | Score Jaro-Winkler, Haversine, compute_score parfait/nul |
+| `test_matching.py` | Score Jaro-Winkler, Haversine, compute_score |
 | `test_restitution.py` | Création idempotente, autorisation, notation, réputation |
 
 ---
@@ -266,6 +316,7 @@ docker compose -f infra/docker-compose.yml down -v
 | S2 | Déclarations de documents (trouver / perdu) | ✅ |
 | S3 | Matching automatique Jaro-Winkler + Haversine, notifications | ✅ |
 | S4 | Messagerie temps réel, profil, restitution, tests, migrations | ✅ |
+| S5 | Mobile Flutter complet (repositories, providers, screens, router) | ✅ |
 
 ---
 
