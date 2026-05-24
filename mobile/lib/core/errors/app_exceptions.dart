@@ -1,35 +1,40 @@
-/// Exceptions métier centralisées pour ReTurn
+/// Exceptions métier de l'application ReTurn
 sealed class AppException implements Exception {
   final String message;
   const AppException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 final class NetworkException extends AppException {
-  const NetworkException([String msg = 'Erreur réseau. Vérifiez votre connexion.'])
-      : super(msg);
-}
-
-final class UnauthorizedException extends AppException {
-  const UnauthorizedException([String msg = 'Session expirée. Veuillez vous reconnecter.'])
-      : super(msg);
-}
-
-final class NotFoundException extends AppException {
-  const NotFoundException([String msg = 'Ressource introuvable.']) : super(msg);
+  const NetworkException([super.message = 'Pas de connexion internet']);
 }
 
 final class ServerException extends AppException {
   final int? statusCode;
-  const ServerException([String msg = 'Erreur serveur.', this.statusCode])
-      : super(msg);
+  const ServerException(super.message, {this.statusCode});
+}
+
+final class UnauthorizedException extends AppException {
+  const UnauthorizedException([super.message = 'Session expirée, reconnectez-vous']);
+}
+
+final class NotFoundException extends AppException {
+  const NotFoundException([super.message = 'Ressource introuvable']);
 }
 
 final class ValidationException extends AppException {
-  final Map<String, List<String>> errors;
-  const ValidationException(this.errors)
-      : super('Données invalides.');
+  final Map<String, String>? fields;
+  const ValidationException(super.message, {this.fields});
 }
 
 final class StorageException extends AppException {
-  const StorageException([String msg = 'Erreur de stockage local.']) : super(msg);
+  const StorageException([super.message = 'Erreur de stockage local']);
+}
+
+/// Convertit une DioException en AppException
+AppException mapDioException(Object err) {
+  // Handled by DioException in api_client — import only when needed
+  return ServerException(err.toString());
 }
