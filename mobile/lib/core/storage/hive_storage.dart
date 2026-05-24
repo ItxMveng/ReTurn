@@ -4,71 +4,45 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'hive_storage.g.dart';
 
-/// Noms de boîtes Hive
-const String kBoxDeclarations = 'declarations_cache';
-const String kBoxMatches = 'matches_cache';
-const String kBoxSettings = 'settings';
-const String kBoxProfile = 'profile_cache';
-
 @Riverpod(keepAlive: true)
 HiveStorageService hiveStorage(Ref ref) => HiveStorageService();
 
+const _kProfileBox   = 'profile_cache';
+const _kProfileKey   = 'current_user';
+const _kSettingsBox  = 'settings';
+
 class HiveStorageService {
-  /// Initialisation de Hive — appeler dans main() avant runApp()
+  /// Initialiser Hive (appeler dans main() avant runApp)
   static Future<void> init() async {
     await Hive.initFlutter();
     await Future.wait([
-      Hive.openBox<Map>(kBoxDeclarations),
-      Hive.openBox<Map>(kBoxMatches),
-      Hive.openBox<dynamic>(kBoxSettings),
-      Hive.openBox<Map>(kBoxProfile),
+      Hive.openBox<Map>(_kProfileBox),
+      Hive.openBox<dynamic>(_kSettingsBox),
     ]);
   }
 
-  // ── Déclarations (cache offline) ─────────────────────────────────────────
-  Box<Map> get _declarations => Hive.box<Map>(kBoxDeclarations);
+  // ── Profil utilisateur ──────────────────────────────────────
+  void cacheProfile(Map<String, dynamic> profile) {
+    Hive.box<Map>(_kProfileBox).put(_kProfileKey, profile);
+  }
 
-  Future<void> cacheDeclaration(String id, Map<String, dynamic> data) =>
-      _declarations.put(id, data);
+  Map<String, dynamic>? getCachedProfile() {
+    final raw = Hive.box<Map>(_kProfileBox).get(_kProfileKey);
+    if (raw == null) return null;
+    return Map<String, dynamic>.from(raw);
+  }
 
-  Map<String, dynamic>? getDeclaration(String id) =>
-      _declarations.get(id)?.cast<String, dynamic>();
+  void clearProfile() => Hive.box<Map>(_kProfileBox).delete(_kProfileKey);
 
-  List<Map<String, dynamic>> getAllDeclarations() =>
-      _declarations.values.map((e) => e.cast<String, dynamic>()).toList();
+  // ── Settings généraux ───────────────────────────────────────
+  T? getSetting<T>(String key) => Hive.box<dynamic>(_kSettingsBox).get(key) as T?;
+  Future<void> setSetting<T>(String key, T value) =>
+      Hive.box<dynamic>(_kSettingsBox).put(key, value);
 
-  Future<void> deleteDeclaration(String id) => _declarations.delete(id);
-
-  // ── Matchs (cache offline) ───────────────────────────────────────────────
-  Box<Map> get _matches => Hive.box<Map>(kBoxMatches);
-
-  Future<void> cacheMatch(String id, Map<String, dynamic> data) =>
-      _matches.put(id, data);
-
-  List<Map<String, dynamic>> getAllMatches() =>
-      _matches.values.map((e) => e.cast<String, dynamic>()).toList();
-
-  // ── Paramètres ────────────────────────────────────────────────────────────
-  Box<dynamic> get _settings => Hive.box<dynamic>(kBoxSettings);
-
-  Future<void> setSetting(String key, dynamic value) => _settings.put(key, value);
-  T? getSetting<T>(String key) => _settings.get(key) as T?;
-
-  // ── Profil (cache offline) ───────────────────────────────────────────────
-  Box<Map> get _profile => Hive.box<Map>(kBoxProfile);
-
-  Future<void> cacheProfile(Map<String, dynamic> data) =>
-      _profile.put('current', data);
-
-  Map<String, dynamic>? getCachedProfile() =>
-      _profile.get('current')?.cast<String, dynamic>();
-
-  /// Efface tous les caches (déconnexion)
   Future<void> clearAll() async {
     await Future.wait([
-      _declarations.clear(),
-      _matches.clear(),
-      _profile.clear(),
+      Hive.box<Map>(_kProfileBox).clear(),
+      Hive.box<dynamic>(_kSettingsBox).clear(),
     ]);
   }
 }

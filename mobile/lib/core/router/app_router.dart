@@ -2,113 +2,129 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../storage/secure_storage.dart';
-import 'route_names.dart';
-
-// Imports temporaires — les vraies pages seront ajoutées dans les prochains commits
-import '../../features/auth/presentation/pages/splash_page.dart';
+import '../../features/auth/application/auth_notifier.dart';
+import '../../features/auth/application/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
-import '../../shared/widgets/scaffold_shell.dart';
+import '../../features/auth/presentation/pages/otp_verify_page.dart';
+import '../widgets/scaffold_with_nav_bar.dart';
+import 'route_names.dart';
 
 part 'app_router.g.dart';
 
 @riverpod
 GoRouter appRouter(Ref ref) {
-  final storage = ref.watch(secureStorageProvider);
+  final authState = ref.watch(authNotifierProvider);
 
   return GoRouter(
-    initialLocation: RoutePaths.splash,
     debugLogDiagnostics: true,
-    redirect: (context, state) async {
-      final isAuth = await storage.isAuthenticated();
-      final loc = state.matchedLocation;
-
-      final authRoutes = [RoutePaths.login, RoutePaths.register, RoutePaths.otpVerify, RoutePaths.onboarding, RoutePaths.splash];
-      final isAuthRoute = authRoutes.contains(loc);
-
-      if (!isAuth && !isAuthRoute) return RoutePaths.login;
-      if (isAuth && isAuthRoute && loc != RoutePaths.splash) return RoutePaths.home;
-      return null;
-    },
+    initialLocation: '/splash',
+    redirect: (context, state) => _redirect(authState, state.matchedLocation),
     routes: [
-      // ── Splash ─────────────────────────────────────────────────────────
+      // ── Splash ───────────────────────────────────────────────
       GoRoute(
-        path: RoutePaths.splash,
+        path: '/splash',
         name: RouteNames.splash,
-        builder: (_, __) => const SplashPage(),
+        builder: (_, __) => const _SplashPage(),
       ),
 
-      // ── Auth ───────────────────────────────────────────────────────────
+      // ── Auth ─────────────────────────────────────────────────
       GoRoute(
-        path: RoutePaths.login,
+        path: '/login',
         name: RouteNames.login,
-        pageBuilder: (_, state) => _fadeTransition(state, const LoginPage()),
+        builder: (_, __) => const LoginPage(),
       ),
       GoRoute(
-        path: RoutePaths.register,
+        path: '/register',
         name: RouteNames.register,
-        pageBuilder: (_, state) => _fadeTransition(state, const RegisterPage()),
+        builder: (_, __) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/otp-verify',
+        name: RouteNames.otpVerify,
+        builder: (context, state) {
+          final phone = state.extra as String? ?? '';
+          return OtpVerifyPage(phoneNumber: phone);
+        },
       ),
 
-      // ── Shell avec BottomNavigation ────────────────────────────────────
+      // ── App principale (shell avec bottom nav) ────────────────
       ShellRoute(
-        builder: (context, state, child) => ScaffoldShell(child: child),
+        builder: (context, state, child) => ScaffoldWithNavBar(child: child),
         routes: [
           GoRoute(
-            path: RoutePaths.home,
+            path: '/home',
             name: RouteNames.home,
-            builder: (_, __) => const HomePage(),
+            builder: (_, __) => const _PlaceholderPage(title: 'Accueil'),
           ),
           GoRoute(
-            path: RoutePaths.declarations,
+            path: '/declarations',
             name: RouteNames.declarations,
-            builder: (_, __) => const PlaceholderPage(title: 'Déclarations'),
+            builder: (_, __) => const _PlaceholderPage(title: 'Déclarations'),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: RouteNames.newDeclaration,
+                builder: (_, __) => const _PlaceholderPage(title: 'Nouvelle déclaration'),
+              ),
+            ],
           ),
           GoRoute(
-            path: RoutePaths.matches,
+            path: '/matches',
             name: RouteNames.matches,
-            builder: (_, __) => const PlaceholderPage(title: 'Correspondances'),
+            builder: (_, __) => const _PlaceholderPage(title: 'Correspondances'),
           ),
           GoRoute(
-            path: RoutePaths.messages,
-            name: RouteNames.messages,
-            builder: (_, __) => const PlaceholderPage(title: 'Messagerie'),
+            path: '/messaging',
+            name: RouteNames.messaging,
+            builder: (_, __) => const _PlaceholderPage(title: 'Messagerie'),
           ),
           GoRoute(
-            path: RoutePaths.profile,
+            path: '/profile',
             name: RouteNames.profile,
-            builder: (_, __) => const PlaceholderPage(title: 'Profil'),
+            builder: (_, __) => const _PlaceholderPage(title: 'Profil'),
           ),
         ],
       ),
     ],
-
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text(
-          'Page introuvable : ${state.error}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ),
-    ),
   );
 }
 
-CustomTransitionPage<void> _fadeTransition(GoRouterState state, Widget child) {
-  return CustomTransitionPage<void>(
-    key: state.pageKey,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 220),
-    transitionsBuilder: (_, animation, __, child) =>
-        FadeTransition(opacity: animation, child: child),
+/// Logique de redirection centralisée
+String? _redirect(AuthState authState, String location) {
+  final publicRoutes = ['/login', '/register', '/otp-verify', '/splash'];
+  final isPublic = publicRoutes.any((r) => location.startsWith(r));
+
+  return authState.when(
+    initial: () => null,
+    checking: () => null,
+    loading: () => null,
+    authenticated: (_) => isPublic ? '/home' : null,
+    unauthenticated: () => isPublic ? null : '/login',
+    error: (_) => isPublic ? null : '/login',
   );
 }
 
-/// Page temporaire pour les routes non encore implémentées
-class PlaceholderPage extends StatelessWidget {
-  const PlaceholderPage({super.key, required this.title});
+/// Page splash simple — affiche un indicateur pendant la vérif auth
+class _SplashPage extends ConsumerWidget {
+  const _SplashPage();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+    authState.whenOrNull(
+      authenticated: (_) => Future.microtask(() => context.goNamed(RouteNames.home)),
+      unauthenticated: () => Future.microtask(() => context.goNamed(RouteNames.login)),
+    );
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+/// Placeholder pour les pages non encore implémentées
+class _PlaceholderPage extends StatelessWidget {
+  const _PlaceholderPage({required this.title});
   final String title;
 
   @override
@@ -116,16 +132,7 @@ class PlaceholderPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.construction_rounded, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('En cours de développement', style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
+        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
       ),
     );
   }
