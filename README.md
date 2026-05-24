@@ -52,14 +52,15 @@ ReTurn/
 │   │   │       ├── restitutions.py      # S3 — Restitution + photos + notation
 │   │   │       ├── messaging.py         # S4 — Messagerie WebSocket
 │   │   │       ├── profile.py           # S4 — Profil utilisateur
-│   │   │       └── admin.py             # ✅ Commit G — Backoffice F-40–F-44
+│   │   │       └── admin.py             # ✅ Commit G — Backoffice complet F-40–F-44
 │   │   ├── models/
 │   │   │   ├── user.py
 │   │   │   ├── declaration.py
 │   │   │   ├── match.py
 │   │   │   ├── restitution.py
 │   │   │   ├── message.py
-│   │   │   └── zone.py                  # ✅ Commit G — Zones de récupération
+│   │   │   ├── zone.py
+│   │   │   └── audit_log.py             # ✅ Commit G — Traçabilité CDC §11.1
 │   │   ├── schemas/
 │   │   ├── services/
 │   │   │   ├── matching_service.py
@@ -71,28 +72,29 @@ ReTurn/
 │   │   ├── 001_initial_schema.py
 │   │   ├── 002_fcm_token.py
 │   │   ├── 003_user_profile.py
-│   │   └── 004_admin_zones.py           # ✅ Commit G
+│   │   ├── 004_admin_zones.py
+│   │   └── 005_audit_logs.py            # ✅ Commit G — Table audit_logs
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_auth.py
 │   │   ├── test_declarations.py
 │   │   ├── test_matching.py
-│   │   └── test_restitution.py
+│   │   ├── test_restitution.py
+│   │   └── test_admin.py                # ✅ Commit G — 15 tests admin
 │   ├── pytest.ini
 │   └── requirements.txt
 ├── mobile/lib/
 │   ├── core/
 │   │   ├── network/api_client.dart
 │   │   ├── router/
-│   │   │   ├── app_router.dart          # ✅ Messagerie branchée
+│   │   │   ├── app_router.dart
 │   │   │   └── route_names.dart
 │   │   └── widgets/scaffold_with_nav_bar.dart
 │   └── features/
 │       ├── auth/ — declarations/ — matches/ — profile/ — home/
-│       └── messaging/                    # ✅ Commit G
-│           ├── data/
-│           │   ├── models/message_model.dart
-│           │   └── repositories/messaging_repository.dart
+│       └── messaging/
+│           ├── data/models/message_model.dart
+│           ├── data/repositories/messaging_repository.dart
 │           ├── application/conversation_notifier.dart
 │           └── presentation/pages/
 │               ├── messaging_list_page.dart
@@ -189,21 +191,27 @@ cd backend && pytest -v
 | `POST` | `/api/v1/messaging/{match_id}` | Envoyer |
 | `WS` | `/api/v1/ws/chat/{match_id}` | WebSocket temps réel |
 
-### Admin (protégé is_admin=True)
+### Admin (protégé `is_admin=True`)
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| `GET` | `/api/v1/admin/stats` | Statistiques globales (F-42) |
+| `GET` | `/api/v1/admin/stats` | KPIs globaux (F-42) |
+| `GET` | `/api/v1/admin/stats/chart` | Séries temporelles graphiques ✅ G |
 | `GET` | `/api/v1/admin/export/declarations` | Export CSV (F-41) |
-| `GET` | `/api/v1/admin/users` | Liste paginiée utilisateurs |
+| `GET` | `/api/v1/admin/users` | Liste paginée utilisateurs |
 | `PATCH` | `/api/v1/admin/users/{id}/ban` | Bannir un compte |
 | `PATCH` | `/api/v1/admin/users/{id}/unban` | Rétablir un compte |
 | `PATCH` | `/api/v1/admin/users/{id}/promote` | Promouvoir en admin |
 | `GET` | `/api/v1/admin/declarations` | Toutes les déclarations |
 | `DELETE` | `/api/v1/admin/declarations/{id}` | Supprimer (modération) |
 | `PATCH` | `/api/v1/admin/declarations/{id}/flag` | Marquer suspect |
+| `POST` | `/api/v1/admin/declarations/bulk` | Import CSV en lot (F-41) ✅ G |
+| `GET` | `/api/v1/admin/matches` | Tous les matchs (F-40) ✅ G |
+| `GET` | `/api/v1/admin/restitutions` | Toutes les restitutions ✅ G |
 | `GET/POST` | `/api/v1/admin/zones` | Zones de récupération (F-32, F-43) |
+| `PATCH` | `/api/v1/admin/zones/{id}` | Modifier une zone ✅ G |
 | `DELETE` | `/api/v1/admin/zones/{id}` | Supprimer une zone |
+| `GET` | `/api/v1/admin/audit-logs` | Historique actions admin ✅ G |
 
 ---
 
@@ -224,8 +232,8 @@ cd backend && pytest -v
 | `/matches` | `matches` | 3 onglets |
 | `/matches/:id` | `match-detail` | Détail + actions |
 | `/restitutions/:id` | `restitution-detail` | Restitution + notation |
-| `/messaging` | `messaging` | Liste conversations ✅ G |
-| `/messaging/:matchId` | `conversation` | Chat WebSocket ✅ G |
+| `/messaging` | `messaging` | Liste conversations |
+| `/messaging/:matchId` | `conversation` | Chat WebSocket |
 | `/profile` | `profile` | Profil |
 | `/profile/edit` | `edit-profile` | Modifier |
 
@@ -241,10 +249,11 @@ alembic revision --autogenerate -m "description"
 
 | Révision | Description |
 |----------|-------------|
-| `001` | Schéma initial |
-| `002` | Colonne `fcm_token` |
-| `003` | Colonnes profil |
-| `004` | `is_admin`, `is_banned`, `is_flagged`, table `zones_recuperation` ✅ G |
+| `001` | Schéma initial (users, declarations, matches, messages, restitutions) |
+| `002` | Colonne `fcm_token` sur users |
+| `003` | Colonnes profil (date_of_birth, city, gender, avatar_url…) |
+| `004` | `is_admin`, `is_banned`, `is_flagged`, table `zones_recuperation` |
+| `005` | Table `audit_logs` — traçabilité CDC §11.1 ✅ G |
 
 ---
 
@@ -256,10 +265,11 @@ cd backend && pytest -v
 
 | Fichier | Couverture |
 |---------|------------|
-| `test_auth.py` | Inscription, JWT |
-| `test_declarations.py` | CRUD, pagination, F-15 |
-| `test_matching.py` | Jaro-Winkler, Haversine |
-| `test_restitution.py` | Idempotence, rating, réputation |
+| `test_auth.py` | Inscription, JWT, token invalide |
+| `test_declarations.py` | CRUD, pagination cursor, F-15 offline |
+| `test_matching.py` | Jaro-Winkler, Haversine, compute_score |
+| `test_restitution.py` | Idempotence, rating, réputation, autorisation |
+| `test_admin.py` | Stats, chart, ban/unban/promote, flag, delete, zones, audit-logs, CSV bulk ✅ G |
 
 ---
 
@@ -274,9 +284,10 @@ cd backend && pytest -v
 | **S4** | Restitutions + messagerie WebSocket + profil | ✅ |
 | **S5** | Mobile — Auth + Déclarations + Profil | ✅ |
 | **S6** | Mobile — Matches + Restitutions | ✅ |
-| **S7** | Mobile — Messagerie WebSocket + Admin backend | ✅ |
-| **S8** | Tests Flutter + widget tests | ⏳ Prochain |
-| **S9** | CI/CD GitHub Actions + déploiement VPS | ⏳ À venir |
+| **S7** | Mobile — Messagerie WebSocket + Admin backend complet | ✅ |
+| **S8** | OCR Flutter (Google ML Kit) + Vérification identité selfie | ⏳ Prochain |
+| **S9** | CI/CD GitHub Actions + déploiement VPS Hetzner | ⏳ À venir |
+| **S10** | Module freemium + Mobile Money (MTN MoMo / Orange) | ⏳ À venir |
 
 ---
 
@@ -289,20 +300,22 @@ cd backend && pytest -v
 | F-04 | Suppression compte CPDP | ✅ |
 | F-05 | Score de réputation | ✅ |
 | F-10 | Déclaration trouvé + photo | ✅ |
-| F-11 | OCR (on-device Flutter) | ⏳ S8 |
+| F-11 | OCR on-device (Google ML Kit Flutter) | ⏳ S8 |
+| F-12 | Masquage données sensibles | ⏳ S8 |
 | F-13 | Déclaration de perte manuelle | ✅ |
-| F-14 | Géolocalisation | ✅ |
-| F-15 | Offline cache | ✅ |
+| F-14 | Géolocalisation (PostGIS) | ✅ |
+| F-15 | Offline cache (Hive Flutter) | ✅ |
 | F-20 | Algorithme matching Jaro-Winkler + Haversine | ✅ |
-| F-21 | Notification push FCM | ✅ |
+| F-21 | Notification push FCM / ntfy.sh | ✅ |
 | F-23 | File matching asynchrone Redis | ✅ |
-| F-30 | Vérification identité (selfie) | ⏳ S8 |
-| F-31 | Messagerie chiffrée | ✅ |
+| F-30 | Vérification identité selfie + questions | ⏳ S8 |
+| F-31 | Messagerie interne chiffrée WebSocket | ✅ |
 | F-32 | Zones de récupération certifiées | ✅ |
 | F-33 | Confirmation double restitution | ✅ |
 | F-35 | Historique restitutions | ✅ |
-| F-40 | Dashboard admin institution | ✅ |
-| F-41 | Export CSV déclarations | ✅ |
-| F-42 | Analytics + reporting | ✅ |
-| F-43 | Badge point de dépôt certifié | ✅ |
-| F-44 | API institutionnelle | ✅ |
+| F-40 | Dashboard admin + matchs + restitutions | ✅ G |
+| F-41 | Export CSV + Import CSV en lot | ✅ G |
+| F-42 | Analytics KPIs + séries temporelles | ✅ G |
+| F-43 | Badge Point de dépôt certifié | ✅ G |
+| F-44 | API institutionnelle (REST documentée) | ✅ |
+| §11.1 | Audit logs toutes actions sensibles | ✅ G |
