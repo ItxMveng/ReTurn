@@ -1,42 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../application/auth_notifier.dart';
+import '../../application/auth_state.dart';
+import 'otp_verify_page.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  bool _obscure = true;
   bool _loading = false;
 
   @override
   void dispose() {
     _phoneCtrl.dispose();
-    _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _requestOtp() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    // TODO: Commit B — implémenter AuthNotifier
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() => _loading = false);
-      context.goNamed(RouteNames.home);
-    }
+    final phone = _phoneCtrl.text.trim();
+    await ref.read(otpNotifierProvider.notifier).requestOtp(phone);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    final otpState = ref.read(otpNotifierProvider);
+    otpState.when(
+      idle: () {},
+      sending: () {},
+      sent: (phone) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => OtpVerifyPage(phoneNumber: phone)),
+        );
+      },
+      verifying: () {},
+      verified: () {},
+      error: (msg) => _showError(msg),
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Rediriger si déjà authentifié
+    ref.listen<AuthState>(authNotifierProvider, (_, next) {
+      next.whenOrNull(
+        authenticated: (_) => context.goNamed(RouteNames.home),
+      );
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -47,41 +76,35 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 48),
-                // Header
+                const SizedBox(height: 56),
+                // Logo
                 Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.find_in_page_rounded, color: AppColors.onPrimary, size: 26),
+                      child: const Icon(Icons.find_in_page_rounded, color: AppColors.onPrimary, size: 28),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'ReTurn',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.primary),
-                    ),
+                    const Text('ReTurn', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ],
                 ),
-                const SizedBox(height: 40),
-                const Text(
-                  'Connexion',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.onSurface),
-                ),
+                const SizedBox(height: 48),
+                const Text('Connexion', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
                 const SizedBox(height: 6),
-                Text(
-                  'Entrez votre numéro de téléphone pour continuer',
-                  style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+                const Text(
+                  'Entrez votre numéro de téléphone.\nNous vous enverrons un code de vérification.',
+                  style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant, height: 1.5),
                 ),
-                const SizedBox(height: 32),
-                // Téléphone
+                const SizedBox(height: 36),
                 TextFormField(
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
+                  autofocus: true,
                   decoration: const InputDecoration(
                     labelText: 'Numéro de téléphone',
                     hintText: '+237 6XX XXX XXX',
@@ -89,39 +112,19 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Numéro requis';
-                    if (v.trim().length < 9) return 'Numéro invalide';
+                    final cleaned = v.trim().replaceAll(RegExp(r'[\s\-]'), '');
+                    if (cleaned.length < 9) return 'Numéro invalide (min. 9 chiffres)';
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                // Mot de passe
-                TextFormField(
-                  controller: _passwordCtrl,
-                  obscureText: _obscure,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Mot de passe requis';
-                    if (v.length < 6) return 'Minimum 6 caractères';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 28),
-                // Bouton connexion
+                const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _loading ? null : _submit,
+                  onPressed: _loading ? null : _requestOtp,
                   child: _loading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Se connecter'),
+                      : const Text('Recevoir le code OTP'),
                 ),
-                const SizedBox(height: 16),
-                // Lien inscription
+                const SizedBox(height: 20),
                 Center(
                   child: TextButton(
                     onPressed: () => context.goNamed(RouteNames.register),
@@ -129,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                       text: const TextSpan(
                         style: TextStyle(fontSize: 14),
                         children: [
-                          TextSpan(text: 'Pas encore de compte ? ', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                          TextSpan(text: 'Pas de compte ? ', style: TextStyle(color: AppColors.onSurfaceVariant)),
                           TextSpan(text: 'Créer un compte', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
                         ],
                       ),
