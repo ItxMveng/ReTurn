@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/splash/splash_page.dart';
 import '../../features/auth/pages/login_page.dart';
 import '../../features/auth/pages/register_page.dart';
@@ -15,72 +14,77 @@ import '../../features/messaging/pages/chat_page.dart';
 import '../../features/profile/pages/profile_page.dart';
 import '../../features/restitution/pages/restitution_page.dart';
 import '../../features/settings/pages/settings_page.dart';
-import '../storage/auth_storage.dart';
+import '../../features/ocr/pages/ocr_scan_page.dart';
+import '../../features/ocr/pages/ocr_review_page.dart';
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final authStorage = ref.watch(authStorageProvider);
+final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
-    redirect: (context, state) async {
-      final loggedIn = await authStorage.isLoggedIn;
-      final onAuth = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register' ||
-          state.matchedLocation == '/splash';
-      if (!loggedIn && !onAuth) return '/login';
-      return null;
-    },
     routes: [
-      GoRoute(path: '/splash', builder: (c, s) => const SplashPage()),
-      GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
-      GoRoute(path: '/register', builder: (c, s) => const RegisterPage()),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
+
+      // ── OCR (hors shell — plein écran) ─────────────────────────
+      GoRoute(path: '/ocr/scan', builder: (_, __) => const OcrScanPage()),
+      GoRoute(path: '/ocr/review', builder: (_, __) => const OcrReviewPage()),
+
+      // ── Shell avec NavigationBar ────────────────────────────────
       ShellRoute(
-        builder: (c, s, child) => HomeShell(child: child),
+        builder: (_, __, child) => HomeShell(child: child),
         routes: [
           GoRoute(
             path: '/declarations',
-            builder: (c, s) => const DeclarationsListPage(),
+            builder: (_, __) => const DeclarationsListPage(),
             routes: [
               GoRoute(
-                  path: 'new',
-                  builder: (c, s) => const DeclarationFormPage()),
+                path: 'new',
+                builder: (_, state) => DeclarationFormPage(
+                  declarationType: state.uri.queryParameters['type'] ?? 'found',
+                ),
+              ),
               GoRoute(
-                  path: ':id',
-                  builder: (c, s) =>
-                      DeclarationDetailPage(id: s.pathParameters['id']!)),
+                path: ':id',
+                builder: (_, state) =>
+                    DeclarationDetailPage(id: state.pathParameters['id']!),
+              ),
             ],
           ),
           GoRoute(
             path: '/matches',
-            builder: (c, s) => const MatchesListPage(),
+            builder: (_, __) => const MatchesListPage(),
             routes: [
               GoRoute(
-                  path: ':id',
-                  builder: (c, s) =>
-                      MatchDetailPage(id: s.pathParameters['id']!)),
+                path: ':id',
+                builder: (_, state) =>
+                    MatchDetailPage(id: state.pathParameters['id']!),
+              ),
             ],
           ),
           GoRoute(
             path: '/messages',
-            builder: (c, s) => const ConversationsPage(),
+            builder: (_, __) => const ConversationsPage(),
             routes: [
               GoRoute(
-                  path: ':roomId',
-                  builder: (c, s) =>
-                      ChatPage(roomId: s.pathParameters['roomId']!)),
+                path: ':roomId',
+                builder: (_, state) =>
+                    ChatPage(roomId: state.pathParameters['roomId']!),
+              ),
             ],
           ),
           GoRoute(
-              path: '/profile',
-              builder: (c, s) => const ProfilePage()),
-          GoRoute(
-              path: '/settings',
-              builder: (c, s) => const SettingsPage()),
-          GoRoute(
-              path: '/restitution/:matchId',
-              builder: (c, s) => RestitutionPage(
-                  matchId: s.pathParameters['matchId']!)),
+            path: '/profile',
+            builder: (_, __) => const ProfilePage(),
+          ),
         ],
       ),
+
+      GoRoute(
+        path: '/restitution/:matchId',
+        builder: (_, state) =>
+            RestitutionPage(matchId: state.pathParameters['matchId']!),
+      ),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
     ],
   );
 });

@@ -35,6 +35,12 @@ dependencies:
   firebase_core: ^3.3.0
   firebase_auth: ^5.1.4
 
+  # ── OCR — Google ML Kit (on-device, F-11) ─────────────────────
+  google_mlkit_text_recognition: ^0.13.1
+  image_picker: ^1.1.2
+  camera: ^0.11.0+2
+  permission_handler: ^11.3.1
+
   # ── Icônes ───────────────────────────────────────────────────
   cupertino_icons: ^1.0.8
 
@@ -55,7 +61,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Police Satoshi (à placer dans assets/fonts/)
+  assets:
+    - assets/fonts/
+
   fonts:
     - family: Satoshi
       fonts:
