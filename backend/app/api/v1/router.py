@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     profile,
     restitutions,
     admin,
+    reports,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -17,4 +18,5 @@ api_router.include_router(declarations.router)
 api_router.include_router(matches.router)
 api_router.include_router(restitutions.router)
 api_router.include_router(messaging.router)
+api_router.include_router(reports.router)
 api_router.include_router(admin.router)

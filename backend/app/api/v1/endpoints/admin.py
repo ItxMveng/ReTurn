@@ -46,7 +46,7 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin  # source unique
 from app.models.audit_log import AuditLog
 from app.models.connection_log import ConnectionLog, ConnectionStatus
 from app.models.declaration import Declaration
@@ -57,22 +57,6 @@ from app.models.user import User
 from app.models.zone import Zone
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Guard — require_admin
-# ─────────────────────────────────────────────────────────────────────────────
-
-async def require_admin(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    """Dépendance : rejette les non-admins avec 403."""
-    if not getattr(current_user, "is_admin", False):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès réservé aux administrateurs.",
-        )
-    return current_user
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,8 +110,8 @@ class GlobalStatsResponse(BaseModel):
 
 class UserStatsResponse(BaseModel):
     total_users: int
-    active_last_7_days: int     # DAU hebdo
-    active_last_30_days: int    # MAU
+    active_last_7_days: int
+    active_last_30_days: int
     new_last_7_days: int
     new_last_30_days: int
     banned_users: int
@@ -140,7 +124,7 @@ class ReportStatsResponse(BaseModel):
     reviewed: int
     resolved: int
     rejected: int
-    by_reason: dict   # {reason: count}
+    by_reason: dict
     avg_resolution_days: Optional[float]
 
 
@@ -165,7 +149,6 @@ class UserAdminRead(BaseModel):
 
 
 class UserAdminDetail(BaseModel):
-    """Profil complet d'un utilisateur — vue admin."""
     id: uuid.UUID
     phone_number: str
     full_name: Optional[str]
@@ -175,11 +158,10 @@ class UserAdminDetail(BaseModel):
     is_banned: bool
     is_active: bool
     created_at: datetime
-    # Agrégats
     total_declarations: int
     total_matches: int
-    total_reports_received: int   # signalements reçus
-    total_reports_emitted: int    # signalements émis
+    total_reports_received: int
+    total_reports_emitted: int
     last_login_at: Optional[datetime]
     last_login_ip: Optional[str]
 
@@ -188,7 +170,6 @@ class UserAdminDetail(BaseModel):
 
 
 class UserAdminUpdate(BaseModel):
-    """Champs éditables par l'admin."""
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     is_active: Optional[bool] = None
@@ -362,10 +343,6 @@ async def user_stats(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """
-    Indicateurs d'activité utilisateurs : DAU, MAU, nouveaux inscrits, bannis.
-    Un utilisateur "actif" = au moins une connexion réussie dans la période.
-    """
     now = datetime.now(timezone.utc)
     since_7  = now - timedelta(days=7)
     since_30 = now - timedelta(days=30)
@@ -384,7 +361,6 @@ async def user_stats(
         select(func.count(User.id)).where(User.created_at >= since_30)
     )).scalar_one()
 
-    # Utilisateurs actifs = ayant eu une connexion SUCCESS dans la période
     active_7 = (await db.execute(
         select(func.count(func.distinct(ConnectionLog.user_id))).where(
             ConnectionLog.status == ConnectionStatus.SUCCESS,
@@ -416,14 +392,12 @@ async def report_stats(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """Stats des signalements : total, par statut, par motif, délai moyen de résolution."""
     total = (await db.execute(select(func.count(Report.id)))).scalar_one()
     pending  = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.PENDING))).scalar_one()
     reviewed = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REVIEWED))).scalar_one()
     resolved = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.RESOLVED))).scalar_one()
     rejected = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REJECTED))).scalar_one()
 
-    # Répartition par motif
     by_reason: dict = {}
     for reason in ReportReason:
         cnt = (await db.execute(
@@ -431,7 +405,6 @@ async def report_stats(
         )).scalar_one()
         by_reason[reason.value] = cnt
 
-    # Délai moyen de résolution (en jours)
     avg_delay = None
     raw = (await db.execute(
         select(func.avg(
@@ -536,18 +509,17 @@ async def list_users(
     per_page: int = Query(50, ge=1, le=100),
     search: Optional[str] = None,
     is_banned: Optional[bool] = None,
-    is_admin: Optional[bool] = None,
+    is_admin_filter: Optional[bool] = Query(None, alias="is_admin"),
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """Liste paginée des utilisateurs avec filtres : recherche, banni, admin."""
     q = select(User).order_by(User.created_at.desc())
     if search:
         q = q.where(or_(User.phone_number.ilike(f"%{search}%"), User.full_name.ilike(f"%{search}%")))
     if is_banned is not None:
         q = q.where(User.is_banned == is_banned)
-    if is_admin is not None:
-        q = q.where(User.is_admin == is_admin)
+    if is_admin_filter is not None:
+        q = q.where(User.is_admin == is_admin_filter)
     q = q.offset((page - 1) * per_page).limit(per_page)
     return (await db.execute(q)).scalars().all()
 
@@ -558,7 +530,6 @@ async def get_user_detail(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """Profil complet d'un utilisateur : déclarations, matchs, signalements, dernière connexion."""
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
@@ -578,7 +549,6 @@ async def get_user_detail(
         select(func.count(Report.id)).where(Report.reporter_id == user_id)
     )).scalar_one()
 
-    # Dernière connexion réussie
     last_log = (await db.execute(
         select(ConnectionLog)
         .where(ConnectionLog.user_id == user_id, ConnectionLog.status == ConnectionStatus.SUCCESS)
@@ -613,7 +583,6 @@ async def update_user(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    """Modifier les données d'un utilisateur (nom, téléphone, actif/inactif). Action auditée."""
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
@@ -644,8 +613,7 @@ async def delete_user(
 ):
     """
     Suppression CPDP (droit à l'effacement) — soft delete.
-    Le compte est désactivé et anonymisé : nom → 'Utilisateur supprimé',
-    téléphone → UUID hash, is_active → False.
+    Le compte est désactivé et anonymisé.
     Les données sont conservées 5 ans pour obligations légales.
     """
     user = await db.get(User, user_id)
@@ -654,7 +622,6 @@ async def delete_user(
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Impossible de supprimer votre propre compte.")
 
-    # Anonymisation CPDP
     anon_id = str(uuid.uuid4())[:8]
     user.full_name = "Utilisateur supprimé"  # type: ignore[assignment]
     user.phone_number = f"deleted_{anon_id}"  # type: ignore[assignment]
@@ -682,11 +649,6 @@ async def get_user_sessions(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """
-    Historique complet des connexions d'un utilisateur :
-    dates, IPs, devices, statuts (success/failed/banned).
-    Utilisable pour répondre à une réquisition judiciaire.
-    """
     since = datetime.now(timezone.utc) - timedelta(days=since_days)
     result = await db.execute(
         select(ConnectionLog)
@@ -709,29 +671,22 @@ async def export_user_legal(
 ):
     """
     Export légal complet d'un utilisateur au format JSON.
-    Contient : profil, déclarations, matchs, sessions de connexion, signalements.
-    Utilisable pour :
-    - Réquisitions judiciaires (ANSSI, parquet)
-    - Demandes CPDP (droit d'accès)
-    - Audits internes
+    Contient : profil, déclarations, matchs, sessions, signalements.
     """
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
 
-    # Déclarations
     decls = (await db.execute(
         select(Declaration).where(Declaration.user_id == user_id).order_by(Declaration.created_at)
     )).scalars().all()
 
-    # Matchs
     matches = (await db.execute(
         select(Match).where(
             or_(Match.user_found_id == user_id, Match.user_lost_id == user_id)
         ).order_by(Match.created_at)
     )).scalars().all()
 
-    # Sessions de connexion (12 derniers mois)
     since_1y = datetime.now(timezone.utc) - timedelta(days=365)
     sessions = (await db.execute(
         select(ConnectionLog)
@@ -739,12 +694,10 @@ async def export_user_legal(
         .order_by(ConnectionLog.created_at)
     )).scalars().all()
 
-    # Signalements reçus
     reports_received = (await db.execute(
         select(Report).where(Report.reported_id == user_id)
     )).scalars().all()
 
-    # Signalements émis
     reports_emitted = (await db.execute(
         select(Report).where(Report.reporter_id == user_id)
     )).scalars().all()
@@ -884,7 +837,7 @@ async def promote_to_admin(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Logs de connexion globaux (traçabilité légale)
+# Logs de connexion globaux
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/connection-logs", response_model=list[ConnectionLogRead])
@@ -898,14 +851,6 @@ async def list_connection_logs(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """
-    Logs de connexion globaux avec filtres :
-    - par statut (success/failed/banned/suspicious)
-    - par utilisateur
-    - par adresse IP (pour identifier des accès frauduleux)
-    - par période
-    Indispensable pour répondre aux réquisitions judiciaires.
-    """
     since = datetime.now(timezone.utc) - timedelta(days=since_days)
     q = select(ConnectionLog).where(ConnectionLog.created_at >= since).order_by(ConnectionLog.created_at.desc())
     if status_filter:
