@@ -1,7 +1,8 @@
+"""Dépendances FastAPI partagées."""
 import uuid
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,44 +11,47 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 
-bearer_scheme = HTTPBearer()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    token = credentials.credentials
-
-    # 1. Essayer le JWT backend (token normal)
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Impossible de valider les informations d'identification",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         user_id: str = payload.get("sub")
         if user_id is None:
-            raise ValueError
-        result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
-        user = result.scalar_one_or_none()
-        if user and user.is_active:
-            return user
-    except (JWTError, ValueError):
-        pass
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
 
-    # 2. Fallback : essayer comme Firebase token (cas offline-first)
-    try:
-        from app.core.firebase_admin import verify_firebase_token
-        decoded = verify_firebase_token(token)
-        firebase_uid = decoded.get("uid")
-        if firebase_uid:
-            result = await db.execute(
-                select(User).where(User.firebase_uid == firebase_uid)
-            )
-            user = result.scalar_one_or_none()
-            if user and user.is_active:
-                return user
-    except Exception:
-        pass
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token invalide ou expiré",
+    result = await db.execute(
+        select(User).where(
+            User.id == uuid.UUID(user_id),
+            User.is_active == True,  # noqa: E712
+        )
     )
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+async def require_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Vérifie que l'utilisateur connecté est administrateur."""
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé aux administrateurs",
+        )
+    return current_user

@@ -25,7 +25,8 @@ from app.models.match import Match
 from app.models.message import Message
 from app.models.user import User
 from app.schemas.message import MessageRead, WsOutgoing
-from app.services import messaging_service, verification_service
+from app.schemas.report import ReportCreate, ReportRead
+from app.services import messaging_service, verification_service, report_service
 from app.services.notification_service import push_message_notification
 from app.schemas.verification import VerificationRead
 
@@ -38,7 +39,7 @@ router = APIRouter(prefix="/messaging", tags=["messaging"])
 async def get_history(
     match_id: uuid.UUID,
     limit: int = Query(50, le=100),
-    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal (not a valid Depends)
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -50,7 +51,7 @@ async def get_history(
 @router.post("/{match_id}/verify", response_model=VerificationRead)
 async def request_verification(
     match_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -64,7 +65,7 @@ async def request_verification(
 async def submit_selfie(
     match_id: uuid.UUID,
     selfie: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
@@ -83,11 +84,62 @@ async def submit_selfie(
 @router.get("/{match_id}/verify", response_model=VerificationRead | None)
 async def get_verification_status(
     match_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),  # FIX: was AsyncSessionLocal
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     await _assert_participant(db, match_id, current_user.id)
     return await verification_service.get_verification(db, match_id, current_user.id)
+
+
+# ── Signalement / Litige ──────────────────────────────────────────────────────
+
+@router.post(
+    "/{match_id}/report",
+    response_model=ReportRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Signaler un utilisateur dans un match",
+)
+async def report_user(
+    match_id: uuid.UUID,
+    payload: ReportCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Permet à un participant d'un match de signaler l'autre utilisateur.
+    - Vérifie que le déclarant est bien participant du match.
+    - Vérifie que l'utilisateur signalé est bien l'autre participant.
+    - Crée le signalement en base et notifie l'admin.
+    """
+    await _assert_participant(db, match_id, current_user.id)
+
+    # Vérifier que reported_id est bien l'autre participant du match
+    match = await _get_match(db, match_id, current_user.id)
+    other_id = (
+        match.user_lost_id
+        if match.user_found_id == current_user.id
+        else match.user_found_id
+    )
+    if payload.reported_id != other_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="L'utilisateur signalé doit être l'autre participant du match",
+        )
+
+    # Empêcher l'auto-signalement
+    if payload.reported_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vous ne pouvez pas vous signaler vous-même",
+        )
+
+    report = await report_service.create_report(
+        db=db,
+        match_id=match_id,
+        reporter=current_user,
+        payload=payload,
+    )
+    return report
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────
