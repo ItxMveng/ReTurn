@@ -25,11 +25,11 @@ ReTurn/
 │   │   │   │   ├── profile.py        # Profil utilisateur
 │   │   │   │   ├── reports.py        # Signalements utilisateurs
 │   │   │   │   └── restitutions.py   # Processus de restitution
-│   │   │   └── router.py             # Agrégation de tous les routers
+│   │   │   └── router.py
 │   │   ├── core/
 │   │   │   ├── config.py
 │   │   │   ├── database.py
-│   │   │   ├── dependencies.py       # get_current_user, require_admin (source unique)
+│   │   │   ├── dependencies.py
 │   │   │   ├── firebase_admin.py
 │   │   │   ├── redis_client.py
 │   │   │   ├── security.py
@@ -53,7 +53,7 @@ ReTurn/
 │   │   ├── 001_initial_schema.py
 │   │   ├── 002_add_event_date_reputation.py
 │   │   ├── 003_add_restitutions_table.py
-│   │   └── 004_add_admin_tables.py   # zones, reports, audit_logs, connection_logs
+│   │   └── 004_add_admin_tables.py
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_auth.py
@@ -63,9 +63,157 @@ ReTurn/
 │   ├── Dockerfile
 │   ├── pytest.ini
 │   └── requirements.txt
-├── mobile/                           # Application Flutter (en cours)
-├── infra/                            # Docker Compose, Nginx, scripts
+├── mobile/
+│   └── lib/
+│       ├── core/
+│       │   ├── network/
+│       │   │   ├── api_client.dart
+│       │   │   ├── auth_interceptor.dart
+│       │   │   ├── dio_provider.dart
+│       │   │   └── interceptors.dart
+│       │   ├── errors/
+│       │   │   ├── app_exception.dart
+│       │   │   └── error_handler.dart
+│       │   ├── providers/
+│       │   │   ├── app_providers.dart
+│       │   │   └── settings_provider.dart
+│       │   ├── router/
+│       │   │   └── app_router.dart
+│       │   ├── services/
+│       │   │   ├── biometric_service.dart
+│       │   │   └── notification_service.dart
+│       │   └── widgets/
+│       │       ├── app_button.dart
+│       │       ├── app_empty_state.dart
+│       │       ├── app_error_widget.dart
+│       │       ├── app_loader.dart
+│       │       ├── app_text_field.dart
+│       │       ├── error_view.dart
+│       │       └── scaffold_with_nav_bar.dart
+│       └── features/
+│           ├── auth/
+│           ├── declarations/
+│           │   ├── models/declaration.dart
+│           │   ├── pages/
+│           │   │   ├── declarations_list_page.dart
+│           │   │   ├── declaration_form_page.dart
+│           │   │   └── declaration_detail_page.dart
+│           │   ├── providers/
+│           │   │   ├── declaration_provider.dart
+│           │   │   └── declarations_provider.dart
+│           │   └── widgets/declaration_card.dart
+│           ├── matches/
+│           │   ├── models/match.dart              # ✨ Nouveau
+│           │   ├── pages/
+│           │   │   ├── matches_list_page.dart
+│           │   │   └── match_detail_page.dart
+│           │   ├── providers/matches_provider.dart # ✨ Nouveau
+│           │   └── repositories/matches_repository.dart # ✨ Nouveau
+│           ├── matching/
+│           │   ├── providers/matching_provider.dart    # ✨ Nouveau
+│           │   ├── repositories/matching_repository.dart # ✨ Nouveau
+│           │   └── screens/matching_screen.dart         # ✨ Nouveau
+│           ├── messaging/pages/
+│           │   ├── conversations_page.dart
+│           │   └── chat_page.dart
+│           ├── ocr/pages/
+│           │   ├── ocr_scan_page.dart
+│           │   └── ocr_review_page.dart
+│           ├── profile/pages/profile_page.dart
+│           ├── restitution/pages/restitution_page.dart
+│           ├── settings/pages/settings_page.dart
+│           ├── splash/
+│           └── support/support_screen.dart
+├── admin/
+│   └── index.html                    # ✨ Dashboard admin web (standalone)
+├── infra/
 └── docs/
+```
+
+---
+
+## 🖥️ Dashboard Admin Web
+
+Interface d'administration **100 % statique** (`admin/index.html`) — aucun build, aucune dépendance Node.js.
+
+### Fonctionnalités
+
+| Section | Capacités |
+|---------|----------|
+| **Vue d'ensemble** | KPIs (utilisateurs, déclarations, matchs, restitutions, signalements, note), graphique activité 30 j, donut matchs, tableau activité récente |
+| **Utilisateurs** | Liste paginable, recherche, filtre (actif / banni / admin), bannir / rétablir |
+| **Déclarations** | Liste, recherche, filtre type, flag suspect, suppression, export CSV |
+| **Matchs** | Score coloré, statut, liens déclarations |
+| **Restitutions** | Statut, note, dates |
+| **Signalements** | Résolution en 1 clic |
+| **Zones certifiées** | Création / suppression |
+| **Audit Logs** | Historique actions admin |
+
+### Lancer le dashboard admin
+
+#### Option 1 — Serveur de développement local (recommandé)
+
+```bash
+# Depuis la racine du projet
+cd admin
+python3 -m http.server 3000
+# Ouvrir http://localhost:3000
+```
+
+#### Option 2 — Avec Node.js
+
+```bash
+npx serve admin -l 3000
+# Ouvrir http://localhost:3000
+```
+
+#### Option 3 — Ouvrir directement dans le navigateur
+
+```bash
+open admin/index.html   # macOS
+start admin/index.html  # Windows
+xdg-open admin/index.html  # Linux
+```
+
+> ⚠️ L'ouverture directe (`file://`) désactive les appels API (CORS). Utilisez un serveur local pour les données réelles.
+
+### Connexion admin
+
+Le dashboard se connecte à l'API FastAPI. Deux modes :
+
+**Mode développement (mock data — sans backend)**
+- Double-cliquer sur le logo ReTurn dans l'écran de login pour bypasser l'authentification
+- Les données mock s'affichent immédiatement
+
+**Mode production (API réelle)**
+```bash
+# 1. S'assurer que le backend tourne
+docker compose -f infra/docker-compose.yml up -d
+cd backend && alembic upgrade head && uvicorn app.main:app --reload
+
+# 2. Créer un compte admin en base
+# Via psql ou pgAdmin :
+UPDATE users SET is_admin = true WHERE phone = '+237XXXXXXXXX';
+
+# 3. Se connecter dans le dashboard
+# URL API par défaut : http://localhost:8000
+# Email + mot de passe du compte admin
+```
+
+**Changer l'URL de l'API (optionnel)**
+
+Ajouter avant la balise `</body>` dans `admin/index.html` :
+```html
+<script>window.RETURN_API_URL = 'https://api.return.cm';</script>
+```
+
+Ou via un fichier `.env` si servi derrière Nginx :
+```nginx
+location /admin {
+  root /var/www/return;
+  try_files $uri $uri/ /admin/index.html;
+  add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net";
+}
 ```
 
 ---
@@ -119,42 +267,20 @@ ReTurn/
 | `POST` | `/messaging/conversations/{id}/messages` | Envoyer un message |
 | `WS` | `/messaging/ws/{conversation_id}` | WebSocket temps réel |
 
-### Signalements
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `GET` | `/my-reports` | Mes signalements |
-| `GET` | `/admin/reports` | [Admin] Tous les signalements |
-| `PATCH` | `/admin/reports/{id}` | [Admin] Résoudre / rejeter |
-
 ### Admin (F-40 → F-44)
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/admin/stats` | KPIs globaux |
-| `GET` | `/admin/stats/users` | DAU / MAU |
-| `GET` | `/admin/stats/reports` | Stats signalements |
-| `GET` | `/admin/stats/chart` | Séries temporelles |
 | `GET` | `/admin/export/declarations` | Export CSV |
-| `GET` | `/admin/users` | Liste utilisateurs |
-| `GET` | `/admin/users/{id}` | Profil complet |
-| `PATCH` | `/admin/users/{id}` | Éditer |
-| `DELETE` | `/admin/users/{id}` | Suppression CPDP |
-| `GET` | `/admin/users/{id}/sessions` | Historique connexions |
-| `GET` | `/admin/users/{id}/export` | Export légal JSON |
+| `GET/PATCH/DELETE` | `/admin/users/{id}` | Gestion utilisateurs |
 | `PATCH` | `/admin/users/{id}/ban` | Bannir |
-| `PATCH` | `/admin/users/{id}/unban` | Rétablir |
 | `PATCH` | `/admin/users/{id}/promote` | Promouvoir admin |
-| `GET` | `/admin/declarations` | Toutes les déclarations |
-| `DELETE` | `/admin/declarations/{id}` | Supprimer (modération) |
-| `PATCH` | `/admin/declarations/{id}/flag` | Marquer suspect |
-| `POST` | `/admin/declarations/bulk` | Import CSV |
+| `GET/DELETE/PATCH` | `/admin/declarations/{id}` | Modération déclarations |
 | `GET` | `/admin/matches` | Tous les matchs |
 | `GET` | `/admin/restitutions` | Toutes les restitutions |
-| `GET` | `/admin/zones` | Liste zones |
-| `POST` | `/admin/zones` | Créer zone certifiée |
-| `PATCH` | `/admin/zones/{id}` | Modifier zone |
-| `DELETE` | `/admin/zones/{id}` | Supprimer zone |
-| `GET` | `/admin/audit-logs` | Historique actions admin |
-| `GET` | `/admin/connection-logs` | Logs connexions globaux |
+| `GET/POST/PATCH/DELETE` | `/admin/zones` | Zones certifiées |
+| `GET` | `/admin/audit-logs` | Historique actions |
+| `PATCH` | `/admin/reports/{id}` | Résoudre signalement |
 
 ---
 
@@ -165,10 +291,9 @@ ReTurn/
 | 001 | `001_initial_schema.py` | Tables : `users`, `declarations`, `matches`, `messages`, `verifications` |
 | 002 | `002_add_event_date_reputation.py` | Colonnes `event_date`, `score_reputation` |
 | 003 | `003_add_restitutions_table.py` | Table `restitutions` |
-| 004 | `004_add_admin_tables.py` | Tables : `zones`, `reports`, `audit_logs`, `connection_logs` + colonne `is_flagged` sur `declarations` |
+| 004 | `004_add_admin_tables.py` | Tables : `zones`, `reports`, `audit_logs`, `connection_logs` |
 
 ```bash
-# Appliquer toutes les migrations
 cd backend && alembic upgrade head
 ```
 
@@ -205,9 +330,17 @@ cd backend && alembic upgrade head
 
 # 4. Lancer l'API
 uvicorn app.main:app --reload
+
+# 5. Lancer le dashboard admin
+cd admin && python3 -m http.server 3000
 ```
 
-Documentation interactive : `http://localhost:8000/docs`
+| Service | URL |
+|---------|-----|
+| API FastAPI | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/docs |
+| Dashboard Admin | http://localhost:3000 |
+| MinIO Console | http://localhost:9001 |
 
 ---
 
@@ -222,4 +355,5 @@ Documentation interactive : `http://localhost:8000/docs`
 | S4 | Messagerie temps réel (WebSocket + profil) | ✅ |
 | S5 | Restitutions, signalements, réputation | ✅ |
 | S6 | Backoffice admin (F-40→F-44, audit, zones, stats) | ✅ |
-| S7 | Application mobile Flutter | 🔄 En cours |
+| S7 | Application mobile Flutter | ✅ |
+| S8 | Dashboard admin web (standalone HTML) | ✅ |

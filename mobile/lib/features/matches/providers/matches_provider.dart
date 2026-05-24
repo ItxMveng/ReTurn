@@ -1,13 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/match_model.dart';
 import '../repositories/matches_repository.dart';
+import '../models/match.dart';
 
-final matchesProvider =
-    FutureProvider<List<MatchModel>>((ref) async {
-  return ref.read(matchesRepositoryProvider).list();
+final matchesProvider = FutureProvider<List<Match>>((ref) async {
+  final repo = ref.watch(matchesRepositoryProvider);
+  return repo.fetchMatches();
 });
 
 final matchDetailProvider =
-    FutureProvider.family<MatchModel, String>((ref, id) async {
-  return ref.read(matchesRepositoryProvider).get(id);
+    FutureProvider.family<Match, String>((ref, id) async {
+  final repo = ref.watch(matchesRepositoryProvider);
+  return repo.fetchMatch(id);
 });

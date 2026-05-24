@@ -1,32 +1,30 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/api/api_client.dart';
-import '../models/match_model.dart';
+import '../../../core/network/api_client.dart';
+import '../models/match.dart';
 
 final matchesRepositoryProvider =
-    Provider<MatchesRepository>(
-        (ref) => MatchesRepository(ref.read(dioProvider)));
+    Provider<MatchesRepository>((ref) => MatchesRepository(ref));
 
 class MatchesRepository {
-  final Dio _dio;
-  MatchesRepository(this._dio);
+  MatchesRepository(this._ref);
+  final Ref _ref;
 
-  Future<List<MatchModel>> list() async {
-    final res = await _dio.get('/matches');
-    final items = res.data['items'] as List;
-    return items
-        .map((e) => MatchModel.fromJson(e as Map<String, dynamic>))
+  Future<List<Match>> fetchMatches() async {
+    final client = _ref.read(apiClientProvider);
+    final res = await client.get('/matches');
+    return (res.data as List)
+        .map((e) => Match.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  Future<MatchModel> get(String id) async {
-    final res = await _dio.get('/matches/$id');
-    return MatchModel.fromJson(res.data as Map<String, dynamic>);
+  Future<Match> fetchMatch(String id) async {
+    final client = _ref.read(apiClientProvider);
+    final res = await client.get('/matches/$id');
+    return Match.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> confirm(String id) =>
-      _dio.patch('/matches/$id/confirm');
-
-  Future<void> reject(String id) =>
-      _dio.patch('/matches/$id/reject');
+  Future<void> confirmMatch(String id) async {
+    final client = _ref.read(apiClientProvider);
+    await client.patch('/matches/$id/confirm');
+  }
 }
