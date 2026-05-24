@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../application/auth_notifier.dart';
-import '../domain/auth_state.dart';
+import '../application/auth_state.dart';
 
 class PhoneInputScreen extends ConsumerStatefulWidget {
   const PhoneInputScreen({super.key});
@@ -23,15 +23,19 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState is _Loading;
+    // Utilise OtpState pour spinner (envoi OTP)
+    final otpState = ref.watch(otpNotifierProvider);
+    final isLoading = otpState.maybeWhen(
+      sending: () => true,
+      orElse: () => false,
+    );
 
-    ref.listen(authNotifierProvider, (_, next) {
-      next.maybeWhen(
-        otpSent: (phone) => context.go('/auth/otp', extra: phone),
+    // Navigue vers OTP quand le code est envoyé
+    ref.listen<OtpState>(otpNotifierProvider, (_, next) {
+      next.whenOrNull(
+        sent: (phone) => context.go('/auth/otp', extra: phone),
         error: (msg) => ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg))),
-        orElse: () {},
       );
     });
 
@@ -78,7 +82,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                     : () {
                         if (_formKey.currentState!.validate()) {
                           ref
-                              .read(authNotifierProvider.notifier)
+                              .read(otpNotifierProvider.notifier)
                               .requestOtp(_phoneCtrl.text.trim());
                         }
                       },

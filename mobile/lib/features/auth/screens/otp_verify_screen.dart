@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../application/auth_notifier.dart';
-import '../domain/auth_state.dart';
+import '../application/auth_state.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
   final String phoneNumber;
@@ -23,15 +23,25 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState is _Loading;
+    // Utilise OtpState pour le chargement (pas AuthState)
+    final otpState = ref.watch(otpNotifierProvider);
+    final isLoading = otpState.maybeWhen(
+      verifying: () => true,
+      orElse: () => false,
+    );
 
-    ref.listen(authNotifierProvider, (_, next) {
-      next.maybeWhen(
+    // Redirige après auth réussie
+    ref.listen<AuthState>(authNotifierProvider, (_, next) {
+      next.whenOrNull(
         authenticated: (_) => context.go('/home'),
+      );
+    });
+
+    // Affiche erreur OTP
+    ref.listen<OtpState>(otpNotifierProvider, (_, next) {
+      next.whenOrNull(
         error: (msg) => ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg))),
-        orElse: () {},
       );
     });
 
@@ -43,8 +53,10 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 48),
-            Text('Code envoyé au ${widget.phoneNumber}',
-                style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Code envoyé au ${widget.phoneNumber}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 32),
             TextFormField(
               controller: _otpCtrl,
@@ -62,7 +74,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
             ElevatedButton(
               onPressed: isLoading
                   ? null
-                  : () => ref.read(authNotifierProvider.notifier).verifyOtp(
+                  : () => ref.read(otpNotifierProvider.notifier).verifyOtp(
                         phoneNumber: widget.phoneNumber,
                         otpCode: _otpCtrl.text.trim(),
                       ),
