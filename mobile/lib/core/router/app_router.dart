@@ -17,6 +17,9 @@ import '../../features/settings/pages/settings_page.dart';
 import '../../features/ocr/pages/ocr_scan_page.dart';
 import '../../features/ocr/pages/ocr_review_page.dart';
 
+/// Alias public utilisé dans main.dart
+final appRouterProvider = routerProvider;
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
