@@ -18,28 +18,24 @@ import 'package:docretour/features/matching/screens/matches_list_screen.dart';
 import 'package:docretour/features/matching/screens/match_detail_screen.dart';
 import 'package:docretour/features/messaging/screens/chat_screen.dart';
 import 'package:docretour/features/messaging/screens/identity_verification_screen.dart';
+import 'package:docretour/features/restitution/screens/restitutions_list_screen.dart';
+import 'package:docretour/features/restitution/screens/restitution_detail_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
-
-  // Watch profile only when authenticated to avoid unnecessary loading
   final profileValue = isAuthenticated ? ref.watch(profileProvider) : null;
 
   return GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
       final loc = state.matchedLocation;
-
-      // Splash manages its own navigation — never redirect it
       if (loc == '/splash') return null;
 
       final isAuthRoute = loc.startsWith('/auth') || loc == '/onboarding';
       final isProfileSetup = loc == '/profile/setup';
 
-      // Not authenticated → go to onboarding
       if (!isAuthenticated && !isAuthRoute) return '/onboarding';
 
-      // Authenticated + on auth screen → check profile then go home
       if (isAuthenticated && isAuthRoute) {
         if (profileValue == null || profileValue.isLoading) return null;
         final profile = profileValue.valueOrNull;
@@ -49,12 +45,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/home';
       }
 
-      // Authenticated + not on profile setup → enforce profile completion
       if (isAuthenticated && !isAuthRoute && !isProfileSetup) {
-        // Don't block while profile is still loading — let the current screen show
         if (profileValue == null || profileValue.isLoading) return null;
         final profile = profileValue.valueOrNull;
-        // Only redirect if we have a definitive answer (profile loaded and incomplete)
         if (profile != null && !profile.isProfileComplete) {
           return '/profile/setup';
         }
@@ -63,6 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      // ── Auth & onboarding
       GoRoute(path: '/splash',        builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/onboarding',    builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: '/auth/phone',    builder: (_, __) => const PhoneInputScreen()),
@@ -76,10 +70,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+
+      // ── Core
       GoRoute(path: '/profile/setup', builder: (_, __) => const ProfileSetupScreen()),
       GoRoute(path: '/home',          builder: (_, __) => const HomeScreen()),
       GoRoute(path: '/settings',      builder: (_, __) => const SettingsScreen()),
       GoRoute(path: '/support',       builder: (_, __) => const SupportScreen()),
+
+      // ── Déclarations
       GoRoute(path: '/declarations',  builder: (_, __) => const DeclarationsListScreen()),
       GoRoute(
         path: '/declarations/new/:type',
@@ -93,12 +91,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           declarationId: state.pathParameters['id']!,
         ),
       ),
+
+      // ── Matching
       GoRoute(path: '/matches',       builder: (_, __) => const MatchesListScreen()),
       GoRoute(
         path: '/matches/:id',
         builder: (_, state) =>
             MatchDetailScreen(matchId: state.pathParameters['id']!),
       ),
+
+      // ── Messagerie
       GoRoute(
         path: '/matches/:id/chat',
         builder: (_, state) => ChatScreen(
@@ -110,6 +112,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/matches/:id/verify',
         builder: (_, state) => IdentityVerificationScreen(
           matchId: state.pathParameters['id']!,
+        ),
+      ),
+
+      // ── Restitutions (nouvelles routes)
+      GoRoute(
+        path: '/restitutions',
+        builder: (_, __) => const RestitutionsListScreen(),
+      ),
+      GoRoute(
+        path: '/restitutions/:id',
+        builder: (_, state) => RestitutionDetailScreen(
+          restitutionId: state.pathParameters['id']!,
         ),
       ),
     ],
