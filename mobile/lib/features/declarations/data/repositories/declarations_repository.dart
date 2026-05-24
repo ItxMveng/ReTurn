@@ -10,117 +10,78 @@ part 'declarations_repository.g.dart';
 
 @riverpod
 DeclarationsRepository declarationsRepository(Ref ref) {
-  return DeclarationsRepository(apiClient: ref.watch(apiClientProvider));
+  return DeclarationsRepository(
+    apiClient: ref.watch(apiClientProvider),
+  );
 }
 
 class DeclarationsRepository {
   DeclarationsRepository({required this.apiClient});
   final ApiClient apiClient;
 
-  /// Liste paginate via cursor
   Future<List<DeclarationModel>> listDeclarations({
-    int limit = 20,
+    String? type,
     String? cursor,
+    int limit = 20,
   }) async {
     try {
-      final raw = await apiClient.get<List<dynamic>>(
-        '/declarations/',
-        fromJson: (d) => d as List<dynamic>,
-        query: {
-          'limit': limit,
-          if (cursor != null) 'cursor': cursor,
-        },
+      final queryParams = <String, dynamic>{'limit': limit};
+      if (type != null) queryParams['type'] = type;
+      if (cursor != null) queryParams['cursor'] = cursor;
+
+      final response = await apiClient.get<Map<String, dynamic>>(
+        '/declarations',
+        queryParameters: queryParams,
+        fromJson: (d) => d as Map<String, dynamic>,
       );
-      return raw
+      final items = response['items'] as List<dynamic>? ?? [];
+      return items
           .map((e) => DeclarationModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
       throw mapException(e);
     } catch (e) {
-      throw mapException(e);
+      throw AppException.unknown(e.toString());
     }
   }
 
-  /// Détail d’une déclaration
   Future<DeclarationModel> getDeclaration(String id) async {
     try {
       return await apiClient.get<DeclarationModel>(
         '/declarations/$id',
-        fromJson: (d) => DeclarationModel.fromJson(d as Map<String, dynamic>),
+        fromJson: (d) =>
+            DeclarationModel.fromJson(d as Map<String, dynamic>),
       );
     } on DioException catch (e) {
       throw mapException(e);
     } catch (e) {
-      throw mapException(e);
+      throw AppException.unknown(e.toString());
     }
   }
 
-  /// Création via multipart/form-data
-  Future<DeclarationModel> createDeclaration({
-    required String declarationType,
-    required String documentType,
-    String? documentNumber,
-    String? ownerName,
-    String? description,
-    double? latitude,
-    double? longitude,
-    String? locationDescription,
-    String? eventDate,
-    List<String> photoPaths = const [],
-  }) async {
+  Future<DeclarationModel> createDeclaration(
+      Map<String, dynamic> payload) async {
     try {
-      final formData = FormData.fromMap({
-        'declaration_type': declarationType,
-        'document_type': documentType,
-        if (documentNumber != null && documentNumber.isNotEmpty) 'document_number': documentNumber,
-        if (ownerName != null && ownerName.isNotEmpty) 'owner_name': ownerName,
-        if (description != null && description.isNotEmpty) 'description': description,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-        if (locationDescription != null && locationDescription.isNotEmpty) 'location_description': locationDescription,
-        if (eventDate != null) 'event_date': eventDate,
-        if (photoPaths.isNotEmpty)
-          'photos': await Future.wait(
-            photoPaths.map((p) => MultipartFile.fromFile(p)),
-          ),
-      });
-
-      final raw = await apiClient.post<Map<String, dynamic>>(
-        '/declarations/',
-        fromJson: (d) => d as Map<String, dynamic>,
-        body: {},  // FormData passé via override Dio
+      return await apiClient.post<DeclarationModel>(
+        '/declarations',
+        body: payload,
+        fromJson: (d) =>
+            DeclarationModel.fromJson(d as Map<String, dynamic>),
       );
-      // On contourne le wrapper post() pour les form-data
-      return DeclarationModel.fromJson(raw);
     } on DioException catch (e) {
       throw mapException(e);
     } catch (e) {
-      throw mapException(e);
+      throw AppException.unknown(e.toString());
     }
   }
 
-  /// Suppression d’une déclaration
   Future<void> deleteDeclaration(String id) async {
     try {
       await apiClient.delete('/declarations/$id');
     } on DioException catch (e) {
       throw mapException(e);
     } catch (e) {
-      throw mapException(e);
-    }
-  }
-
-  /// Récupère les types de documents disponibles
-  Future<List<String>> getDocumentTypes() async {
-    try {
-      return await apiClient.get<List<String>>(
-        '/declarations/document-types',
-        fromJson: (d) => (d as List<dynamic>).map((e) => e.toString()).toList(),
-      );
-    } on DioException catch (e) {
-      throw mapException(e);
-    } catch (e) {
-      throw mapException(e);
+      throw AppException.unknown(e.toString());
     }
   }
 }
