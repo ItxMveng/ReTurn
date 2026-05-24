@@ -22,15 +22,15 @@ import 'package:docretour/features/messaging/screens/identity_verification_scree
 import 'package:docretour/features/restitution/screens/restitutions_list_screen.dart';
 import 'package:docretour/features/restitution/screens/restitution_detail_screen.dart';
 
-// ── Transition helpers ──────────────────────────────────────────────────────
+// ── Transition helpers ────────────────────────────────────────────────────────
 
-/// Slide depuis la droite (push standard)
-Page<T> _slidePage<T>(Widget child, GoRouterState state) {
+/// Slide depuis la droite + fade — utilisé pour toutes les routes "push"
+Page<T> _slideTransition<T>(LocalKey key, Widget child) {
   return CustomTransitionPage<T>(
-    key: state.pageKey,
+    key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 250),
+    transitionDuration: const Duration(milliseconds: 280),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final slide = Tween<Offset>(
         begin: const Offset(1.0, 0.0),
@@ -43,53 +43,50 @@ Page<T> _slidePage<T>(Widget child, GoRouterState state) {
       final fade = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: animation,
-          curve: const Interval(0.0, 0.5),
+          curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
         ),
       );
       final secondarySlide = Tween<Offset>(
         begin: Offset.zero,
-        end: const Offset(-0.15, 0.0),
+        end: const Offset(-0.2, 0.0),
       ).animate(CurvedAnimation(
         parent: secondaryAnimation,
         curve: Curves.easeOutCubic,
       ));
       return SlideTransition(
         position: secondarySlide,
-        child: SlideTransition(
-          position: slide,
-          child: FadeTransition(opacity: fade, child: child),
+        child: FadeTransition(
+          opacity: fade,
+          child: SlideTransition(position: slide, child: child),
         ),
       );
     },
   );
 }
 
-/// Fade simple (pour root tabs / home)
-Page<T> _fadePage<T>(Widget child, GoRouterState state) {
+/// Fade seul — pour les modales et overlays (chat, settings)
+Page<T> _fadeTransition<T>(LocalKey key, Widget child) {
   return CustomTransitionPage<T>(
-    key: state.pageKey,
+    key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: const Duration(milliseconds: 240),
     reverseTransitionDuration: const Duration(milliseconds: 180),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
-        opacity: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOut,
-        ),
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
         child: child,
       );
     },
   );
 }
 
-/// Slide depuis le bas (modales légères)
-Page<T> _bottomSlidePage<T>(Widget child, GoRouterState state) {
+/// Slide depuis le bas — pour les sheets (form, setup)
+Page<T> _bottomSheetTransition<T>(LocalKey key, Widget child) {
   return CustomTransitionPage<T>(
-    key: state.pageKey,
+    key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 350),
-    reverseTransitionDuration: const Duration(milliseconds: 280),
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 240),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final slide = Tween<Offset>(
         begin: const Offset(0.0, 1.0),
@@ -104,7 +101,7 @@ Page<T> _bottomSlidePage<T>(Widget child, GoRouterState state) {
   );
 }
 
-// ── Router ──────────────────────────────────────────────────────────────────
+// ── Router ────────────────────────────────────────────────────────────────────
 
 final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
@@ -141,125 +138,121 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // ── Auth & onboarding
+      // ── Auth & onboarding ─────────────────────────────────────────
       GoRoute(
         path: '/splash',
-        pageBuilder: (_, state) => _fadePage(const SplashScreen(), state),
+        pageBuilder: (_, state) => _fadeTransition(state.pageKey, const SplashScreen()),
       ),
       GoRoute(
         path: '/onboarding',
-        pageBuilder: (_, state) => _fadePage(const OnboardingScreen(), state),
+        pageBuilder: (_, state) => _fadeTransition(state.pageKey, const OnboardingScreen()),
       ),
       GoRoute(
         path: '/auth/phone',
-        pageBuilder: (_, state) => _slidePage(const PhoneInputScreen(), state),
+        pageBuilder: (_, state) => _slideTransition(state.pageKey, const PhoneInputScreen()),
       ),
       GoRoute(
         path: '/auth/otp',
         pageBuilder: (_, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return _slidePage(
+          return _slideTransition(
+            state.pageKey,
             OtpVerifyScreen(
               verificationId: extra['verificationId'] as String,
               phoneNumber: extra['phoneNumber'] as String,
             ),
-            state,
           );
         },
       ),
 
-      // ── Core
+      // ── Core ──────────────────────────────────────────────────────
       GoRoute(
         path: '/profile/setup',
         pageBuilder: (_, state) =>
-            _bottomSlidePage(const ProfileSetupScreen(), state),
+            _bottomSheetTransition(state.pageKey, const ProfileSetupScreen()),
       ),
       GoRoute(
         path: '/home',
-        pageBuilder: (_, state) => _fadePage(const HomeScreen(), state),
+        pageBuilder: (_, state) => _fadeTransition(state.pageKey, const HomeScreen()),
       ),
       GoRoute(
         path: '/settings',
-        pageBuilder: (_, state) => _slidePage(const SettingsScreen(), state),
+        pageBuilder: (_, state) => _slideTransition(state.pageKey, const SettingsScreen()),
       ),
       GoRoute(
         path: '/support',
-        pageBuilder: (_, state) => _slidePage(const SupportScreen(), state),
+        pageBuilder: (_, state) => _slideTransition(state.pageKey, const SupportScreen()),
       ),
 
-      // ── Déclarations
+      // ── Déclarations ──────────────────────────────────────────────
       GoRoute(
         path: '/declarations',
         pageBuilder: (_, state) =>
-            _slidePage(const DeclarationsListScreen(), state),
+            _slideTransition(state.pageKey, const DeclarationsListScreen()),
       ),
       GoRoute(
         path: '/declarations/new/:type',
-        pageBuilder: (_, state) => _bottomSlidePage(
+        pageBuilder: (_, state) => _bottomSheetTransition(
+          state.pageKey,
           DeclarationFormScreen(
             declarationType: state.pathParameters['type']!,
           ),
-          state,
         ),
       ),
       GoRoute(
         path: '/declarations/:id',
-        pageBuilder: (_, state) => _slidePage(
-          DeclarationDetailScreen(
-            declarationId: state.pathParameters['id']!,
-          ),
-          state,
+        pageBuilder: (_, state) => _slideTransition(
+          state.pageKey,
+          DeclarationDetailScreen(declarationId: state.pathParameters['id']!),
         ),
       ),
 
-      // ── Matching
+      // ── Matching ──────────────────────────────────────────────────
       GoRoute(
         path: '/matches',
         pageBuilder: (_, state) =>
-            _slidePage(const MatchesListScreen(), state),
+            _slideTransition(state.pageKey, const MatchesListScreen()),
       ),
       GoRoute(
         path: '/matches/:id',
-        pageBuilder: (_, state) => _slidePage(
+        pageBuilder: (_, state) => _slideTransition(
+          state.pageKey,
           MatchDetailScreen(matchId: state.pathParameters['id']!),
-          state,
         ),
       ),
 
-      // ── Messagerie
+      // ── Messagerie ────────────────────────────────────────────────
       GoRoute(
         path: '/matches/:id/chat',
-        pageBuilder: (_, state) => _slidePage(
+        pageBuilder: (_, state) => _slideTransition(
+          state.pageKey,
           ChatScreen(
             matchId: state.pathParameters['id']!,
             title: state.extra as String? ?? 'Chat',
           ),
-          state,
         ),
       ),
       GoRoute(
         path: '/matches/:id/verify',
-        pageBuilder: (_, state) => _bottomSlidePage(
-          IdentityVerificationScreen(
-            matchId: state.pathParameters['id']!,
-          ),
-          state,
+        pageBuilder: (_, state) => _bottomSheetTransition(
+          state.pageKey,
+          IdentityVerificationScreen(matchId: state.pathParameters['id']!),
         ),
       ),
 
-      // ── Restitutions
+      // ── Restitutions ──────────────────────────────────────────────
       GoRoute(
         path: '/restitutions',
         pageBuilder: (_, state) =>
-            _slidePage(const RestitutionsListScreen(), state),
+            _slideTransition(state.pageKey, const RestitutionsListScreen()),
       ),
       GoRoute(
         path: '/restitutions/:id',
-        pageBuilder: (_, state) => _slidePage(
+        pageBuilder: (_, state) => _slideTransition(
+          state.pageKey,
           RestitutionDetailScreen(
             restitutionId: state.pathParameters['id']!,
           ),
-          state,
         ),
       ),
     ],

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
-import 'package:docretour/features/profile/providers/profile_provider.dart';
 import 'package:docretour/features/restitution/providers/restitution_provider.dart';
 import 'package:docretour/shared/models/restitution.dart';
 
@@ -51,6 +50,7 @@ class RestitutionDetailScreen extends ConsumerWidget {
 }
 
 // ── Body ──────────────────────────────────────────────────────────────────────
+
 class _RestitutionDetailBody extends ConsumerWidget {
   const _RestitutionDetailBody({
     required this.restitution,
@@ -62,17 +62,14 @@ class _RestitutionDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final authState = ref.watch(authProvider);
 
-    // FIX [A] : auth_state.authenticated = (accessToken, refreshToken, userId)
-    // On préfère le profil Riverpod (plus fiable, vrai UUID backend)
-    final profile = ref.watch(profileProvider).valueOrNull;
-    final currentUserId = profile?.id.isNotEmpty == true
-        ? profile!.id
-        : ref.watch(authProvider).maybeWhen(
-              // ordre correct : accessToken, refreshToken, userId
-              authenticated: (_, __, userId) => userId,
-              orElse: () => '',
-            );
+    // FIX [A] : ordre correct des paramètres authenticated
+    // AuthState.authenticated(accessToken:, refreshToken:, userId:)
+    final currentUserId = authState.maybeWhen(
+      authenticated: (accessToken, refreshToken, userId) => userId,
+      orElse: () => '',
+    );
 
     final isRequester = restitution.isRequester(currentUserId);
     final canRate = restitution.canRate(currentUserId);
@@ -117,77 +114,9 @@ class _RestitutionDetailBody extends ConsumerWidget {
 
           // Actions
           if (restitution.isActive)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (isRequester)
-                  _ActionButton(
-                    label: 'Marquer comme remis',
-                    icon: Icons.check_circle_outline,
-                    color: Colors.green,
-                    onTap: () async {
-                      final ok = await _confirm(
-                          context, 'Confirmer la restitution ?',
-                          'Le document a bien été remis.');
-                      if (!ok) return;
-                      try {
-                        await ref
-                            .read(restitutionListProvider.notifier)
-                            .complete(restitutionId);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            _successSnack(
-                                '✅ Restitution complétée avec succès !'),
-                          );
-                          ref.invalidate(
-                              restitutionDetailProvider(restitutionId));
-                          context.pop();
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            _errorSnack(cs, 'Erreur : $e'),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                const SizedBox(height: 12),
-                _ActionButton(
-                  label: 'Annuler',
-                  icon: Icons.cancel_outlined,
-                  color: cs.error,
-                  outlined: true,
-                  onTap: () async {
-                    final ok = await _confirm(
-                        context, 'Annuler la restitution ?',
-                        'Cette action est irréversible.');
-                    if (!ok) return;
-                    try {
-                      await ref
-                          .read(restitutionListProvider.notifier)
-                          .cancel(restitutionId);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Restitution annulée.'),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                        context.pop();
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          _errorSnack(cs, 'Erreur : $e'),
-                        );
-                      }
-                    }
-                  },
-                ),
-              ],
+            _ActiveActions(
+              isRequester: isRequester,
+              restitutionId: restitutionId,
             ),
 
           if (canRate) ...[
@@ -195,45 +124,14 @@ class _RestitutionDetailBody extends ConsumerWidget {
             _RatingSection(
               restitutionId: restitutionId,
               ref: ref,
-              onRated: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  _successSnack('⭐ Note envoyée, merci !'),
-                );
-              },
             ),
           ],
 
           if (restitution.isCompleted && !restitution.isDisputed)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: _ActionButton(
-                label: 'Signaler un litige',
-                icon: Icons.report_problem_outlined,
-                color: Colors.orange,
-                outlined: true,
-                onTap: () async {
-                  final reason = await _promptReason(context);
-                  if (reason == null || reason.isEmpty) return;
-                  try {
-                    await ref
-                        .read(restitutionListProvider.notifier)
-                        .dispute(restitutionId, reason: reason);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        _successSnack(
-                            '⚠️ Litige signalé. Notre équipe vous contactera.'),
-                      );
-                      ref.invalidate(
-                          restitutionDetailProvider(restitutionId));
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        _errorSnack(cs, 'Erreur : $e'),
-                      );
-                    }
-                  }
-                },
+              child: _DisputeButton(
+                restitutionId: restitutionId,
               ),
             ),
         ],
@@ -243,19 +141,98 @@ class _RestitutionDetailBody extends ConsumerWidget {
 
   String _formatDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+}
 
-  Future<bool> _confirm(BuildContext ctx, String title, String msg) async {
+// ── Active actions (complete + cancel) ────────────────────────────────────────
+
+class _ActiveActions extends ConsumerStatefulWidget {
+  const _ActiveActions({
+    required this.isRequester,
+    required this.restitutionId,
+  });
+  final bool isRequester;
+  final String restitutionId;
+
+  @override
+  ConsumerState<_ActiveActions> createState() => _ActiveActionsState();
+}
+
+class _ActiveActionsState extends ConsumerState<_ActiveActions> {
+  bool _loadingComplete = false;
+  bool _loadingCancel = false;
+
+  void _snack(String msg, {Color? color, IconData? icon}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[Icon(icon, color: Colors.white, size: 18), const SizedBox(width: 10)],
+            Expanded(child: Text(msg)),
+          ],
+        ),
+        backgroundColor: color ?? Theme.of(context).colorScheme.secondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _complete() async {
+    final ok = await _confirm('Confirmer la restitution ?',
+        'Le document a bien été remis au propriétaire.');
+    if (!ok) return;
+    setState(() => _loadingComplete = true);
+    try {
+      await ref
+          .read(restitutionListProvider.notifier)
+          .complete(widget.restitutionId);
+      ref.invalidate(restitutionDetailProvider(widget.restitutionId));
+      _snack('Restitution complétée ✅',
+          color: Colors.green, icon: Icons.check_circle);
+      if (mounted) context.pop();
+    } catch (e) {
+      _snack('Erreur : ${e.toString()}',
+          color: Theme.of(context).colorScheme.error,
+          icon: Icons.error_outline);
+    } finally {
+      if (mounted) setState(() => _loadingComplete = false);
+    }
+  }
+
+  Future<void> _cancel() async {
+    final ok = await _confirm(
+        'Annuler la restitution ?', 'Cette action est irréversible.');
+    if (!ok) return;
+    setState(() => _loadingCancel = true);
+    try {
+      await ref
+          .read(restitutionListProvider.notifier)
+          .cancel(widget.restitutionId);
+      _snack('Restitution annulée', icon: Icons.cancel);
+      if (mounted) context.pop();
+    } catch (e) {
+      _snack('Erreur : ${e.toString()}',
+          color: Theme.of(context).colorScheme.error,
+          icon: Icons.error_outline);
+    } finally {
+      if (mounted) setState(() => _loadingCancel = false);
+    }
+  }
+
+  Future<bool> _confirm(String title, String msg) async {
     return await showDialog<bool>(
-          context: ctx,
+          context: context,
           builder: (_) => AlertDialog(
             title: Text(title),
             content: Text(msg),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
+                  onPressed: () => Navigator.pop(context, false),
                   child: const Text('Annuler')),
               FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
+                  onPressed: () => Navigator.pop(context, true),
                   child: const Text('Confirmer')),
             ],
           ),
@@ -263,50 +240,122 @@ class _RestitutionDetailBody extends ConsumerWidget {
         false;
   }
 
-  Future<String?> _promptReason(BuildContext ctx) async {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        if (widget.isRequester)
+          _ActionButton(
+            label: 'Marquer comme remis',
+            icon: Icons.check_circle_outline,
+            color: Colors.green,
+            loading: _loadingComplete,
+            onTap: _loadingComplete || _loadingCancel ? null : _complete,
+          ),
+        const SizedBox(height: 12),
+        _ActionButton(
+          label: 'Annuler',
+          icon: Icons.cancel_outlined,
+          color: cs.error,
+          outlined: true,
+          loading: _loadingCancel,
+          onTap: _loadingComplete || _loadingCancel ? null : _cancel,
+        ),
+      ],
+    );
+  }
+}
+
+// ── Dispute button ─────────────────────────────────────────────────────────────
+
+class _DisputeButton extends ConsumerStatefulWidget {
+  const _DisputeButton({required this.restitutionId});
+  final String restitutionId;
+
+  @override
+  ConsumerState<_DisputeButton> createState() => _DisputeButtonState();
+}
+
+class _DisputeButtonState extends ConsumerState<_DisputeButton> {
+  bool _loading = false;
+
+  void _snack(String msg, {Color? color}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return _ActionButton(
+      label: 'Signaler un litige',
+      icon: Icons.report_problem_outlined,
+      color: Colors.orange,
+      outlined: true,
+      loading: _loading,
+      onTap: _loading
+          ? null
+          : () async {
+              final reason = await _promptReason();
+              if (reason == null || reason.isEmpty) return;
+              setState(() => _loading = true);
+              try {
+                await ref
+                    .read(restitutionListProvider.notifier)
+                    .dispute(widget.restitutionId, reason: reason);
+                ref.invalidate(
+                    restitutionDetailProvider(widget.restitutionId));
+                _snack('Litige signalé — notre équipe vous contactera',
+                    color: Colors.orange);
+              } catch (e) {
+                _snack('Erreur : ${e.toString()}',
+                    color: cs.error);
+              } finally {
+                if (mounted) setState(() => _loading = false);
+              }
+            },
+    );
+  }
+
+  Future<String?> _promptReason() async {
     final controller = TextEditingController();
     return await showDialog<String>(
-      context: ctx,
+      context: context,
       builder: (_) => AlertDialog(
         title: const Text('Motif du litige'),
         content: TextField(
           controller: controller,
           maxLines: 3,
-          decoration:
-              const InputDecoration(hintText: 'Décrivez le problème…'),
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Décrivez le problème…',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Annuler')),
           FilledButton(
               onPressed: () =>
-                  Navigator.pop(ctx, controller.text.trim()),
+                  Navigator.pop(context, controller.text.trim()),
               child: const Text('Envoyer')),
         ],
       ),
     );
   }
-
-  SnackBar _successSnack(String msg) => SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-      );
-
-  SnackBar _errorSnack(ColorScheme cs, String msg) => SnackBar(
-        content: Text(msg),
-        backgroundColor: cs.error,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      );
 }
 
 // ── Widgets helpers ──────────────────────────────────────────────────────────
+
 class _StatusBanner extends StatelessWidget {
   const _StatusBanner({required this.status});
   final String status;
@@ -330,20 +379,31 @@ class _StatusBanner extends StatelessWidget {
       'cancelled' => 'Annulée',
       _           => status,
     };
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, child) =>
+          Opacity(opacity: v, child: Transform.translate(
+            offset: Offset(0, 12 * (1 - v)),
+            child: child,
+          )),
+      child: Container(
+        width: double.infinity,
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Text(label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 15)),
       ),
-      child: Text(label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: 15)),
     );
   }
 }
@@ -382,21 +442,34 @@ class _ActionButton extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.outlined = false,
+    this.loading = false,
   });
   final String label;
   final IconData icon;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool outlined;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
+    final iconWidget = loading
+        ? SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: outlined ? color : Colors.white,
+            ),
+          )
+        : Icon(icon, color: outlined ? color : null);
+
     if (outlined) {
       return SizedBox(
         width: double.infinity,
         child: OutlinedButton.icon(
           onPressed: onTap,
-          icon: Icon(icon, color: color),
+          icon: iconWidget,
           label: Text(label, style: TextStyle(color: color)),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: color.withValues(alpha: 0.5)),
@@ -409,7 +482,7 @@ class _ActionButton extends StatelessWidget {
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: onTap,
-        icon: Icon(icon),
+        icon: iconWidget,
         label: Text(label),
         style: FilledButton.styleFrom(
           backgroundColor: color,
@@ -421,14 +494,9 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _RatingSection extends StatefulWidget {
-  const _RatingSection({
-    required this.restitutionId,
-    required this.ref,
-    required this.onRated,
-  });
+  const _RatingSection({required this.restitutionId, required this.ref});
   final String restitutionId;
   final WidgetRef ref;
-  final VoidCallback onRated;
 
   @override
   State<_RatingSection> createState() => _RatingSectionState();
@@ -437,10 +505,46 @@ class _RatingSection extends StatefulWidget {
 class _RatingSectionState extends State<_RatingSection> {
   double _rating = 4;
   bool _loading = false;
+  bool _submitted = false;
+
+  void _snack(String msg, {Color? color}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    if (_submitted) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 20),
+            SizedBox(width: 8),
+            Text('Note envoyée — merci !',
+                style: TextStyle(
+                    color: Colors.green, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -475,15 +579,6 @@ class _RatingSectionState extends State<_RatingSection> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              _ratingLabel(_rating),
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.6),
-                  fontSize: 12),
-            ),
-          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -499,9 +594,18 @@ class _RatingSectionState extends State<_RatingSection> {
                         widget.ref.invalidate(
                             restitutionDetailProvider(
                                 widget.restitutionId));
-                        widget.onRated();
-                      } finally {
-                        if (mounted) setState(() => _loading = false);
+                        setState(() {
+                          _loading = false;
+                          _submitted = true;
+                        });
+                        _snack(
+                          '⭐ Note de ${_rating.toInt()}/5 envoyée, merci !',
+                          color: Colors.green,
+                        );
+                      } catch (e) {
+                        setState(() => _loading = false);
+                        _snack('Erreur : ${e.toString()}',
+                            color: cs.error);
                       }
                     },
               child: _loading
@@ -517,13 +621,4 @@ class _RatingSectionState extends State<_RatingSection> {
       ),
     );
   }
-
-  String _ratingLabel(double r) => switch (r.toInt()) {
-        1 => 'Très mauvais',
-        2 => 'Mauvais',
-        3 => 'Correct',
-        4 => 'Bien',
-        5 => 'Excellent',
-        _ => '',
-      };
 }

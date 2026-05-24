@@ -4,23 +4,24 @@ import 'package:go_router/go_router.dart';
 
 import 'package:docretour/core/theme/app_theme.dart';
 import 'package:docretour/features/matching/providers/match_provider.dart';
+import 'package:docretour/features/matching/repositories/match_repository.dart';
 import 'package:docretour/l10n/app_localizations.dart';
 import 'package:docretour/shared/models/declaration.dart';
+import 'package:docretour/shared/models/match.dart';
 import 'package:docretour/shared/widgets/document_type_dropdown.dart';
 
-// Provider dédié pour fetch un match individuel si absent du cache
-final _singleMatchProvider =
-    FutureProvider.family.autoDispose<dynamic, String>((ref, id) async {
-  // On essaie d'abord le cache de la liste
-  final cached = ref
-      .watch(matchListProvider)
-      .valueOrNull
+// Provider family : fetch direct si absent du cache
+final _matchDetailProvider = FutureProvider.family<Match, String>((ref, id) async {
+  // D'abord chercher dans le cache de la liste
+  final cached = ref.watch(matchListProvider).valueOrNull
       ?.where((m) => m.id == id)
       .firstOrNull;
   if (cached != null) return cached;
-  // Sinon fetch direct via le repository
-  final repo = ref.read(matchRepositoryProvider);
-  return repo.getMatch(id);
+  // Sinon fetch direct depuis l'API (timeout 10s)
+  return ref
+      .read(matchRepositoryProvider)
+      .getById(id)
+      .timeout(const Duration(seconds: 10));
 });
 
 class MatchDetailScreen extends ConsumerWidget {
@@ -31,7 +32,7 @@ class MatchDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
-    final asyncMatch = ref.watch(_singleMatchProvider(matchId));
+    final asyncMatch = ref.watch(_matchDetailProvider(matchId));
 
     return Scaffold(
       appBar: AppBar(
@@ -42,25 +43,22 @@ class MatchDetailScreen extends ConsumerWidget {
           asyncMatch.whenOrNull(
             data: (match) => Container(
               margin: const EdgeInsets.only(right: 12),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: _scoreColor(match?.scorePercent ?? 0)
-                    .withValues(alpha: 0.2),
+                color: _scoreColor(match.scorePercent).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                    color: _scoreColor(match?.scorePercent ?? 0), width: 1),
+                    color: _scoreColor(match.scorePercent), width: 1),
               ),
               child: Text(
-                '${match?.scorePercent ?? 0}%',
+                '${match.scorePercent}%',
                 style: TextStyle(
-                    color: _scoreColor(match?.scorePercent ?? 0),
+                    color: _scoreColor(match.scorePercent),
                     fontWeight: FontWeight.bold,
                     fontSize: 13),
               ),
             ),
-          ) ??
-              const SizedBox.shrink(),
+          ) ?? const SizedBox.shrink(),
         ],
       ),
       body: asyncMatch.when(
@@ -73,18 +71,19 @@ class MatchDetailScreen extends ConsumerWidget {
               children: [
                 Icon(Icons.error_outline, size: 48, color: cs.error),
                 const SizedBox(height: 12),
-                Text('Impossible de charger ce match.',
-                    style: TextStyle(color: cs.onSurface)),
-                const SizedBox(height: 8),
+                Text('Impossible de charger ce match',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: cs.onSurface)),
+                const SizedBox(height: 6),
                 Text(e.toString(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 12,
                         color: cs.onSurface.withValues(alpha: 0.5))),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: () =>
-                      ref.invalidate(_singleMatchProvider(matchId)),
+                      ref.invalidate(_matchDetailProvider(matchId)),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Réessayer'),
                 ),
@@ -92,30 +91,7 @@ class MatchDetailScreen extends ConsumerWidget {
             ),
           ),
         ),
-        data: (match) {
-          if (match == null) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.search_off,
-                      size: 56,
-                      color: cs.onSurface.withValues(alpha: 0.2)),
-                  const SizedBox(height: 12),
-                  Text('Match introuvable',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface)),
-                  const SizedBox(height: 16),
-                  TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Retour')),
-                ],
-              ),
-            );
-          }
-          return _MatchDetailBody(match: match, matchId: matchId, l: l);
-        },
+        data: (match) => _MatchDetailBody(match: match, matchId: matchId, l: l),
       ),
     );
   }
@@ -124,101 +100,83 @@ class MatchDetailScreen extends ConsumerWidget {
       p >= 80 ? kGreen : p >= 60 ? const Color(0xFFF59E0B) : Colors.grey;
 }
 
-// ── Body ─────────────────────────────────────────────────────────────────────
-class _MatchDetailBody extends ConsumerWidget {
-  final dynamic match;
+// ── Body ──────────────────────────────────────────────────────────────────────
+
+class _MatchDetailBody extends ConsumerStatefulWidget {
+  final Match match;
   final String matchId;
   final AppLocalizations l;
   const _MatchDetailBody(
       {required this.match, required this.matchId, required this.l});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final isActionLoading = ref.watch(
-      _actionLoadingProvider(matchId),
+  ConsumerState<_MatchDetailBody> createState() => _MatchDetailBodyState();
+}
+
+class _MatchDetailBodyState extends ConsumerState<_MatchDetailBody> {
+  bool _loadingConfirm = false;
+  bool _loadingIgnore = false;
+
+  void _showSnackbar(String msg, {Color? color, IconData? icon}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[Icon(icon, color: Colors.white, size: 18), const SizedBox(width: 10)],
+            Expanded(child: Text(msg)),
+          ],
+        ),
+        backgroundColor: color ?? Theme.of(context).colorScheme.secondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
     );
+  }
 
-    Future<void> doConfirm() async {
-      ref.read(_actionLoadingProvider(matchId).notifier).state = true;
-      try {
-        await ref.read(matchListProvider.notifier).confirm(matchId);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle,
-                      color: Colors.white, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(l.matchConfirmedSuccess)),
-                ],
-              ),
-              backgroundColor: kGreen,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-          context.pop();
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur : $e'),
-              backgroundColor: cs.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
-      } finally {
-        ref.read(_actionLoadingProvider(matchId).notifier).state = false;
-      }
+  Future<void> _confirm() async {
+    if (_loadingConfirm || _loadingIgnore) return;
+    setState(() => _loadingConfirm = true);
+    try {
+      await ref.read(matchListProvider.notifier).confirm(widget.match.id);
+      ref.invalidate(_matchDetailProvider(widget.matchId));
+      _showSnackbar(
+        'Match confirmé — vous pouvez maintenant discuter',
+        color: kGreen,
+        icon: Icons.check_circle,
+      );
+      if (mounted) context.pop();
+    } catch (e) {
+      _showSnackbar('Erreur : ${e.toString()}',
+          color: Theme.of(context).colorScheme.error,
+          icon: Icons.error_outline);
+    } finally {
+      if (mounted) setState(() => _loadingConfirm = false);
     }
+  }
 
-    Future<void> doIgnore() async {
-      ref.read(_actionLoadingProvider(matchId).notifier).state = true;
-      try {
-        await ref.read(matchListProvider.notifier).ignore(matchId);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.info_outline,
-                      color: Colors.white, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(l.matchIgnoredSuccess)),
-                ],
-              ),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-          context.pop();
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur : $e'),
-              backgroundColor: cs.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
-      } finally {
-        ref.read(_actionLoadingProvider(matchId).notifier).state = false;
-      }
+  Future<void> _ignore() async {
+    if (_loadingConfirm || _loadingIgnore) return;
+    setState(() => _loadingIgnore = true);
+    try {
+      await ref.read(matchListProvider.notifier).ignore(widget.match.id);
+      _showSnackbar('Match ignoré', icon: Icons.do_not_disturb);
+      if (mounted) context.pop();
+    } catch (e) {
+      _showSnackbar('Erreur : ${e.toString()}',
+          color: Theme.of(context).colorScheme.error,
+          icon: Icons.error_outline);
+    } finally {
+      if (mounted) setState(() => _loadingIgnore = false);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final match = widget.match;
+    final l = widget.l;
+    final cs = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -253,114 +211,83 @@ class _MatchDetailBody extends ConsumerWidget {
             _DeclarationCard(
                 declaration: match.declarationLost!, type: 'lost'),
           const SizedBox(height: 32),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: isActionLoading
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: CircularProgressIndicator(color: kGreen),
-                    ),
-                  )
-                : _Actions(
-                    match: match,
-                    matchId: matchId,
-                    l: l,
-                    onConfirm: doConfirm,
-                    onIgnore: doIgnore,
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final _actionLoadingProvider =
-    StateProvider.family<bool, String>((ref, _) => false);
-
-class _Actions extends StatelessWidget {
-  final dynamic match;
-  final String matchId;
-  final AppLocalizations l;
-  final VoidCallback onConfirm;
-  final VoidCallback onIgnore;
-  const _Actions({
-    required this.match,
-    required this.matchId,
-    required this.l,
-    required this.onConfirm,
-    required this.onIgnore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (match.status == 'confirmed') {
-      return ElevatedButton.icon(
-        onPressed: () => context.push(
-          '/matches/$matchId/chat',
-          extra: documentTypeLabel(
-            match.declarationFound?.documentType ??
-                match.declarationLost?.documentType ??
-                '',
-          ),
-        ),
-        icon: const Icon(Icons.chat_outlined),
-        label: Text(l.matchOpenChat),
-      );
-    }
-    if (match.isPending) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ElevatedButton.icon(
-            onPressed: onConfirm,
-            icon: const Icon(Icons.check_circle_outline),
-            label: Text(l.matchConfirmThis),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => context.push(
-              '/matches/$matchId/chat',
-              extra: documentTypeLabel(
-                match.declarationFound?.documentType ??
-                    match.declarationLost?.documentType ??
-                    '',
+          if (match.status == 'confirmed') ...[
+            ElevatedButton.icon(
+              onPressed: () => context.push(
+                '/matches/${match.id}/chat',
+                extra: documentTypeLabel(
+                  match.declarationFound?.documentType ??
+                      match.declarationLost?.documentType ??
+                      '',
+                ),
+              ),
+              icon: const Icon(Icons.chat_outlined),
+              label: Text(l.matchOpenChat),
+            ),
+          ] else if (match.isPending) ...[
+            ElevatedButton.icon(
+              onPressed: _loadingConfirm ? null : _confirm,
+              icon: _loadingConfirm
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.check_circle_outline),
+              label: Text(l.matchConfirmThis),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push(
+                '/matches/${match.id}/chat',
+                extra: documentTypeLabel(
+                  match.declarationFound?.documentType ??
+                      match.declarationLost?.documentType ??
+                      '',
+                ),
+              ),
+              icon: const Icon(Icons.chat_outlined),
+              label: Text(l.matchOpenChat),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _loadingIgnore ? null : _ignore,
+              icon: _loadingIgnore
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Color(0xFFEF4444)))
+                  : const Icon(Icons.cancel_outlined,
+                      color: Color(0xFFEF4444)),
+              label: Text(l.matchIgnore,
+                  style: const TextStyle(color: Color(0xFFEF4444))),
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFEF4444))),
+            ),
+          ] else
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey),
+                ),
+                child: Text(
+                  'Statut : ${match.status}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ),
             ),
-            icon: const Icon(Icons.chat_outlined),
-            label: Text(l.matchOpenChat),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: onIgnore,
-            icon: const Icon(Icons.cancel_outlined,
-                color: Color(0xFFEF4444)),
-            label: Text(l.matchIgnore,
-                style: const TextStyle(color: Color(0xFFEF4444))),
-            style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFEF4444))),
-          ),
         ],
-      );
-    }
-    return Center(
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey),
-        ),
-        child: Text(
-          'Statut : ${match.status}',
-          style: const TextStyle(color: Colors.grey),
-        ),
       ),
     );
   }
 }
+
+// ── Declaration card ──────────────────────────────────────────────────────────
 
 class _DeclarationCard extends StatelessWidget {
   final Declaration declaration;
@@ -477,8 +404,7 @@ class _Row extends StatelessWidget {
           ),
           Expanded(
               child: Text(value,
-                  style: TextStyle(
-                      fontSize: 13, color: cs.onSurface))),
+                  style: TextStyle(fontSize: 13, color: cs.onSurface))),
         ],
       ),
     );

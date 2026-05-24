@@ -39,10 +39,14 @@ class RestitutionsListScreen extends ConsumerWidget {
               _RestitutionTab(
                 items: list.where((r) => r.isActive).toList(),
                 emptyLabel: 'Aucune restitution en cours',
+                onRefresh: () =>
+                    ref.read(restitutionListProvider.notifier).refresh(),
               ),
               _RestitutionTab(
                 items: list.where((r) => !r.isActive).toList(),
                 emptyLabel: 'Aucune restitution terminée',
+                onRefresh: () =>
+                    ref.read(restitutionListProvider.notifier).refresh(),
               ),
             ],
           ),
@@ -52,55 +56,139 @@ class RestitutionsListScreen extends ConsumerWidget {
   }
 }
 
-// ── Tab list ────────────────────────────────────────────────────────────────
-class _RestitutionTab extends ConsumerWidget {
-  const _RestitutionTab({required this.items, required this.emptyLabel});
+// ── Tab ───────────────────────────────────────────────────────────────────────
+
+class _RestitutionTab extends StatelessWidget {
+  const _RestitutionTab({
+    required this.items,
+    required this.emptyLabel,
+    required this.onRefresh,
+  });
   final List<Restitution> items;
   final String emptyLabel;
+  final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.assignment_turned_in_outlined,
-              size: 56,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.25),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              emptyLabel,
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5),
+      // L'empty state est aussi scroll-able pour que pull-to-refresh fonctionne
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 450),
+                      curve: Curves.elasticOut,
+                      builder: (_, v, child) =>
+                          Transform.scale(scale: v, child: child),
+                      child: Icon(
+                        Icons.assignment_turned_in_outlined,
+                        size: 64,
+                        color: cs.onSurface.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      emptyLabel,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface.withValues(alpha: 0.5)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tirez vers le bas pour actualiser',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withValues(alpha: 0.35)),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       );
     }
-    // Consumer pour avoir accès à ref dans le callback onRefresh
+
     return RefreshIndicator(
-      onRefresh: () => ref.read(restitutionListProvider.notifier).refresh(),
+      onRefresh: onRefresh,
       child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) => _RestitutionCard(restitution: items[i]),
+        itemBuilder: (_, i) => _AnimatedCard(
+          index: i,
+          child: _RestitutionCard(restitution: items[i]),
+        ),
       ),
     );
   }
 }
 
-// ── Card ─────────────────────────────────────────────────────────────────────
+// ── Animated card wrapper (staggered entrance) ────────────────────────────────
+
+class _AnimatedCard extends StatefulWidget {
+  final int index;
+  final Widget child;
+  const _AnimatedCard({required this.index, required this.child});
+
+  @override
+  State<_AnimatedCard> createState() => _AnimatedCardState();
+}
+
+class _AnimatedCardState extends State<_AnimatedCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    // Stagger: chaque carte apparaît 50ms après la précédente
+    Future.delayed(
+      Duration(milliseconds: widget.index * 50),
+      () { if (mounted) _ctrl.forward(); },
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+
 class _RestitutionCard extends StatelessWidget {
   const _RestitutionCard({required this.restitution});
   final Restitution restitution;
@@ -160,7 +248,7 @@ class _RestitutionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Restitution #${restitution.id.length >= 8 ? restitution.id.substring(0, 8) : restitution.id}',
+                      'Restitution #${restitution.id.substring(0, 8)}',
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 14),
                     ),
@@ -194,8 +282,7 @@ class _RestitutionCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 11,
-                                  color:
-                                      cs.onSurface.withValues(alpha: 0.5)),
+                                  color: cs.onSurface.withValues(alpha: 0.5)),
                             ),
                           ),
                         ],
@@ -215,6 +302,7 @@ class _RestitutionCard extends StatelessWidget {
 }
 
 // ── Error state ──────────────────────────────────────────────────────────────
+
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});
   final String message;
