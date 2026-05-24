@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../../features/auth/application/auth_notifier.dart';
 import '../../features/auth/application/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/otp_verify_page.dart';
+import '../../features/declarations/presentation/pages/declarations_list_page.dart';
+import '../../features/declarations/presentation/pages/declaration_form_page.dart';
+import '../../features/declarations/presentation/pages/declaration_detail_page.dart';
+import '../../features/matches/presentation/pages/matches_list_page.dart';
+import '../../features/matches/presentation/pages/match_detail_page.dart';
+import '../../features/matches/presentation/pages/restitution_detail_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 import '../widgets/scaffold_with_nav_bar.dart';
 import 'route_names.dart';
 
@@ -21,14 +30,14 @@ GoRouter appRouter(Ref ref) {
     initialLocation: '/splash',
     redirect: (context, state) => _redirect(authState, state.matchedLocation),
     routes: [
-      // ── Splash ───────────────────────────────────────────────
+      // ── Splash ───────────────────────────────────────────────────────
       GoRoute(
         path: '/splash',
         name: RouteNames.splash,
         builder: (_, __) => const _SplashPage(),
       ),
 
-      // ── Auth ─────────────────────────────────────────────────
+      // ── Auth ─────────────────────────────────────────────────────────
       GoRoute(
         path: '/login',
         name: RouteNames.login,
@@ -48,41 +57,91 @@ GoRouter appRouter(Ref ref) {
         },
       ),
 
-      // ── App principale (shell avec bottom nav) ────────────────
+      // ── App principale (shell avec bottom nav) ────────────────────────
       ShellRoute(
         builder: (context, state, child) => ScaffoldWithNavBar(child: child),
         routes: [
+          // Home
           GoRoute(
             path: '/home',
             name: RouteNames.home,
-            builder: (_, __) => const _PlaceholderPage(title: 'Accueil'),
+            builder: (_, __) => const HomePage(),
           ),
+
+          // Déclarations
           GoRoute(
             path: '/declarations',
             name: RouteNames.declarations,
-            builder: (_, __) => const _PlaceholderPage(title: 'Déclarations'),
+            builder: (_, __) => const DeclarationsListPage(),
             routes: [
               GoRoute(
                 path: 'new',
                 name: RouteNames.newDeclaration,
-                builder: (_, __) => const _PlaceholderPage(title: 'Nouvelle déclaration'),
+                builder: (_, __) => const DeclarationFormPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                name: RouteNames.declarationDetail,
+                builder: (_, state) => DeclarationDetailPage(
+                  id: state.pathParameters['id']!,
+                ),
               ),
             ],
           ),
+
+          // Matches
           GoRoute(
             path: '/matches',
             name: RouteNames.matches,
-            builder: (_, __) => const _PlaceholderPage(title: 'Correspondances'),
+            builder: (_, __) => const MatchesListPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: RouteNames.matchDetail,
+                builder: (_, state) => MatchDetailPage(
+                  id: state.pathParameters['id']!,
+                ),
+              ),
+            ],
           ),
+
+          // Restitutions (accessible depuis match-detail)
+          GoRoute(
+            path: '/restitutions/:id',
+            name: RouteNames.restitutionDetail,
+            builder: (_, state) => RestitutionDetailPage(
+              id: state.pathParameters['id']!,
+            ),
+          ),
+
+          // Messagerie
           GoRoute(
             path: '/messaging',
             name: RouteNames.messaging,
             builder: (_, __) => const _PlaceholderPage(title: 'Messagerie'),
+            routes: [
+              GoRoute(
+                path: ':matchId',
+                name: RouteNames.conversation,
+                builder: (_, state) => _PlaceholderPage(
+                  title: 'Conversation ${state.pathParameters["matchId"]!}',
+                ),
+              ),
+            ],
           ),
+
+          // Profil
           GoRoute(
             path: '/profile',
             name: RouteNames.profile,
-            builder: (_, __) => const _PlaceholderPage(title: 'Profil'),
+            builder: (_, __) => const ProfilePage(),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                name: RouteNames.editProfile,
+                builder: (_, __) => const _PlaceholderPage(title: 'Modifier le profil'),
+              ),
+            ],
           ),
         ],
       ),
@@ -90,22 +149,22 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-/// Logique de redirection centralisée
+// ── Logique de redirection centralisée ──────────────────────────────────────
 String? _redirect(AuthState authState, String location) {
-  final publicRoutes = ['/login', '/register', '/otp-verify', '/splash'];
+  const publicRoutes = ['/login', '/register', '/otp-verify', '/splash'];
   final isPublic = publicRoutes.any((r) => location.startsWith(r));
 
   return authState.when(
-    initial: () => null,
-    checking: () => null,
-    loading: () => null,
-    authenticated: (_) => isPublic ? '/home' : null,
+    initial:         () => null,
+    checking:        () => null,
+    loading:         () => null,
+    authenticated:   (_) => isPublic ? '/home' : null,
     unauthenticated: () => isPublic ? null : '/login',
-    error: (_) => isPublic ? null : '/login',
+    error:           (_) => isPublic ? null : '/login',
   );
 }
 
-/// Page splash simple — affiche un indicateur pendant la vérif auth
+// ── Splash page ─────────────────────────────────────────────────────────────
 class _SplashPage extends ConsumerWidget {
   const _SplashPage();
 
@@ -113,7 +172,7 @@ class _SplashPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     authState.whenOrNull(
-      authenticated: (_) => Future.microtask(() => context.goNamed(RouteNames.home)),
+      authenticated:   (_) => Future.microtask(() => context.goNamed(RouteNames.home)),
       unauthenticated: () => Future.microtask(() => context.goNamed(RouteNames.login)),
     );
     return const Scaffold(
@@ -122,7 +181,7 @@ class _SplashPage extends ConsumerWidget {
   }
 }
 
-/// Placeholder pour les pages non encore implémentées
+// ── Placeholder pour les pages non encore implémentées ──────────────────────
 class _PlaceholderPage extends StatelessWidget {
   const _PlaceholderPage({required this.title});
   final String title;
@@ -132,7 +191,16 @@ class _PlaceholderPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
-        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.construction_rounded, size: 48, color: Colors.amber),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            const Text('Page en cours de développement', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
       ),
     );
   }

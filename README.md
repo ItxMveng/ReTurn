@@ -1,325 +1,327 @@
-# DocRetour
+# ReTurn — DocRetour 🇨🇲
 
-Application mobile de **restitution sécurisée de documents perdus au Cameroun**.
-
-Un citoyen qui trouve un document peut le déclarer ; le propriétaire est notifié et peut le récupérer via un processus vérifié et sécurisé.
-
----
-
-## Prérequis
-
-| Outil | Version minimale |
-|---|---|
-| [Flutter](https://flutter.dev/docs/get-started/install) | 3.19+ |
-| [Python](https://www.python.org/downloads/) | 3.12+ |
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 4.x (avec Docker Compose v2) |
+> **Plateforme de restitution sécurisée de documents perdus au Cameroun**
+>
+> Un citoyen trouve une pièce d'identité, la déclare dans l'app → le propriétaire
+> est notifié via un algorithme de matching → les deux parties se retrouvent en
+> toute sécurité pour restituer le document.
 
 ---
 
-## Démarrage rapide (5 commandes)
+## Table des matières
 
-```powershell
-# 1. Copier les variables d'environnement
-Copy-Item infra\.env.example infra\.env
+1. [Stack technique](#stack-technique)
+2. [Structure du projet](#structure-du-projet)
+3. [Démarrage rapide](#démarrage-rapide)
+4. [API Backend](#api-backend)
+5. [Architecture mobile (Flutter)](#architecture-mobile-flutter)
+6. [Migrations Alembic](#migrations-alembic)
+7. [Tests](#tests)
+8. [Roadmap Sprints](#roadmap-sprints)
 
-# 2. Lancer l'infrastructure (Postgres, Redis, MinIO, Backend)
-cd infra
-docker compose up -d
+---
 
-# 3. Vérifier que le backend répond
-Invoke-RestMethod http://localhost:8000/health
+## Stack technique
 
-# 4. Installer les dépendances Flutter
-cd ..\mobile
-flutter pub get
-
-# 5. Lancer l'application Flutter (émulateur ou appareil connecté)
-flutter run
-```
+| Couche | Technologie |
+|--------|-------------|
+| Mobile | Flutter 3.x (Dart) — Riverpod + Freezed + Go Router |
+| Backend | FastAPI (Python 3.12) — SQLAlchemy async + Alembic |
+| Base de données | PostgreSQL 16 |
+| Cache / Files | Redis 7 |
+| Stockage objets | MinIO (S3-compatible) |
+| Proxy | Nginx |
+| Containerisation | Docker + Docker Compose |
+| Tests | pytest + pytest-asyncio + aiosqlite |
 
 ---
 
 ## Structure du projet
 
 ```
-docretour/
-├── mobile/                   # Application Flutter (Dart)
-│   ├── lib/
-│   │   ├── core/             # Config, thème, router, utils
-│   │   │   └── router/
-│   │   │       └── app_router.dart    # GoRouter complet — toutes routes
-│   │   ├── features/
-│   │   │   ├── auth/              # Authentification OTP + JWT
-│   │   │   ├── declarations/
-│   │   │   │   └── repositories/
-│   │   │   │       └── declaration_repository.dart  # +getById, +searchDeclarations
-│   │   │   ├── home/
-│   │   │   │   └── screens/
-│   │   │   │       └── home_screen.dart  # +carte Restitutions + badge compteur
-│   │   │   ├── matching/
-│   │   │   │   └── repositories/
-│   │   │   │       └── match_repository.dart  # listMatches, actOnMatch, notifications
-│   │   │   ├── messaging/          # Chat WebSocket + vérification identité
-│   │   │   ├── profile/
-│   │   │   │   └── repositories/
-│   │   │   │       └── profile_repository.dart  # fetchProfile, updateAvatar, FCM
-│   │   │   └── restitution/          # 🔵 NOUVEAU — cycle complet de restitution
-│   │   │       ├── repositories/
-│   │   │       │   └── restitution_repository.dart
-│   │   │       ├── providers/
-│   │   │       │   └── restitution_provider.dart
-│   │   │       └── screens/
-│   │   │           ├── restitutions_list_screen.dart
-│   │   │           └── restitution_detail_screen.dart
-│   │   └── shared/
-│   │       ├── models/
-│   │       │   ├── restitution.dart      # +isActive, +canRate, +statusLabel
-│   │       │   └── user_profile.dart     # Source of truth + reputationScore
-│   │       └── widgets/                  # Widgets réutilisables
-│   └── pubspec.yaml
-├── backend/                  # API REST FastAPI (Python 3.12)
-│   ├── alembic.ini
-│   ├── alembic/
-│   │   ├── env.py
-│   │   └── versions/
-│   │       ├── 001_initial_schema.py
-│   │       ├── 002_add_event_date_reputation.py
-│   │       └── 003_add_restitutions_table.py
+ReTurn/
+├── backend/
 │   ├── app/
-│   │   ├── api/v1/
-│   │   │   ├── router.py
-│   │   │   └── endpoints/
-│   │   │       ├── auth.py
-│   │   │       ├── declarations.py
-│   │   │       ├── matches.py
-│   │   │       ├── messaging.py
-│   │   │       ├── profile.py
-│   │   │       └── restitutions.py
+│   │   ├── api/v1/endpoints/
+│   │   │   ├── auth.py              # S1 — Inscription, connexion, refresh
+│   │   │   ├── declarations.py      # S2 — CRUD déclarations
+│   │   │   ├── matches.py           # S3 — Matching + notifications
+│   │   │   ├── restitutions.py      # S3 — Restitution + photos + notation
+│   │   │   ├── messaging.py         # S4 — Messagerie temps réel
+│   │   │   └── profile.py           # S4 — Profil utilisateur
 │   │   ├── core/
-│   │   │   ├── config.py
-│   │   │   ├── database.py
-│   │   │   ├── dependencies.py
-│   │   │   └── redis_client.py
-│   │   ├── models/
-│   │   │   ├── user.py | declaration.py | match.py
-│   │   │   ├── message.py | restitution.py | verification.py
-│   │   │   └── __init__.py
-│   │   ├── schemas/
-│   │   │   ├── auth.py | declaration.py | match.py
-│   │   │   └── message.py | restitution.py | user.py | verification.py
-│   │   └── services/
-│   │       ├── auth_service.py | declaration_service.py | matching_service.py
-│   │       └── messaging_service.py | notification_service.py | otp_service.py
-│   │           restitution_service.py | storage_service.py | verification_service.py
+│   │   │   ├── config.py            # Variables d'environnement
+│   │   │   ├── database.py          # Engine async SQLAlchemy
+│   │   │   ├── redis_client.py      # Pool Redis
+│   │   │   ├── security.py          # JWT + hashing
+│   │   │   └── dependencies.py      # get_current_user
+│   │   ├── models/                  # ORM SQLAlchemy
+│   │   │   ├── user.py
+│   │   │   ├── declaration.py
+│   │   │   ├── match.py
+│   │   │   ├── restitution.py
+│   │   │   └── message.py
+│   │   ├── schemas/                 # Pydantic v2
+│   │   ├── services/
+│   │   │   ├── matching_service.py  # Jaro-Winkler + Haversine
+│   │   │   ├── restitution_service.py
+│   │   │   ├── notification_service.py
+│   │   │   └── storage_service.py   # MinIO
+│   │   └── main.py
+│   ├── migrations/
+│   │   ├── versions/
+│   │   │   ├── 001_initial_schema.py
+│   │   │   ├── 002_fcm_token.py
+│   │   │   └── 003_user_profile.py
+│   │   └── env.py
 │   ├── tests/
-│   │   ├── conftest.py
-│   │   ├── test_auth.py
-│   │   ├── test_declarations.py
-│   │   ├── test_matching.py
-│   │   └── test_restitution.py
+│   │   ├── conftest.py              # SQLite in-memory + fake Redis + mock MinIO
+│   │   ├── test_auth.py             # Inscription, lookup téléphone, JWT
+│   │   ├── test_declarations.py     # CRUD, pagination cursor, F-15
+│   │   ├── test_matching.py         # Jaro-Winkler, Haversine, compute_score
+│   │   └── test_restitution.py      # Idempotence, autorisation, rating, réputation
 │   ├── pytest.ini
-│   ├── requirements.txt
-│   └── Dockerfile
+│   └── requirements.txt
+├── mobile/
+│   ├── lib/
+│   │   ├── core/
+│   │   │   ├── network/
+│   │   │   │   └── api_client.dart          # Dio + intercepteurs JWT
+│   │   │   ├── router/
+│   │   │   │   ├── app_router.dart          # Go Router complet ✅ Commit F
+│   │   │   │   └── route_names.dart         # Constantes de routes ✅ Commit F
+│   │   │   ├── theme/
+│   │   │   │   └── app_colors.dart
+│   │   │   ├── errors/
+│   │   │   │   └── error_handler.dart
+│   │   │   └── widgets/
+│   │   │       └── scaffold_with_nav_bar.dart
+│   │   └── features/
+│   │       ├── auth/
+│   │       │   ├── data/
+│   │       │   │   ├── models/auth_model.dart
+│   │       │   │   └── repositories/auth_repository.dart
+│   │       │   ├── application/
+│   │       │   │   ├── auth_notifier.dart
+│   │       │   │   └── auth_state.dart
+│   │       │   └── presentation/pages/
+│   │       │       ├── login_page.dart
+│   │       │       ├── register_page.dart
+│   │       │       └── otp_verify_page.dart
+│   │       ├── declarations/
+│   │       │   ├── data/
+│   │       │   │   ├── models/declaration_model.dart
+│   │       │   │   └── repositories/declarations_repository.dart
+│   │       │   ├── application/declarations_notifier.dart
+│   │       │   └── presentation/pages/
+│   │       │       ├── declarations_list_page.dart
+│   │       │       ├── declaration_form_page.dart
+│   │       │       └── declaration_detail_page.dart
+│   │       ├── matches/                              ✅ Commit E
+│   │       │   ├── data/
+│   │       │   │   ├── models/
+│   │       │   │   │   ├── match_model.dart
+│   │       │   │   │   └── restitution_model.dart
+│   │       │   │   └── repositories/matches_repository.dart
+│   │       │   ├── application/matches_notifier.dart
+│   │       │   └── presentation/
+│   │       │       ├── pages/
+│   │       │       │   ├── matches_list_page.dart
+│   │       │       │   ├── match_detail_page.dart
+│   │       │       │   └── restitution_detail_page.dart
+│   │       │       └── widgets/match_card.dart
+│   │       ├── home/
+│   │       │   └── presentation/pages/home_page.dart  ✅ Commit F
+│   │       └── profile/
+│   │           └── presentation/pages/profile_page.dart
+│   └── pubspec.yaml
 ├── infra/
 │   ├── docker-compose.yml
-│   ├── docker-compose.prod.yml
-│   ├── nginx/
-│   └── postgres/
-└── docs/api/
+│   ├── nginx/nginx.conf
+│   └── .env.example
+└── docs/
+    └── api.md
 ```
 
 ---
 
-## Mobile Flutter — Fonctionnalités
+## Démarrage rapide
 
-| Feature | Écran(s) | Statut |
-|---------|----------|--------|
-| Authentification OTP | `PhoneInputScreen`, `OtpVerifyScreen` | ✅ |
-| Configuration profil | `ProfileSetupScreen` | ✅ |
-| Accueil | `HomeScreen` (+carte Restitutions, badge) | ✅ |
-| Déclarations | `DeclarationsListScreen`, `DeclarationFormScreen`, `DeclarationDetailScreen` | ✅ |
-| Matching | `MatchesListScreen`, `MatchDetailScreen` | ✅ |
-| Messagerie | `ChatScreen`, `IdentityVerificationScreen` | ✅ |
-| Restitutions | `RestitutionsListScreen`, `RestitutionDetailScreen` | ✅ |
-| Paramètres / Support | `SettingsScreen`, `SupportScreen` | ✅ |
-
----
-
-## API — Endpoints disponibles
-
-### Auth (`/api/v1/auth`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/send-otp` | Envoi OTP par SMS |
-| POST | `/verify-otp` | Vérification OTP → tokens JWT |
-| POST | `/refresh` | Renouvellement access token |
-| POST | `/logout` | Révocation refresh token |
-
-### Profil (`/api/v1/profile`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/` | Récupérer son profil |
-| PATCH | `/` | Modifier son profil |
-| PATCH | `/avatar` | Mettre à jour l'avatar |
-| DELETE | `/` | Suppression compte (RGPD F-04) |
-
-### Déclarations (`/api/v1/declarations`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/` | Créer une déclaration (max 3 actives — F-15) |
-| GET | `/` | Lister ses déclarations (pagination cursor) |
-| GET | `/{id}` | Détail d'une déclaration |
-| PATCH | `/{id}` | Modifier une déclaration |
-| DELETE | `/{id}` | Supprimer une déclaration |
-| POST | `/{id}/photos` | Ajouter une photo (max 3) |
-
-### Matchs (`/api/v1/matches`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/` | Lister ses matchs |
-| GET | `/{id}` | Détail d'un match |
-| POST | `/{id}/action` | Confirmer ou ignorer (double-confirmation, crée la restitution) |
-| GET | `/notifications` | Notifications en attente |
-| DELETE | `/notifications` | Vider les notifications |
-
-### Restitutions (`/api/v1/restitutions`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/` | Lister ses restitutions |
-| GET | `/{id}` | Détail d'une restitution |
-| PATCH | `/{id}` | Modifier lieu de RDV / statut |
-| POST | `/{id}/photos` | Uploader une photo preuve |
-| POST | `/{id}/rate` | Noter la restitution (1–5★ → met à jour score_reputation) |
-| POST | `/{id}/dispute` | Signaler un litige |
-
-### Messagerie (`/api/v1/messaging`)
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/{match_id}/history` | Historique des messages |
-| WS | `/ws/{match_id}` | WebSocket temps réel |
-| POST | `/{match_id}/mark-read` | Marquer comme lu |
-
----
-
-## Routes Flutter (GoRouter)
-
-| Route | Écran | Auth requise |
-|-------|-------|--------------|
-| `/splash` | `SplashScreen` | Non |
-| `/onboarding` | `OnboardingScreen` | Non |
-| `/auth/phone` | `PhoneInputScreen` | Non |
-| `/auth/otp` | `OtpVerifyScreen` | Non |
-| `/profile/setup` | `ProfileSetupScreen` | Oui |
-| `/home` | `HomeScreen` | Oui |
-| `/declarations` | `DeclarationsListScreen` | Oui |
-| `/declarations/new/:type` | `DeclarationFormScreen` | Oui |
-| `/declarations/:id` | `DeclarationDetailScreen` | Oui |
-| `/matches` | `MatchesListScreen` | Oui |
-| `/matches/:id` | `MatchDetailScreen` | Oui |
-| `/matches/:id/chat` | `ChatScreen` | Oui |
-| `/matches/:id/verify` | `IdentityVerificationScreen` | Oui |
-| `/restitutions` | `RestitutionsListScreen` | Oui |
-| `/restitutions/:id` | `RestitutionDetailScreen` | Oui |
-| `/settings` | `SettingsScreen` | Oui |
-| `/support` | `SupportScreen` | Oui |
-
----
-
-## Migrations de base de données (Alembic)
+### Backend
 
 ```bash
-# Appliquer toutes les migrations
-alembic upgrade head
+cd infra
+cp .env.example .env          # remplir les variables
+docker compose up -d          # PostgreSQL + Redis + MinIO + Nginx
 
-# Voir l'état actuel
-alembic current
+cd ../backend
+pip install -r requirements.txt
+alembic upgrade head          # Appliquer toutes les migrations
+uvicorn app.main:app --reload --port 8000
+```
 
-# Créer une nouvelle migration
-alembic revision --autogenerate -m "description"
+Docs interactives : <http://localhost:8000/docs>
 
-# Rollback
-alembic downgrade -1
+### Mobile
+
+```bash
+cd mobile
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
+flutter run
+```
+
+### Tests backend
+
+```bash
+cd backend
+pytest -v
+```
+
+---
+
+## API Backend
+
+### Authentification
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `POST` | `/api/v1/auth/register` | Inscription (téléphone + mot de passe) |
+| `POST` | `/api/v1/auth/login` | Connexion → JWT access + refresh |
+| `POST` | `/api/v1/auth/refresh` | Renouveler l'access token |
+| `POST` | `/api/v1/auth/logout` | Révoquer le refresh token |
+
+### Profil utilisateur
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/v1/profile/me` | Profil de l'utilisateur connecté |
+| `PATCH` | `/api/v1/profile/me` | Mettre à jour le profil |
+| `POST` | `/api/v1/profile/me/photo` | Upload photo de profil |
+| `POST` | `/api/v1/profile/fcm-token` | Enregistrer le token FCM |
+
+### Déclarations
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/v1/declarations/` | Lister (cursor pagination) |
+| `POST` | `/api/v1/declarations/` | Créer une déclaration |
+| `GET` | `/api/v1/declarations/{id}` | Détail d'une déclaration |
+| `PATCH` | `/api/v1/declarations/{id}` | Modifier |
+| `DELETE` | `/api/v1/declarations/{id}` | Supprimer |
+| `POST` | `/api/v1/declarations/{id}/photos` | Upload une photo |
+
+### Matchs & Correspondances
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/v1/matches/` | Mes matchs (trié par score) |
+| `GET` | `/api/v1/matches/{id}` | Détail d'un match |
+| `POST` | `/api/v1/matches/{id}/action` | Confirmer ou ignorer |
+| `GET` | `/api/v1/matches/notifications` | Notifications en attente |
+| `DELETE` | `/api/v1/matches/notifications` | Effacer les notifications |
+
+### Restitutions
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/v1/restitutions/{id}` | Détail d'une restitution |
+| `PATCH` | `/api/v1/restitutions/{id}` | Mettre à jour lieu / statut |
+| `POST` | `/api/v1/restitutions/{id}/photos` | Upload photo de preuve |
+| `POST` | `/api/v1/restitutions/{id}/rate` | Soumettre une note (1-5 ⭐) |
+
+### Messagerie
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/v1/messaging/{match_id}` | Historique des messages |
+| `POST` | `/api/v1/messaging/{match_id}` | Envoyer un message |
+| `WS` | `/api/v1/ws/chat/{match_id}` | WebSocket temps réel |
+
+---
+
+## Architecture mobile (Flutter)
+
+L'app suit l'architecture **Feature-first** avec **Riverpod + Freezed + Go Router**.
+
+```
+feature/
+├── data/
+│   ├── models/       # Freezed (JSON serialization)
+│   └── repositories/ # Appels API via ApiClient (Dio)
+├── application/      # Notifiers Riverpod (state management)
+└── presentation/
+    ├── pages/        # Écrans complets
+    └── widgets/      # Composants réutilisables
+```
+
+### Navigation (Go Router)
+
+| Route | Nom | Page |
+|-------|-----|------|
+| `/splash` | `splash` | Vérification auth |
+| `/login` | `login` | Connexion |
+| `/register` | `register` | Inscription |
+| `/otp-verify` | `otp-verify` | Vérification OTP |
+| `/home` | `home` | Tableau de bord |
+| `/declarations` | `declarations` | Liste des déclarations |
+| `/declarations/new` | `new-declaration` | Formulaire |
+| `/declarations/:id` | `declaration-detail` | Détail |
+| `/matches` | `matches` | Liste matchs (3 onglets) |
+| `/matches/:id` | `match-detail` | Détail + confirmer/ignorer |
+| `/restitutions/:id` | `restitution-detail` | Restitution + notation |
+| `/messaging` | `messaging` | Liste conversations |
+| `/messaging/:matchId` | `conversation` | Chat |
+| `/profile` | `profile` | Profil utilisateur |
+| `/profile/edit` | `edit-profile` | Modifier le profil |
+
+---
+
+## Migrations Alembic
+
+```bash
+alembic upgrade head          # Appliquer toutes les migrations
+alembic downgrade -1          # Revenir en arrière d'une version
+alembic revision --autogenerate -m "description"  # Nouvelle migration
 ```
 
 | Révision | Description |
 |----------|-------------|
-| `001` | Schéma initial : users, declarations, matches, messages, identity_verifications |
-| `002` | Ajout `event_date`, `score_reputation`, `confirmed_by_owner/finder` |
-| `003` | Nouvelle table `restitutions` |
+| `001` | Schéma initial (users, declarations, matches, restitutions, messages) |
+| `002` | Ajout colonne `fcm_token` sur `users` |
+| `003` | Ajout colonnes profil (`full_name`, `avatar_url`, `reputation_score`) |
 
 ---
 
 ## Tests
 
 ```bash
-# Depuis backend/
-pip install -r requirements.txt
-pytest
-
-# Avec rapport de couverture
-pytest --cov=app --cov-report=term-missing
-
-# Un test spécifique
-pytest tests/test_matching.py -v
+cd backend
+pytest -v                     # Tous les tests
+pytest tests/test_auth.py -v  # Tests d'un fichier
+pytest -k "matching" -v       # Filtrer par nom
 ```
 
-Les tests utilisent **SQLite in-memory** + mocks MinIO/Redis : aucun service externe requis.
-
-| Fichier | Ce qui est testé |
-|---------|----------------|
-| `test_auth.py` | Création utilisateur, lookup téléphone, génération JWT |
-| `test_declarations.py` | Limite F-15, pagination cursor, CRUD complet |
-| `test_matching.py` | Score Jaro-Winkler, Haversine, compute_score |
-| `test_restitution.py` | Création idempotente, autorisation, notation, réputation |
+| Fichier | Tests couverts |
+|---------|---------------|
+| `test_auth.py` | Inscription, lookup téléphone, génération/vérification JWT |
+| `test_declarations.py` | Création, lecture, pagination cursor, règle F-15 |
+| `test_matching.py` | Jaro-Winkler, distance Haversine, `compute_score` |
+| `test_restitution.py` | Idempotence, contrôle d'autorisation, rating, réputation |
 
 ---
 
-## Variables d'environnement
-
-Toutes les variables sont documentées dans `infra/.env.example` et `backend/.env.example`.
-Copiez `infra/.env.example` → `infra/.env` et adaptez avant de lancer Docker.
-
-> Ne commitez jamais `.env`. Il est dans le `.gitignore`.
-
----
-
-## Commandes utiles
-
-```powershell
-# Logs backend en temps réel
-docker compose -f infra/docker-compose.yml logs -f backend
-
-# Console MinIO
-Start-Process http://localhost:9001
-
-# Documentation Swagger interactive
-Start-Process http://localhost:8000/docs
-
-# Relancer le backend après modification
-docker compose -f infra/docker-compose.yml restart backend
-
-# Arrêter (volumes conservés)
-docker compose -f infra/docker-compose.yml down
-
-# Reset complet (supprime les volumes)
-docker compose -f infra/docker-compose.yml down -v
-```
-
----
-
-## Sprints
+## Roadmap Sprints
 
 | Sprint | Objectif | Statut |
 |--------|----------|--------|
-| S0 | Structure monorepo, infrastructure Docker, squelette API | ✅ |
-| S1 | Authentification JWT (inscription, connexion, refresh) | ✅ |
-| S2 | Déclarations de documents (trouver / perdu) | ✅ |
-| S3 | Matching automatique Jaro-Winkler + Haversine, notifications | ✅ |
-| S4 | Messagerie temps réel, profil, restitution, tests, migrations | ✅ |
-| S5 | Mobile Flutter complet (repositories, providers, screens, router) | ✅ |
-
----
-
-## Licence
-
-Propriétaire — © 2026 DocRetour. Tous droits réservés.
+| **S0** | Monorepo, Docker Compose, squelette FastAPI | ✅ Terminé |
+| **S1** | Auth JWT (inscription, connexion, refresh, logout) | ✅ Terminé |
+| **S2** | Déclarations (CRUD + photos + pagination cursor) | ✅ Terminé |
+| **S3** | Matching automatique (Jaro-Winkler + Haversine) + notifications Redis | ✅ Terminé |
+| **S4** | Restitutions + messagerie WebSocket + profil utilisateur | ✅ Terminé |
+| **S5** | Mobile Flutter — Auth + Déclarations + profil | ✅ Terminé |
+| **S6** | Mobile Flutter — Matches + Restitutions (Commits E & F) | ✅ Terminé |
+| **S7** | Mobile Flutter — Messagerie temps réel (WebSocket) | 🔄 Prochain |
+| **S8** | Tests Flutter (widget tests + integration tests) | ⏳ À venir |
+| **S9** | CI/CD (GitHub Actions) + déploiement production | ⏳ À venir |
