@@ -19,7 +19,8 @@ final activeChatMatchIdProvider = StateProvider<String?>((ref) => null);
 class ChatScreen extends ConsumerStatefulWidget {
   final String matchId;
   final String title;
-  const ChatScreen({super.key, required this.matchId, required this.title});
+  const ChatScreen(
+      {super.key, required this.matchId, required this.title});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -33,7 +34,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(activeChatMatchIdProvider.notifier).state = widget.matchId;
+      ref.read(activeChatMatchIdProvider.notifier).state =
+          widget.matchId;
       NotificationService.setActiveChatMatchId(widget.matchId);
     });
   }
@@ -74,13 +76,129 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (_) {}
   }
 
+  /// Supprime la discussion après confirmation
+  Future<void> _deleteConversation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Supprimer la discussion'),
+        content: const Text(
+            'Tous les messages seront supprimés. Cette action est irréversible.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Supprimer',
+                  style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ref
+        .read(chatProvider(widget.matchId).notifier)
+        .deleteConversation();
+    if (mounted) {
+      if (ok) {
+        Navigator.of(context).pop(); // retour à la liste
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Impossible de supprimer la discussion'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+
+  /// Signale un utilisateur
+  Future<void> _reportUser() async {
+    final reasons = [
+      'Comportement inapproprié',
+      'Arnaque / tentative de fraude',
+      'Fausses informations',
+      'Harcèlement',
+      'Autre',
+    ];
+    String? selectedReason;
+    final controller = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Text('Signaler cet utilisateur'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Motif du signalement :',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              ...reasons.map((r) => RadioListTile<String>(
+                    title: Text(r, style: const TextStyle(fontSize: 14)),
+                    value: r,
+                    groupValue: selectedReason,
+                    onChanged: (v) => setSt(() => selectedReason = v),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  )),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Précisions supplémentaires (optionnel)',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: selectedReason == null
+                  ? null
+                  : () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white),
+              child: const Text('Signaler'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selectedReason == null) return;
+
+    final ok = await ref
+        .read(chatProvider(widget.matchId).notifier)
+        .reportUser(
+          reason: selectedReason!,
+          details: controller.text.trim(),
+        );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ok
+            ? 'Signalement envoyé. Merci de nous avoir alertés.'
+            : 'Erreur lors de l\'envoi du signalement'),
+        backgroundColor: ok ? kGreen : Colors.red,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
     final chatState = ref.watch(chatProvider(widget.matchId));
 
-    // Utiliser l'UUID backend depuis le profil (plus fiable que authProvider)
     final profile = ref.watch(profileProvider).valueOrNull;
     final myId = profile?.id.isNotEmpty == true
         ? profile!.id
@@ -91,7 +209,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final avatarUrl = profile?.avatarUrl;
 
-    ref.listen(chatProvider(widget.matchId), (_, __) => _scrollToBottom());
+    ref.listen(
+        chatProvider(widget.matchId), (_, __) => _scrollToBottom());
 
     return Scaffold(
       appBar: AppBar(
@@ -120,15 +239,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       margin: const EdgeInsets.only(right: 4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: chatState.connected ? kGreen : cs.error,
+                        color: chatState.connected
+                            ? kGreen
+                            : cs.error,
                       ),
                     ),
                     Text(
                       chatState.connected
                           ? l.chatConnected
                           : l.chatDisconnected,
-                      style:
-                          const TextStyle(fontSize: 11, color: Colors.white70),
+                      style: const TextStyle(
+                          fontSize: 11, color: Colors.white70),
                     ),
                   ]),
                 ],
@@ -139,10 +260,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           if (!chatState.connected)
             IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: () =>
-                  ref.read(chatProvider(widget.matchId).notifier).reconnect(),
+              icon:
+                  const Icon(Icons.refresh, color: Colors.white),
+              onPressed: () => ref
+                  .read(chatProvider(widget.matchId).notifier)
+                  .reconnect(),
             ),
+          // Menu contextuel : supprimer + signaler
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (v) {
+              if (v == 'delete') _deleteConversation();
+              if (v == 'report') _reportUser();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_outlined,
+                        color: Colors.orange, size: 18),
+                    SizedBox(width: 10),
+                    Text('Signaler'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline,
+                        color: Colors.red, size: 18),
+                    SizedBox(width: 10),
+                    Text('Supprimer la discussion',
+                        style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -150,18 +306,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (chatState.error != null)
             Container(
               color: cs.error.withValues(alpha: 0.1),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: cs.error, size: 18),
+                  Icon(Icons.error_outline,
+                      color: cs.error, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                       child: Text(chatState.error!,
-                          style: TextStyle(color: cs.error, fontSize: 13))),
+                          style: TextStyle(
+                              color: cs.error, fontSize: 13))),
                   TextButton(
                     onPressed: () => ref
-                        .read(chatProvider(widget.matchId).notifier)
+                        .read(chatProvider(widget.matchId)
+                            .notifier)
                         .reconnect(),
                     child: const Text('Reconnecter'),
                   ),
@@ -176,29 +335,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       children: [
                         Icon(Icons.chat_bubble_outline,
                             size: 48,
-                            color: cs.onSurface.withValues(alpha: 0.2)),
+                            color: cs.onSurface
+                                .withValues(alpha: 0.2)),
                         const SizedBox(height: 12),
                         Text('Démarrez la conversation',
                             style: TextStyle(
-                                color: cs.onSurface.withValues(alpha: 0.4),
+                                color: cs.onSurface
+                                    .withValues(alpha: 0.4),
                                 fontSize: 14)),
                       ],
                     ),
                   )
                 : ListView.builder(
                     controller: _scrollCtrl,
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                    padding:
+                        const EdgeInsets.fromLTRB(12, 12, 12, 8),
                     itemCount: chatState.messages.length,
                     itemBuilder: (_, i) {
                       final msg = chatState.messages[i];
                       final isMe = msg.senderId == myId;
                       final showDate = i == 0 ||
-                          !_sameDay(chatState.messages[i - 1].createdAt,
+                          !_sameDay(
+                              chatState.messages[i - 1].createdAt,
                               msg.createdAt);
                       return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.stretch,
                         children: [
-                          if (showDate) _DateSeparator(msg.createdAt),
+                          if (showDate)
+                            _DateSeparator(msg.createdAt),
                           _MessageBubble(
                             message: msg,
                             isMe: isMe,
@@ -216,7 +381,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onSend: () {
               final text = _inputCtrl.text.trim();
               if (text.isEmpty) return;
-              ref.read(chatProvider(widget.matchId).notifier).send(text);
+              ref
+                  .read(chatProvider(widget.matchId).notifier)
+                  .send(text);
               _inputCtrl.clear();
             },
             onLocation: _sendLocation,
@@ -227,7 +394,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+      a.year == b.year &&
+      a.month == b.month &&
+      a.day == b.day;
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
@@ -236,7 +405,10 @@ class _Avatar extends StatelessWidget {
   final String? url;
   final double size;
   final bool isMe;
-  const _Avatar({required this.url, required this.size, required this.isMe});
+  const _Avatar(
+      {required this.url,
+      required this.size,
+      required this.isMe});
 
   @override
   Widget build(BuildContext context) {
@@ -257,13 +429,18 @@ class _Avatar extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isMe ? kGreen.withValues(alpha: 0.2) : cs.surfaceContainerHighest,
+          color: isMe
+              ? kGreen.withValues(alpha: 0.2)
+              : cs.surfaceContainerHighest,
           shape: BoxShape.circle,
-          border: Border.all(color: isMe ? kGreen : cs.outline, width: 1.5),
+          border: Border.all(
+              color: isMe ? kGreen : cs.outline, width: 1.5),
         ),
         child: Icon(Icons.person,
             size: size * 0.5,
-            color: isMe ? kGreen : cs.onSurface.withValues(alpha: 0.5)),
+            color: isMe
+                ? kGreen
+                : cs.onSurface.withValues(alpha: 0.5)),
       );
 }
 
@@ -293,11 +470,13 @@ class _DateSeparator extends StatelessWidget {
         children: [
           Expanded(child: Divider(color: cs.outline)),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12),
             child: Text(label,
                 style: TextStyle(
                     fontSize: 11,
-                    color: cs.onSurface.withValues(alpha: 0.4),
+                    color:
+                        cs.onSurface.withValues(alpha: 0.4),
                     fontWeight: FontWeight.w600)),
           ),
           Expanded(child: Divider(color: cs.outline)),
@@ -324,12 +503,14 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    // ── Message système (centré) ─────────────────────────────
     if (message.isSystem) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
@@ -337,17 +518,20 @@ class _MessageBubble extends StatelessWidget {
             child: Text(message.content,
                 style: TextStyle(
                     fontSize: 12,
-                    color: cs.onSurface.withValues(alpha: 0.6))),
+                    color:
+                        cs.onSurface.withValues(alpha: 0.6))),
           ),
         ),
       );
     }
 
+    // ── Contenu de la bulle ──────────────────────────────────
     Widget content;
     if (message.isLocation) {
       final parts = message.content.split(',');
       final latStr = parts.isNotEmpty ? parts[0].trim() : '';
-      final lngStr = parts.length > 1 ? parts[1].trim() : '';
+      final lngStr =
+          parts.length > 1 ? parts[1].trim() : '';
       final lat = double.tryParse(latStr);
       final lng = double.tryParse(lngStr);
       content = GestureDetector(
@@ -359,7 +543,8 @@ class _MessageBubble extends StatelessWidget {
               }
             : null,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: isMe
                 ? Colors.white.withValues(alpha: 0.15)
@@ -374,15 +559,19 @@ class _MessageBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.location_on,
-                  color: isMe ? Colors.white : kGreen, size: 20),
+                  color: isMe ? Colors.white : kGreen,
+                  size: 20),
               const SizedBox(width: 6),
               Flexible(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text('Zone de récupération',
                         style: TextStyle(
-                            color: isMe ? Colors.white : kGreen,
+                            color: isMe
+                                ? Colors.white
+                                : kGreen,
                             fontSize: 12,
                             fontWeight: FontWeight.w700)),
                     if (lat != null)
@@ -390,15 +579,19 @@ class _MessageBubble extends StatelessWidget {
                         '${lat.toStringAsFixed(5)}, ${lng?.toStringAsFixed(5)}',
                         style: TextStyle(
                             color: isMe
-                                ? Colors.white.withValues(alpha: 0.8)
-                                : cs.onSurface.withValues(alpha: 0.6),
+                                ? Colors.white
+                                    .withValues(alpha: 0.8)
+                                : cs.onSurface
+                                    .withValues(alpha: 0.6),
                             fontSize: 11),
                       ),
                     Text('Appuyer pour ouvrir Maps',
                         style: TextStyle(
                             color: isMe
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : kGreen.withValues(alpha: 0.7),
+                                ? Colors.white
+                                    .withValues(alpha: 0.6)
+                                : kGreen.withValues(
+                                    alpha: 0.7),
                             fontSize: 10,
                             fontStyle: FontStyle.italic)),
                   ],
@@ -412,6 +605,8 @@ class _MessageBubble extends StatelessWidget {
       content = Text(
         message.content,
         style: TextStyle(
+          // Émetteur → texte blanc (bulle verte)
+          // Receveur → texte normal (bulle claire)
           color: isMe ? Colors.white : cs.onSurface,
           fontSize: 14,
           height: 1.4,
@@ -419,7 +614,10 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
-    // Bulle alignée : moi = droite, autre = gauche
+    // ── Alignement : émetteur droite, receveur gauche ────────
+    // Cette règle s'applique symétriquement :
+    // • Chez l'émetteur : SES messages = droite, l'autre = gauche
+    // • Chez le receveur : SES messages = droite, l'autre = gauche
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -429,144 +627,4 @@ class _MessageBubble extends StatelessWidget {
         children: [
           // Avatar gauche (interlocuteur)
           if (!isMe) ...[
-            _Avatar(url: null, size: 28, isMe: false),
-            const SizedBox(width: 6),
-          ],
-          // Bulle
-          ConstrainedBox(
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.68),
-            child: Container(
-              padding: message.isLocation
-                  ? EdgeInsets.zero
-                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: message.isLocation
-                  ? null
-                  : BoxDecoration(
-                      color: isMe
-                          ? kGreen
-                          : (cs.brightness == Brightness.light
-                              ? Colors.white
-                              : cs.surfaceContainerHighest),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(18),
-                        topRight: const Radius.circular(18),
-                        bottomLeft: Radius.circular(isMe ? 18 : 4),
-                        bottomRight: Radius.circular(isMe ? 4 : 18),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-              child: Column(
-                crossAxisAlignment: isMe
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  content,
-                  if (!message.isLocation) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('HH:mm')
-                          .format(message.createdAt.toLocal()),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe
-                            ? Colors.white.withValues(alpha: 0.65)
-                            : cs.onSurface.withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          // Avatar droite (moi)
-          if (isMe) ...[
-            const SizedBox(width: 6),
-            _Avatar(url: myAvatarUrl, size: 28, isMe: true),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Input bar ─────────────────────────────────────────────────────────────────
-
-class _InputBar extends StatelessWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final String locationTooltip;
-  final VoidCallback onSend;
-  final VoidCallback onLocation;
-
-  const _InputBar({
-    required this.controller,
-    required this.placeholder,
-    required this.locationTooltip,
-    required this.onSend,
-    required this.onLocation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          border: Border(top: BorderSide(color: cs.outline, width: 0.8)),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.location_on_outlined, color: kGreen),
-              onPressed: onLocation,
-              tooltip: locationTooltip,
-            ),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 4,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: placeholder,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: cs.surface,
-                ),
-                onSubmitted: (_) => onSend(),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Material(
-              color: kGreen,
-              borderRadius: BorderRadius.circular(24),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: onSend,
-                child: const Padding(
-                  padding: EdgeInsets.all(11),
-                  child:
-                      Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+            _Avatar(

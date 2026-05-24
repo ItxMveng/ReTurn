@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:docretour/features/declarations/repositories/declaration_repository.dart';
+import 'package:docretour/features/matching/providers/match_provider.dart';
 import 'package:docretour/shared/models/declaration.dart';
 
 final declarationListProvider =
@@ -11,7 +12,36 @@ class DeclarationListNotifier extends AsyncNotifier<List<Declaration>> {
       ref.read(declarationRepositoryProvider);
 
   @override
-  Future<List<Declaration>> build() => _repo.listMyDeclarations();
+  Future<List<Declaration>> build() {
+    // Écouter les changements de matchs pour auto-synchroniser les statuts
+    ref.listen(matchListProvider, (_, next) {
+      next.whenData((matches) => _syncStatusFromMatches(matches));
+    });
+    return _repo.listMyDeclarations();
+  }
+
+  /// Met à jour automatiquement le statut des déclarations selon les matchs actifs
+  void _syncStatusFromMatches(List<dynamic> matches) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final matchedDeclIds = <String>{};
+    for (final m in matches) {
+      // Un match actif (non rejeté) marque les deux déclarations comme 'matched'
+      if (m.status != 'rejected') {
+        matchedDeclIds.add(m.declarationFoundId as String);
+        matchedDeclIds.add(m.declarationLostId as String);
+      }
+    }
+    final updated = current.map((d) {
+      if (matchedDeclIds.contains(d.id) && d.status == 'active') {
+        return d.copyWith(status: 'matched');
+      }
+      return d;
+    }).toList();
+    if (updated != current) {
+      state = AsyncData(updated);
+    }
+  }
 
   Future<void> refresh() async {
     state = const AsyncLoading();

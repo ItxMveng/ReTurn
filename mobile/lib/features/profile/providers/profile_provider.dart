@@ -118,17 +118,16 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     }
   }
 
-  Future<bool> updateAvatar() async {
+  /// Upload avatar depuis un XFile (image_picker)
+  Future<bool> updateAvatarFromFile(XFile xFile) async {
     try {
-      final picker = ImagePicker();
-      final xFile = await picker.pickImage(
-          source: ImageSource.gallery, imageQuality: 80, maxWidth: 512);
-      if (xFile == null) return false;
       final token = await getAccessToken();
       if (token == null) return false;
       final formData = FormData.fromMap({
-        'avatar': await MultipartFile.fromFile(xFile.path,
-            filename: xFile.name),
+        'avatar': await MultipartFile.fromFile(
+          xFile.path,
+          filename: xFile.name,
+        ),
       });
       final res = await _dio.patch(
         '/api/v1/profile/avatar',
@@ -138,6 +137,40 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       final updated = UserProfile.fromJson(res.data as Map<String, dynamic>);
       state = AsyncData(updated);
       return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Méthode legacy (garde la compatibilité avec le code existant)
+  Future<bool> updateAvatar() async {
+    try {
+      final picker = ImagePicker();
+      final xFile = await picker.pickImage(
+          source: ImageSource.gallery, imageQuality: 80, maxWidth: 512);
+      if (xFile == null) return false;
+      return updateAvatarFromFile(xFile);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Vérifie si un email est disponible (non utilisé par un autre compte)
+  Future<bool> checkEmailAvailable(String email) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return false;
+      final res = await _dio.get(
+        '/api/v1/profile/check-email',
+        queryParameters: {'email': email},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final data = res.data as Map<String, dynamic>;
+      return (data['available'] as bool?) ?? false;
+    } on DioException catch (e) {
+      // 409 = email déjà pris
+      if (e.response?.statusCode == 409) return false;
+      return false;
     } catch (_) {
       return false;
     }
