@@ -1,46 +1,36 @@
 """
-Module Admin — Backoffice modération, analytics & conformité légale
+Module Admin — Backoffice modération & analytics (F-40 à F-44)
 
 Routes protégées par le rôle is_admin=True sur le modèle User.
 Toutes les actions sensibles sont audit-loggées via _audit().
 
 Routes disponibles :
-  ── Analytics ──────────────────────────────────────────────────────────────
   GET  /admin/stats                          — KPIs globaux (F-42)
-  GET  /admin/stats/chart                    — Séries temporelles graphiques
-  GET  /admin/stats/users                    — DAU / MAU / nouveaux / par statut
-  GET  /admin/stats/reports                  — Tableau signalements
-
-  ── Export & Import ────────────────────────────────────────────────────────
+  GET  /admin/stats/users                    — DAU, MAU, nouveaux, actifs
+  GET  /admin/stats/reports                  — Stats signalements dashboard
+  GET  /admin/stats/chart                    — Séries temporelles pour graphiques
   GET  /admin/export/declarations            — Export CSV (F-41)
+  GET  /admin/users                          — Liste paginée + filtre
+  GET  /admin/users/{id}                     — Profil complet d'un utilisateur
+  PATCH /admin/users/{id}                    — Éditer nom/téléphone
+  DELETE /admin/users/{id}                   — Suppression CPDP (soft delete)
+  GET  /admin/users/{id}/sessions            — Historique connexions + IPs
+  GET  /admin/users/{id}/export              — Export légal JSON complet
+  PATCH /admin/users/{id}/ban                — Bannir
+  PATCH /admin/users/{id}/unban              — Rétablir
+  PATCH /admin/users/{id}/promote            — Promouvoir admin
+  GET  /admin/declarations                   — Toutes déclarations (filtre flagged)
+  DELETE /admin/declarations/{id}            — Supprimer (modération)
+  PATCH /admin/declarations/{id}/flag        — Marquer suspect
   POST /admin/declarations/bulk              — Import lot CSV (F-41)
-
-  ── Gestion utilisateurs (CRUD complet + CPDP) ─────────────────────────────
-  GET    /admin/users                        — Liste paginée + filtre
-  GET    /admin/users/{id}                   — Profil complet
-  PATCH  /admin/users/{id}                   — Éditer nom / téléphone
-  DELETE /admin/users/{id}                   — Soft-delete CPDP
-  PATCH  /admin/users/{id}/ban               — Bannir
-  PATCH  /admin/users/{id}/unban             — Rétablir
-  PATCH  /admin/users/{id}/promote           — Promouvoir admin
-  GET    /admin/users/{id}/sessions          — Historique connexions + IPs
-  GET    /admin/users/{id}/export            — Export légal JSON (réquisition)
-
-  ── Modération ─────────────────────────────────────────────────────────────
-  GET    /admin/declarations                 — Toutes déclarations
-  DELETE /admin/declarations/{id}            — Supprimer
-  PATCH  /admin/declarations/{id}/flag       — Marquer suspect
-  GET    /admin/matches                      — Tous les matchs
-  GET    /admin/restitutions                 — Toutes les restitutions
-
-  ── Zones certifiées ───────────────────────────────────────────────────────
-  GET    /admin/zones                        — Lister zones
-  POST   /admin/zones                        — Créer zone (F-32, F-43)
-  PATCH  /admin/zones/{id}                   — Modifier zone
+  GET  /admin/matches                        — Tous les matchs (F-40 dashboard)
+  GET  /admin/restitutions                   — Toutes les restitutions
+  GET  /admin/zones                          — Lister zones
+  POST /admin/zones                          — Créer zone certifiée (F-32, F-43)
+  PATCH /admin/zones/{id}                    — Modifier zone
   DELETE /admin/zones/{id}                   — Supprimer zone
-
-  ── Traçabilité légale ─────────────────────────────────────────────────────
-  GET  /admin/audit-logs                     — Historique actions admin (§11.1)
+  GET  /admin/audit-logs                     — Historique des actions admin (§11.1)
+  GET  /admin/connection-logs                — Logs connexions globaux (traçabilité légale)
 """
 import csv
 import io
@@ -52,16 +42,16 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.audit_log import AuditLog
-from app.models.connection_log import ConnectionLog
+from app.models.connection_log import ConnectionLog, ConnectionStatus
 from app.models.declaration import Declaration
 from app.models.match import Match
-from app.models.report import Report, ReportStatus
+from app.models.report import Report, ReportReason, ReportStatus
 from app.models.restitution import Restitution
 from app.models.user import User
 from app.models.zone import Zone
@@ -136,22 +126,22 @@ class GlobalStatsResponse(BaseModel):
 
 class UserStatsResponse(BaseModel):
     total_users: int
-    active_users_7d: int       # DAU proxy — connectés dans les 7 derniers jours
-    active_users_30d: int      # MAU proxy — connectés dans les 30 derniers jours
-    new_users_7d: int
-    new_users_30d: int
+    active_last_7_days: int     # DAU hebdo
+    active_last_30_days: int    # MAU
+    new_last_7_days: int
+    new_last_30_days: int
     banned_users: int
     admin_users: int
-    failed_logins_24h: int     # Tentatives échouées dernières 24h
 
 
 class ReportStatsResponse(BaseModel):
-    total_pending: int
-    total_reviewed: int
-    total_resolved: int
-    total_rejected: int
-    top_reason: Optional[str]  # Motif le plus fréquent
-    avg_resolution_hours: Optional[float]
+    total_reports: int
+    pending: int
+    reviewed: int
+    resolved: int
+    rejected: int
+    by_reason: dict   # {reason: count}
+    avg_resolution_days: Optional[float]
 
 
 class ChartDataPoint(BaseModel):
@@ -179,40 +169,48 @@ class UserAdminDetail(BaseModel):
     id: uuid.UUID
     phone_number: str
     full_name: Optional[str]
+    email: Optional[str]
     score_reputation: float
     is_admin: bool
     is_banned: bool
     is_active: bool
     created_at: datetime
+    # Agrégats
     total_declarations: int
     total_matches: int
-    total_restitutions: int
-    total_reports_received: int   # Signalements reçus
-    total_reports_emitted: int    # Signalements émis
+    total_reports_received: int   # signalements reçus
+    total_reports_emitted: int    # signalements émis
     last_login_at: Optional[datetime]
     last_login_ip: Optional[str]
 
+    class Config:
+        from_attributes = True
+
 
 class UserAdminUpdate(BaseModel):
+    """Champs éditables par l'admin."""
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
-
-
-class BanRequest(BaseModel):
-    reason: str
+    is_active: Optional[bool] = None
 
 
 class ConnectionLogRead(BaseModel):
     id: uuid.UUID
+    user_id: Optional[uuid.UUID]
+    phone_number: Optional[str]
     ip_address: Optional[str]
     user_agent: Optional[str]
     device_id: Optional[str]
     auth_method: str
-    status: str
+    status: ConnectionStatus
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class BanRequest(BaseModel):
+    reason: str
 
 
 class DeclarationAdminRead(BaseModel):
@@ -359,6 +357,104 @@ async def global_stats(
     )
 
 
+@router.get("/stats/users", response_model=UserStatsResponse)
+async def user_stats(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """
+    Indicateurs d'activité utilisateurs : DAU, MAU, nouveaux inscrits, bannis.
+    Un utilisateur "actif" = au moins une connexion réussie dans la période.
+    """
+    now = datetime.now(timezone.utc)
+    since_7  = now - timedelta(days=7)
+    since_30 = now - timedelta(days=30)
+
+    total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
+    banned_users = (await db.execute(
+        select(func.count(User.id)).where(User.is_banned == True)  # noqa: E712
+    )).scalar_one()
+    admin_users = (await db.execute(
+        select(func.count(User.id)).where(User.is_admin == True)  # noqa: E712
+    )).scalar_one()
+    new_7 = (await db.execute(
+        select(func.count(User.id)).where(User.created_at >= since_7)
+    )).scalar_one()
+    new_30 = (await db.execute(
+        select(func.count(User.id)).where(User.created_at >= since_30)
+    )).scalar_one()
+
+    # Utilisateurs actifs = ayant eu une connexion SUCCESS dans la période
+    active_7 = (await db.execute(
+        select(func.count(func.distinct(ConnectionLog.user_id))).where(
+            ConnectionLog.status == ConnectionStatus.SUCCESS,
+            ConnectionLog.created_at >= since_7,
+            ConnectionLog.user_id.isnot(None),
+        )
+    )).scalar_one()
+    active_30 = (await db.execute(
+        select(func.count(func.distinct(ConnectionLog.user_id))).where(
+            ConnectionLog.status == ConnectionStatus.SUCCESS,
+            ConnectionLog.created_at >= since_30,
+            ConnectionLog.user_id.isnot(None),
+        )
+    )).scalar_one()
+
+    return UserStatsResponse(
+        total_users=total_users,
+        active_last_7_days=active_7,
+        active_last_30_days=active_30,
+        new_last_7_days=new_7,
+        new_last_30_days=new_30,
+        banned_users=banned_users,
+        admin_users=admin_users,
+    )
+
+
+@router.get("/stats/reports", response_model=ReportStatsResponse)
+async def report_stats(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Stats des signalements : total, par statut, par motif, délai moyen de résolution."""
+    total = (await db.execute(select(func.count(Report.id)))).scalar_one()
+    pending  = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.PENDING))).scalar_one()
+    reviewed = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REVIEWED))).scalar_one()
+    resolved = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.RESOLVED))).scalar_one()
+    rejected = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REJECTED))).scalar_one()
+
+    # Répartition par motif
+    by_reason: dict = {}
+    for reason in ReportReason:
+        cnt = (await db.execute(
+            select(func.count(Report.id)).where(Report.reason == reason)
+        )).scalar_one()
+        by_reason[reason.value] = cnt
+
+    # Délai moyen de résolution (en jours)
+    avg_delay = None
+    raw = (await db.execute(
+        select(func.avg(
+            func.extract("epoch", Report.resolved_at - Report.created_at)
+        )).where(
+            Report.resolved_at.isnot(None),
+            Report.status.in_([ReportStatus.RESOLVED, ReportStatus.REJECTED]),
+        )
+    )).scalar_one()
+    if raw is not None:
+        avg_delay = round(raw / 86400, 1)
+
+    return ReportStatsResponse(
+        total_reports=total,
+        pending=pending,
+        reviewed=reviewed,
+        resolved=resolved,
+        rejected=rejected,
+        by_reason=by_reason,
+        avg_resolution_days=avg_delay,
+    )
+
+
 @router.get("/stats/chart", response_model=list[ChartDataPoint])
 async def stats_chart(
     period_days: int = Query(30, ge=7, le=365),
@@ -368,23 +464,26 @@ async def stats_chart(
     today = date.today()
     start = today - timedelta(days=period_days - 1)
 
-    decls_rows = {str(r.day): r.cnt for r in (await db.execute(
+    decls_q = (
         select(func.date(Declaration.created_at).label("day"), func.count(Declaration.id).label("cnt"))
         .where(func.date(Declaration.created_at) >= start)
         .group_by(func.date(Declaration.created_at))
-    )).all()}
+    )
+    decls_rows = {str(r.day): r.cnt for r in (await db.execute(decls_q)).all()}
 
-    matches_rows = {str(r.day): r.cnt for r in (await db.execute(
+    matches_q = (
         select(func.date(Match.created_at).label("day"), func.count(Match.id).label("cnt"))
         .where(func.date(Match.created_at) >= start)
         .group_by(func.date(Match.created_at))
-    )).all()}
+    )
+    matches_rows = {str(r.day): r.cnt for r in (await db.execute(matches_q)).all()}
 
-    restit_rows = {str(r.day): r.cnt for r in (await db.execute(
+    restit_q = (
         select(func.date(Restitution.completed_at).label("day"), func.count(Restitution.id).label("cnt"))
         .where(Restitution.status == "completed", Restitution.completed_at.isnot(None), func.date(Restitution.completed_at) >= start)
         .group_by(func.date(Restitution.completed_at))
-    )).all()}
+    )
+    restit_rows = {str(r.day): r.cnt for r in (await db.execute(restit_q)).all()}
 
     return [
         ChartDataPoint(
@@ -395,99 +494,6 @@ async def stats_chart(
         )
         for i in range(period_days)
     ]
-
-
-@router.get("/stats/users", response_model=UserStatsResponse)
-async def user_stats(
-    db: AsyncSession = Depends(get_db),
-    _admin: User = Depends(require_admin),
-):
-    """
-    Indicateurs utilisateurs : DAU proxy, MAU proxy, nouveaux inscrits,
-    comptes bannis, admins, tentatives de connexion échouées.
-    """
-    now = datetime.now(timezone.utc)
-    since_7d  = now - timedelta(days=7)
-    since_30d = now - timedelta(days=30)
-    since_24h = now - timedelta(hours=24)
-
-    total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
-    banned_users = (await db.execute(
-        select(func.count(User.id)).where(User.is_banned == True)  # noqa: E712
-    )).scalar_one()
-    admin_users = (await db.execute(
-        select(func.count(User.id)).where(User.is_admin == True)  # noqa: E712
-    )).scalar_one()
-    new_users_7d = (await db.execute(
-        select(func.count(User.id)).where(User.created_at >= since_7d)
-    )).scalar_one()
-    new_users_30d = (await db.execute(
-        select(func.count(User.id)).where(User.created_at >= since_30d)
-    )).scalar_one()
-
-    # DAU / MAU via connection_logs (connexions réussies uniques)
-    active_7d = (await db.execute(
-        select(func.count(func.distinct(ConnectionLog.user_id)))
-        .where(ConnectionLog.status == "success", ConnectionLog.created_at >= since_7d)
-    )).scalar_one()
-    active_30d = (await db.execute(
-        select(func.count(func.distinct(ConnectionLog.user_id)))
-        .where(ConnectionLog.status == "success", ConnectionLog.created_at >= since_30d)
-    )).scalar_one()
-    failed_24h = (await db.execute(
-        select(func.count(ConnectionLog.id))
-        .where(ConnectionLog.status == "failed", ConnectionLog.created_at >= since_24h)
-    )).scalar_one()
-
-    return UserStatsResponse(
-        total_users=total_users,
-        active_users_7d=active_7d,
-        active_users_30d=active_30d,
-        new_users_7d=new_users_7d,
-        new_users_30d=new_users_30d,
-        banned_users=banned_users,
-        admin_users=admin_users,
-        failed_logins_24h=failed_24h,
-    )
-
-
-@router.get("/stats/reports", response_model=ReportStatsResponse)
-async def report_stats(
-    db: AsyncSession = Depends(get_db),
-    _admin: User = Depends(require_admin),
-):
-    """Tableau de bord des signalements : en attente, motif dominant, délai de résolution."""
-    pending  = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.PENDING))).scalar_one()
-    reviewed = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REVIEWED))).scalar_one()
-    resolved = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.RESOLVED))).scalar_one()
-    rejected = (await db.execute(select(func.count(Report.id)).where(Report.status == ReportStatus.REJECTED))).scalar_one()
-
-    # Motif le plus fréquent
-    top_reason_row = (await db.execute(
-        select(Report.reason, func.count(Report.id).label("cnt"))
-        .group_by(Report.reason)
-        .order_by(func.count(Report.id).desc())
-        .limit(1)
-    )).first()
-    top_reason = top_reason_row.reason.value if top_reason_row else None
-
-    # Délai moyen de résolution en heures
-    avg_resolution = None
-    raw = (await db.execute(
-        select(func.avg(func.extract("epoch", Report.resolved_at - Report.created_at)))
-        .where(Report.resolved_at.isnot(None))
-    )).scalar_one()
-    if raw is not None:
-        avg_resolution = round(raw / 3600, 1)
-
-    return ReportStatsResponse(
-        total_pending=pending,
-        total_reviewed=reviewed,
-        total_resolved=resolved,
-        total_rejected=rejected,
-        top_reason=top_reason,
-        avg_resolution_hours=avg_resolution,
-    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -505,14 +511,13 @@ async def export_declarations_csv(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id", "user_id", "document_type", "declaration_type",
-                     "status", "is_flagged", "created_at", "location_description"])
+    writer.writerow(["id", "user_id", "document_type", "declaration_type", "status", "is_flagged", "created_at", "location_description"])
     for d in declarations:
-        writer.writerow([str(d.id), str(d.user_id), d.document_type,
-                         d.declaration_type, d.status,
-                         getattr(d, "is_flagged", False),
-                         d.created_at.isoformat(),
-                         getattr(d, "location_description", "")])
+        writer.writerow([
+            str(d.id), str(d.user_id), d.document_type, d.declaration_type,
+            d.status, getattr(d, "is_flagged", False), d.created_at.isoformat(),
+            getattr(d, "location_description", ""),
+        ])
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -522,7 +527,7 @@ async def export_declarations_csv(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Gestion utilisateurs — CRUD complet + conformité CPDP
+# Gestion utilisateurs — CRUD complet
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/users", response_model=list[UserAdminRead])
@@ -530,14 +535,19 @@ async def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=100),
     search: Optional[str] = None,
+    is_banned: Optional[bool] = None,
+    is_admin: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
+    """Liste paginée des utilisateurs avec filtres : recherche, banni, admin."""
     q = select(User).order_by(User.created_at.desc())
     if search:
-        q = q.where(
-            User.phone_number.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%")
-        )
+        q = q.where(or_(User.phone_number.ilike(f"%{search}%"), User.full_name.ilike(f"%{search}%")))
+    if is_banned is not None:
+        q = q.where(User.is_banned == is_banned)
+    if is_admin is not None:
+        q = q.where(User.is_admin == is_admin)
     q = q.offset((page - 1) * per_page).limit(per_page)
     return (await db.execute(q)).scalars().all()
 
@@ -548,13 +558,7 @@ async def get_user_detail(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """
-    Profil complet d'un utilisateur :
-    - Données personnelles
-    - Statistiques (déclarations, matchs, restitutions)
-    - Signalements reçus et émis
-    - Dernière connexion (IP + timestamp)
-    """
+    """Profil complet d'un utilisateur : déclarations, matchs, signalements, dernière connexion."""
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
@@ -564,25 +568,20 @@ async def get_user_detail(
     )).scalar_one()
     total_matches = (await db.execute(
         select(func.count(Match.id)).where(
-            (Match.user_found_id == user_id) | (Match.user_lost_id == user_id)
+            or_(Match.user_found_id == user_id, Match.user_lost_id == user_id)
         )
     )).scalar_one()
-    total_restitutions = (await db.execute(
-        select(func.count(Restitution.id)).join(Match, Restitution.match_id == Match.id).where(
-            (Match.user_found_id == user_id) | (Match.user_lost_id == user_id)
-        )
-    )).scalar_one()
-    reports_received = (await db.execute(
+    total_reports_received = (await db.execute(
         select(func.count(Report.id)).where(Report.reported_id == user_id)
     )).scalar_one()
-    reports_emitted = (await db.execute(
+    total_reports_emitted = (await db.execute(
         select(func.count(Report.id)).where(Report.reporter_id == user_id)
     )).scalar_one()
 
     # Dernière connexion réussie
     last_log = (await db.execute(
         select(ConnectionLog)
-        .where(ConnectionLog.user_id == user_id, ConnectionLog.status == "success")
+        .where(ConnectionLog.user_id == user_id, ConnectionLog.status == ConnectionStatus.SUCCESS)
         .order_by(ConnectionLog.created_at.desc())
         .limit(1)
     )).scalar_one_or_none()
@@ -591,16 +590,16 @@ async def get_user_detail(
         id=user.id,
         phone_number=user.phone_number,
         full_name=getattr(user, "full_name", None),
-        score_reputation=getattr(user, "score_reputation", 5.0),
+        email=getattr(user, "email", None),
+        score_reputation=getattr(user, "score_reputation", 0.0),
         is_admin=getattr(user, "is_admin", False),
         is_banned=getattr(user, "is_banned", False),
         is_active=getattr(user, "is_active", True),
         created_at=user.created_at,
         total_declarations=total_decls,
         total_matches=total_matches,
-        total_restitutions=total_restitutions,
-        total_reports_received=reports_received,
-        total_reports_emitted=reports_emitted,
+        total_reports_received=total_reports_received,
+        total_reports_emitted=total_reports_emitted,
         last_login_at=last_log.created_at if last_log else None,
         last_login_ip=last_log.ip_address if last_log else None,
     )
@@ -614,7 +613,7 @@ async def update_user(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    """Éditer le nom ou le numéro de téléphone d'un utilisateur. Action auditée."""
+    """Modifier les données d'un utilisateur (nom, téléphone, actif/inactif). Action auditée."""
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
@@ -623,13 +622,20 @@ async def update_user(
     for field, value in changes.items():
         setattr(user, field, value)
 
-    await _audit(db, admin, "user.update", "user", user_id, _get_ip(request), extra=changes)
+    await _audit(
+        db, admin,
+        action_type="user.update",
+        target_type="user",
+        target_id=user_id,
+        ip_address=_get_ip(request),
+        extra=changes,
+    )
     await db.commit()
     await db.refresh(user)
     return user
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/users/{user_id}", status_code=status.HTTP_200_OK)
 async def delete_user(
     user_id: uuid.UUID,
     request: Request,
@@ -638,8 +644,9 @@ async def delete_user(
 ):
     """
     Suppression CPDP (droit à l'effacement) — soft delete.
-    Anonymise les données personnelles sans supprimer l'historique métier.
-    Action auditée.
+    Le compte est désactivé et anonymisé : nom → 'Utilisateur supprimé',
+    téléphone → UUID hash, is_active → False.
+    Les données sont conservées 5 ans pour obligations légales.
     """
     user = await db.get(User, user_id)
     if not user:
@@ -647,14 +654,182 @@ async def delete_user(
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Impossible de supprimer votre propre compte.")
 
-    # Anonymisation CPDP — soft delete
-    user.phone_number = f"deleted_{user_id.hex[:8]}"
-    user.full_name    = "[Compte supprimé]"
-    user.is_active    = False
-    user.fcm_token    = None
+    # Anonymisation CPDP
+    anon_id = str(uuid.uuid4())[:8]
+    user.full_name = "Utilisateur supprimé"  # type: ignore[assignment]
+    user.phone_number = f"deleted_{anon_id}"  # type: ignore[assignment]
+    user.is_active = False  # type: ignore[assignment]
+    if hasattr(user, "fcm_token"):
+        user.fcm_token = None  # type: ignore[assignment]
 
-    await _audit(db, admin, "user.delete_cpdp", "user", user_id, _get_ip(request))
+    await _audit(
+        db, admin,
+        action_type="user.delete_gdpr",
+        target_type="user",
+        target_id=user_id,
+        ip_address=_get_ip(request),
+        extra={"anon_id": anon_id},
+    )
     await db.commit()
+    return {"detail": f"Compte {user_id} anonymisé et désactivé (CPDP). Données conservées 5 ans."}
+
+
+@router.get("/users/{user_id}/sessions", response_model=list[ConnectionLogRead])
+async def get_user_sessions(
+    user_id: uuid.UUID,
+    limit: int = Query(100, le=500),
+    since_days: int = Query(30, ge=1, le=365),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """
+    Historique complet des connexions d'un utilisateur :
+    dates, IPs, devices, statuts (success/failed/banned).
+    Utilisable pour répondre à une réquisition judiciaire.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=since_days)
+    result = await db.execute(
+        select(ConnectionLog)
+        .where(
+            ConnectionLog.user_id == user_id,
+            ConnectionLog.created_at >= since,
+        )
+        .order_by(ConnectionLog.created_at.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()
+
+
+@router.get("/users/{user_id}/export")
+async def export_user_legal(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+    request: Request = None,
+):
+    """
+    Export légal complet d'un utilisateur au format JSON.
+    Contient : profil, déclarations, matchs, sessions de connexion, signalements.
+    Utilisable pour :
+    - Réquisitions judiciaires (ANSSI, parquet)
+    - Demandes CPDP (droit d'accès)
+    - Audits internes
+    """
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+
+    # Déclarations
+    decls = (await db.execute(
+        select(Declaration).where(Declaration.user_id == user_id).order_by(Declaration.created_at)
+    )).scalars().all()
+
+    # Matchs
+    matches = (await db.execute(
+        select(Match).where(
+            or_(Match.user_found_id == user_id, Match.user_lost_id == user_id)
+        ).order_by(Match.created_at)
+    )).scalars().all()
+
+    # Sessions de connexion (12 derniers mois)
+    since_1y = datetime.now(timezone.utc) - timedelta(days=365)
+    sessions = (await db.execute(
+        select(ConnectionLog)
+        .where(ConnectionLog.user_id == user_id, ConnectionLog.created_at >= since_1y)
+        .order_by(ConnectionLog.created_at)
+    )).scalars().all()
+
+    # Signalements reçus
+    reports_received = (await db.execute(
+        select(Report).where(Report.reported_id == user_id)
+    )).scalars().all()
+
+    # Signalements émis
+    reports_emitted = (await db.execute(
+        select(Report).where(Report.reporter_id == user_id)
+    )).scalars().all()
+
+    await _audit(
+        db, admin,
+        action_type="user.legal_export",
+        target_type="user",
+        target_id=user_id,
+        ip_address=_get_ip(request),
+        extra={"exported_at": datetime.now(timezone.utc).isoformat()},
+    )
+    await db.commit()
+
+    export_data = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "exported_by_admin": str(admin.id),
+        "user": {
+            "id": str(user.id),
+            "phone_number": user.phone_number,
+            "full_name": getattr(user, "full_name", None),
+            "email": getattr(user, "email", None),
+            "score_reputation": getattr(user, "score_reputation", 0.0),
+            "is_banned": getattr(user, "is_banned", False),
+            "is_active": getattr(user, "is_active", True),
+            "created_at": user.created_at.isoformat(),
+        },
+        "declarations": [
+            {
+                "id": str(d.id),
+                "document_type": d.document_type,
+                "declaration_type": d.declaration_type,
+                "status": d.status,
+                "created_at": d.created_at.isoformat(),
+            }
+            for d in decls
+        ],
+        "matches": [
+            {
+                "id": str(m.id),
+                "score": m.score,
+                "status": m.status,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in matches
+        ],
+        "connection_logs": [
+            {
+                "id": str(s.id),
+                "ip_address": s.ip_address,
+                "user_agent": s.user_agent,
+                "device_id": s.device_id,
+                "auth_method": s.auth_method,
+                "status": s.status.value,
+                "created_at": s.created_at.isoformat(),
+            }
+            for s in sessions
+        ],
+        "reports_received": [
+            {
+                "id": str(r.id),
+                "reason": r.reason.value,
+                "status": r.status.value,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in reports_received
+        ],
+        "reports_emitted": [
+            {
+                "id": str(r.id),
+                "reason": r.reason.value,
+                "status": r.status.value,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in reports_emitted
+        ],
+    }
+
+    json_bytes = json.dumps(export_data, ensure_ascii=False, indent=2).encode("utf-8")
+    filename = f"user_{user_id}_legal_export_{date.today().isoformat()}.json"
+    return StreamingResponse(
+        iter([json_bytes]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.patch("/users/{user_id}/ban", status_code=status.HTTP_200_OK)
@@ -671,7 +846,7 @@ async def ban_user(
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous bannir vous-même.")
     user.is_banned = True  # type: ignore[assignment]
-    await _audit(db, admin, "user.ban", "user", user_id, _get_ip(request), extra={"reason": body.reason})
+    await _audit(db, admin, "user.ban", "user", user_id, _get_ip(request), {"reason": body.reason})
     await db.commit()
     return {"detail": f"Utilisateur {user_id} banni. Raison : {body.reason}"}
 
@@ -708,125 +883,39 @@ async def promote_to_admin(
     return {"detail": f"Utilisateur {user_id} promu administrateur."}
 
 
-@router.get("/users/{user_id}/sessions", response_model=list[ConnectionLogRead])
-async def get_user_sessions(
-    user_id: uuid.UUID,
-    limit: int = Query(50, ge=1, le=200),
+# ─────────────────────────────────────────────────────────────────────────────
+# Logs de connexion globaux (traçabilité légale)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/connection-logs", response_model=list[ConnectionLogRead])
+async def list_connection_logs(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    status_filter: Optional[ConnectionStatus] = Query(None, alias="status"),
+    user_id: Optional[uuid.UUID] = None,
+    ip_address: Optional[str] = None,
+    since_days: int = Query(7, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
     """
-    Historique complet des connexions d'un utilisateur :
-    IP, device, user-agent, méthode d'auth, statut, timestamp.
-    Permet de répondre à une réquisition judiciaire.
+    Logs de connexion globaux avec filtres :
+    - par statut (success/failed/banned/suspicious)
+    - par utilisateur
+    - par adresse IP (pour identifier des accès frauduleux)
+    - par période
+    Indispensable pour répondre aux réquisitions judiciaires.
     """
-    user = await db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
-
-    logs = (await db.execute(
-        select(ConnectionLog)
-        .where(ConnectionLog.user_id == user_id)
-        .order_by(ConnectionLog.created_at.desc())
-        .limit(limit)
-    )).scalars().all()
-    return logs
-
-
-@router.get("/users/{user_id}/export")
-async def export_user_data(
-    user_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
-    request: Request = None,
-):
-    """
-    Export légal complet des données d'un utilisateur (JSON).
-    Couvre : profil, déclarations, matchs, restitutions,
-             signalements émis/reçus, historique de connexions.
-
-    Utilisé pour :
-    - Droit d'accès CPDP (art. 14)
-    - Réquisitions judiciaires
-    - Demandes ANSSI
-    """
-    user = await db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
-
-    declarations = (await db.execute(
-        select(Declaration).where(Declaration.user_id == user_id).order_by(Declaration.created_at)
-    )).scalars().all()
-
-    matches = (await db.execute(
-        select(Match).where(
-            (Match.user_found_id == user_id) | (Match.user_lost_id == user_id)
-        ).order_by(Match.created_at)
-    )).scalars().all()
-
-    reports_emitted = (await db.execute(
-        select(Report).where(Report.reporter_id == user_id).order_by(Report.created_at)
-    )).scalars().all()
-
-    reports_received = (await db.execute(
-        select(Report).where(Report.reported_id == user_id).order_by(Report.created_at)
-    )).scalars().all()
-
-    sessions = (await db.execute(
-        select(ConnectionLog).where(ConnectionLog.user_id == user_id).order_by(ConnectionLog.created_at)
-    )).scalars().all()
-
-    await _audit(db, admin, "user.export_legal", "user", user_id, _get_ip(request))
-    await db.commit()
-
-    payload = {
-        "export_generated_at": datetime.now(timezone.utc).isoformat(),
-        "exported_by_admin": str(admin.id),
-        "user": {
-            "id": str(user.id),
-            "phone_number": user.phone_number,
-            "full_name": getattr(user, "full_name", None),
-            "created_at": user.created_at.isoformat(),
-            "is_active": getattr(user, "is_active", True),
-            "is_banned": getattr(user, "is_banned", False),
-            "score_reputation": getattr(user, "score_reputation", 5.0),
-        },
-        "declarations": [
-            {"id": str(d.id), "document_type": d.document_type,
-             "declaration_type": d.declaration_type, "status": d.status,
-             "created_at": d.created_at.isoformat()}
-            for d in declarations
-        ],
-        "matches": [
-            {"id": str(m.id), "score": m.score, "status": m.status,
-             "created_at": m.created_at.isoformat()}
-            for m in matches
-        ],
-        "reports_emitted": [
-            {"id": str(r.id), "reason": r.reason.value, "status": r.status.value,
-             "created_at": r.created_at.isoformat()}
-            for r in reports_emitted
-        ],
-        "reports_received": [
-            {"id": str(r.id), "reason": r.reason.value, "status": r.status.value,
-             "created_at": r.created_at.isoformat()}
-            for r in reports_received
-        ],
-        "connection_logs": [
-            {"ip": s.ip_address, "device_id": s.device_id, "user_agent": s.user_agent,
-             "auth_method": s.auth_method, "status": s.status.value,
-             "timestamp": s.created_at.isoformat()}
-            for s in sessions
-        ],
-    }
-
-    json_bytes = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
-    filename = f"user_export_{user_id}_{date.today()}.json"
-    return StreamingResponse(
-        iter([json_bytes]),
-        media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
-    )
+    since = datetime.now(timezone.utc) - timedelta(days=since_days)
+    q = select(ConnectionLog).where(ConnectionLog.created_at >= since).order_by(ConnectionLog.created_at.desc())
+    if status_filter:
+        q = q.where(ConnectionLog.status == status_filter)
+    if user_id:
+        q = q.where(ConnectionLog.user_id == user_id)
+    if ip_address:
+        q = q.where(ConnectionLog.ip_address == ip_address)
+    q = q.offset((page - 1) * per_page).limit(per_page)
+    return (await db.execute(q)).scalars().all()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -859,7 +948,7 @@ async def delete_declaration(
     if not decl:
         raise HTTPException(status_code=404, detail="Déclaration introuvable.")
     await _audit(db, admin, "declaration.delete", "declaration", declaration_id, _get_ip(request),
-                 extra={"document_type": decl.document_type, "user_id": str(decl.user_id)})
+                 {"document_type": decl.document_type, "user_id": str(decl.user_id)})
     await db.delete(decl)
     await db.commit()
 
@@ -888,8 +977,8 @@ async def bulk_import_declarations(
     admin: User = Depends(require_admin),
 ):
     if file.content_type not in ("text/csv", "application/csv", "text/plain"):
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                            detail="Seuls les fichiers CSV sont acceptés.")
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Seuls les fichiers CSV sont acceptés.")
+
     content = (await file.read()).decode("utf-8", errors="replace")
     reader = csv.DictReader(io.StringIO(content))
     required_fields = {"document_type", "owner_name"}
@@ -901,7 +990,7 @@ async def bulk_import_declarations(
             errors.append({"row": i, "error": f"Colonnes manquantes : {missing}"})
             continue
         try:
-            db.add(Declaration(
+            decl = Declaration(
                 id=uuid.uuid4(), user_id=admin.id, declaration_type="found",
                 document_type=row["document_type"].strip(),
                 owner_name=row.get("owner_name", "").strip() or None,
@@ -910,19 +999,20 @@ async def bulk_import_declarations(
                 latitude=float(row["latitude"]) if row.get("latitude") else None,
                 longitude=float(row["longitude"]) if row.get("longitude") else None,
                 status="active",
-            ))
+            )
+            db.add(decl)
             rows_created += 1
         except (ValueError, KeyError) as exc:
             errors.append({"row": i, "error": str(exc)})
 
     await _audit(db, admin, "declaration.bulk_import", "declaration", None, _get_ip(request),
-                 extra={"rows_created": rows_created, "errors_count": len(errors)})
+                 {"rows_created": rows_created, "errors_count": len(errors)})
     await db.commit()
     return {"rows_created": rows_created, "errors": errors}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Matchs
+# Matchs & Restitutions
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get("/matches", response_model=list[MatchAdminRead])
@@ -940,10 +1030,6 @@ async def list_all_matches(
     return (await db.execute(q)).scalars().all()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Restitutions
-# ─────────────────────────────────────────────────────────────────────────────
-
 @router.get("/restitutions", response_model=list[RestitutionAdminRead])
 async def list_all_restitutions(
     page: int = Query(1, ge=1),
@@ -960,7 +1046,7 @@ async def list_all_restitutions(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Zones certifiées (F-32, F-43)
+# Zones de récupération (F-32, F-43)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.post("/zones", response_model=ZoneRead, status_code=status.HTTP_201_CREATED)
@@ -970,12 +1056,11 @@ async def create_zone(
     admin: User = Depends(require_admin),
 ):
     zone = Zone(id=uuid.uuid4(), name=body.name, zone_type=body.zone_type,
-                latitude=body.latitude, longitude=body.longitude,
-                address=body.address, institution_id=body.institution_id,
-                is_certified=body.is_certified)
+                latitude=body.latitude, longitude=body.longitude, address=body.address,
+                institution_id=body.institution_id, is_certified=body.is_certified)
     db.add(zone)
     await _audit(db, admin, "zone.create", "zone", zone.id, _get_ip(request),
-                 extra={"name": zone.name, "zone_type": zone.zone_type})
+                 {"name": zone.name, "zone_type": zone.zone_type})
     await db.commit()
     await db.refresh(zone)
     return zone
@@ -989,16 +1074,15 @@ async def list_zones(db: AsyncSession = Depends(get_db), _admin: User = Depends(
 @router.patch("/zones/{zone_id}", response_model=ZoneRead)
 async def update_zone(
     zone_id: uuid.UUID, body: ZoneUpdate, request: Request,
-    db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin),
 ):
     zone = await db.get(Zone, zone_id)
     if not zone:
         raise HTTPException(status_code=404, detail="Zone introuvable.")
     changes = body.model_dump(exclude_unset=True)
-    for f, v in changes.items():
-        setattr(zone, f, v)
-    await _audit(db, admin, "zone.update", "zone", zone_id, _get_ip(request), extra=changes)
+    for field, value in changes.items():
+        setattr(zone, field, value)
+    await _audit(db, admin, "zone.update", "zone", zone_id, _get_ip(request), changes)
     await db.commit()
     await db.refresh(zone)
     return zone
@@ -1007,13 +1091,12 @@ async def update_zone(
 @router.delete("/zones/{zone_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_zone(
     zone_id: uuid.UUID, request: Request,
-    db: AsyncSession = Depends(get_db),
-    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin),
 ):
     zone = await db.get(Zone, zone_id)
     if not zone:
         raise HTTPException(status_code=404, detail="Zone introuvable.")
-    await _audit(db, admin, "zone.delete", "zone", zone_id, _get_ip(request), extra={"name": zone.name})
+    await _audit(db, admin, "zone.delete", "zone", zone_id, _get_ip(request), {"name": zone.name})
     await db.delete(zone)
     await db.commit()
 
