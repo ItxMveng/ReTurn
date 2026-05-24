@@ -14,7 +14,7 @@
 2. [Structure du projet](#structure-du-projet)
 3. [Démarrage rapide](#démarrage-rapide)
 4. [API Backend](#api-backend)
-5. [Architecture mobile (Flutter)](#architecture-mobile-flutter)
+5. [Architecture mobile Flutter](#architecture-mobile-flutter)
 6. [Migrations Alembic](#migrations-alembic)
 7. [Tests](#tests)
 8. [Roadmap Sprints](#roadmap-sprints)
@@ -26,7 +26,7 @@
 
 | Couche | Technologie |
 |--------|-------------|
-| Mobile | Flutter 3.x (Dart) — Riverpod + Freezed + Go Router |
+| Mobile | Flutter 3.x (Dart) — Riverpod + GoRouter + Dio + Hive |
 | Backend | FastAPI (Python 3.12) — SQLAlchemy async + Alembic |
 | Base de données | PostgreSQL 16 |
 | Cache / Files | Redis 7 |
@@ -44,7 +44,7 @@ ReTurn/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/
-│   │   │   ├── router.py                # Enregistrement de tous les routers
+│   │   │   ├── router.py
 │   │   │   └── endpoints/
 │   │   │       ├── auth.py              # S1 — Inscription, connexion, refresh
 │   │   │       ├── declarations.py      # S2 — CRUD déclarations
@@ -52,7 +52,7 @@ ReTurn/
 │   │   │       ├── restitutions.py      # S3 — Restitution + photos + notation
 │   │   │       ├── messaging.py         # S4 — Messagerie WebSocket
 │   │   │       ├── profile.py           # S4 — Profil utilisateur
-│   │   │       └── admin.py             # ✅ Commit G — Backoffice complet F-40–F-44
+│   │   │       └── admin.py             # Backoffice complet F-40–F-44
 │   │   ├── models/
 │   │   │   ├── user.py
 │   │   │   ├── declaration.py
@@ -60,10 +60,10 @@ ReTurn/
 │   │   │   ├── restitution.py
 │   │   │   ├── message.py
 │   │   │   ├── zone.py
-│   │   │   └── audit_log.py             # ✅ Commit G — Traçabilité CDC §11.1
+│   │   │   └── audit_log.py
 │   │   ├── schemas/
 │   │   ├── services/
-│   │   │   ├── matching_service.py
+│   │   │   ├── matching_service.py      # Jaro-Winkler + Haversine
 │   │   │   ├── restitution_service.py
 │   │   │   ├── notification_service.py
 │   │   │   └── storage_service.py
@@ -73,34 +73,82 @@ ReTurn/
 │   │   ├── 002_fcm_token.py
 │   │   ├── 003_user_profile.py
 │   │   ├── 004_admin_zones.py
-│   │   └── 005_audit_logs.py            # ✅ Commit G — Table audit_logs
+│   │   └── 005_audit_logs.py
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_auth.py
 │   │   ├── test_declarations.py
 │   │   ├── test_matching.py
 │   │   ├── test_restitution.py
-│   │   └── test_admin.py                # ✅ Commit G — 15 tests admin
+│   │   └── test_admin.py
 │   ├── pytest.ini
 │   └── requirements.txt
-├── mobile/lib/
-│   ├── core/
-│   │   ├── network/api_client.dart
-│   │   ├── router/
-│   │   │   ├── app_router.dart
-│   │   │   └── route_names.dart
-│   │   └── widgets/scaffold_with_nav_bar.dart
-│   └── features/
-│       ├── auth/ — declarations/ — matches/ — profile/ — home/
-│       └── messaging/
-│           ├── data/models/message_model.dart
-│           ├── data/repositories/messaging_repository.dart
-│           ├── application/conversation_notifier.dart
-│           └── presentation/pages/
-│               ├── messaging_list_page.dart
-│               └── conversation_page.dart
+│
+├── mobile/
+│   ├── pubspec.yaml                     # Riverpod, GoRouter, Dio, Freezed, Hive
+│   └── lib/
+│       ├── main.dart                    # Entrypoint — ProviderScope + Hive init
+│       ├── core/
+│       │   ├── api/
+│       │   │   └── api_client.dart      # Dio + AuthInterceptor JWT auto-refresh
+│       │   ├── storage/
+│       │   │   ├── auth_storage.dart    # FlutterSecureStorage (tokens)
+│       │   │   └── hive_storage.dart    # Hive boxes (cache + drafts)
+│       │   ├── router/
+│       │   │   └── app_router.dart      # GoRouter + guard auth + ShellRoute
+│       │   └── theme/
+│       │       └── app_theme.dart       # ThemeData light/dark (vert ReTurn)
+│       └── features/
+│           ├── splash/
+│           │   └── splash_page.dart     # Splash animée → redirect auth
+│           ├── auth/
+│           │   ├── models/auth_models.dart
+│           │   ├── repositories/auth_repository.dart
+│           │   ├── providers/auth_notifier.dart
+│           │   └── pages/
+│           │       ├── login_page.dart
+│           │       └── register_page.dart
+│           ├── home/
+│           │   └── home_shell.dart      # NavigationBar bottom (4 onglets)
+│           ├── declarations/
+│           │   ├── models/declaration.dart
+│           │   ├── repositories/declarations_repository.dart
+│           │   ├── providers/declarations_provider.dart
+│           │   ├── widgets/declaration_card.dart
+│           │   └── pages/
+│           │       ├── declarations_list_page.dart
+│           │       ├── declaration_form_page.dart
+│           │       └── declaration_detail_page.dart
+│           ├── matches/
+│           │   ├── models/match_model.dart
+│           │   ├── repositories/matches_repository.dart
+│           │   ├── providers/matches_provider.dart
+│           │   └── pages/
+│           │       ├── matches_list_page.dart  # Score circulaire animé
+│           │       └── match_detail_page.dart  # Confirmer / Rejeter
+│           ├── messaging/
+│           │   ├── models/message.dart         # Conversation + ChatMessage
+│           │   ├── repositories/messaging_repository.dart
+│           │   └── pages/
+│           │       ├── conversations_page.dart  # Liste + badge unread
+│           │       └── chat_page.dart           # Bulles + envoi + scroll auto
+│           ├── profile/
+│           │   ├── models/user_profile.dart
+│           │   ├── repositories/profile_repository.dart
+│           │   └── pages/profile_page.dart      # Stats + réputation + logout
+│           ├── restitution/
+│           │   ├── models/restitution.dart
+│           │   ├── repositories/restitution_repository.dart
+│           │   └── pages/restitution_page.dart  # Code + confirmation + notation
+│           └── settings/
+│               └── pages/settings_page.dart    # Compte, notifs, langue
+│
 ├── infra/
+│   ├── docker-compose.yml
+│   ├── nginx/
+│   └── .env.example
 └── docs/
+    └── CDC_Complet.docx
 ```
 
 ---
@@ -129,6 +177,9 @@ flutter pub run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
+> **Note :** Placer les polices Satoshi dans `mobile/assets/fonts/` avant `flutter run`.
+> Téléchargement : <https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap>
+
 ### Tests
 
 ```bash
@@ -152,10 +203,10 @@ cd backend && pytest -v
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| `GET` | `/api/v1/profile/me` | Profil connecté |
-| `PATCH` | `/api/v1/profile/me` | Mise à jour |
-| `POST` | `/api/v1/profile/me/photo` | Upload photo |
-| `POST` | `/api/v1/profile/fcm-token` | Token FCM |
+| `GET` | `/api/v1/users/me` | Profil connecté |
+| `PATCH` | `/api/v1/users/me` | Mise à jour |
+| `POST` | `/api/v1/users/me/photo` | Upload photo |
+| `POST` | `/api/v1/users/fcm-token` | Token FCM notifications |
 
 ### Déclarations
 
@@ -172,31 +223,33 @@ cd backend && pytest -v
 |---------|----------|-------------|
 | `GET` | `/api/v1/matches/` | Mes matchs |
 | `GET` | `/api/v1/matches/{id}` | Détail |
-| `POST` | `/api/v1/matches/{id}/action` | Confirmer / ignorer |
-| `GET/DELETE` | `/api/v1/matches/notifications` | Notifications |
+| `PATCH` | `/api/v1/matches/{id}/confirm` | Confirmer |
+| `PATCH` | `/api/v1/matches/{id}/reject` | Rejeter |
 
 ### Restitutions
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| `GET/PATCH` | `/api/v1/restitutions/{id}` | Détail / mise à jour |
-| `POST` | `/api/v1/restitutions/{id}/photos` | Photo de preuve |
+| `POST` | `/api/v1/restitutions` | Créer (génère code confirmation) |
+| `GET` | `/api/v1/restitutions/{id}` | Détail |
+| `POST` | `/api/v1/restitutions/{id}/confirm` | Confirmer avec code |
 | `POST` | `/api/v1/restitutions/{id}/rate` | Notation 1–5 ⭐ |
 
 ### Messagerie
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| `GET` | `/api/v1/messaging/{match_id}` | Historique |
-| `POST` | `/api/v1/messaging/{match_id}` | Envoyer |
-| `WS` | `/api/v1/ws/chat/{match_id}` | WebSocket temps réel |
+| `GET` | `/api/v1/messages/conversations` | Liste des conversations |
+| `GET` | `/api/v1/messages/{room_id}/history` | Historique messages |
+| `POST` | `/api/v1/messages/{room_id}` | Envoyer un message |
+| `WS` | `/api/v1/ws/chat/{room_id}` | WebSocket temps réel |
 
 ### Admin (protégé `is_admin=True`)
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
 | `GET` | `/api/v1/admin/stats` | KPIs globaux (F-42) |
-| `GET` | `/api/v1/admin/stats/chart` | Séries temporelles graphiques ✅ G |
+| `GET` | `/api/v1/admin/stats/chart` | Séries temporelles graphiques |
 | `GET` | `/api/v1/admin/export/declarations` | Export CSV (F-41) |
 | `GET` | `/api/v1/admin/users` | Liste paginée utilisateurs |
 | `PATCH` | `/api/v1/admin/users/{id}/ban` | Bannir un compte |
@@ -205,37 +258,59 @@ cd backend && pytest -v
 | `GET` | `/api/v1/admin/declarations` | Toutes les déclarations |
 | `DELETE` | `/api/v1/admin/declarations/{id}` | Supprimer (modération) |
 | `PATCH` | `/api/v1/admin/declarations/{id}/flag` | Marquer suspect |
-| `POST` | `/api/v1/admin/declarations/bulk` | Import CSV en lot (F-41) ✅ G |
-| `GET` | `/api/v1/admin/matches` | Tous les matchs (F-40) ✅ G |
-| `GET` | `/api/v1/admin/restitutions` | Toutes les restitutions ✅ G |
+| `POST` | `/api/v1/admin/declarations/bulk` | Import CSV en lot (F-41) |
+| `GET` | `/api/v1/admin/matches` | Tous les matchs (F-40) |
+| `GET` | `/api/v1/admin/restitutions` | Toutes les restitutions |
 | `GET/POST` | `/api/v1/admin/zones` | Zones de récupération (F-32, F-43) |
-| `PATCH` | `/api/v1/admin/zones/{id}` | Modifier une zone ✅ G |
-| `DELETE` | `/api/v1/admin/zones/{id}` | Supprimer une zone |
-| `GET` | `/api/v1/admin/audit-logs` | Historique actions admin ✅ G |
+| `PATCH/DELETE` | `/api/v1/admin/zones/{id}` | Modifier / Supprimer une zone |
+| `GET` | `/api/v1/admin/audit-logs` | Historique actions admin |
 
 ---
 
-## Architecture mobile (Flutter)
+## Architecture mobile Flutter
 
-### Navigation (Go Router) — 14 routes
+### Pattern — Clean Architecture par feature
 
-| Route | Nom | Page |
-|-------|-----|------|
-| `/splash` | `splash` | Vérification auth |
-| `/login` | `login` | Connexion |
-| `/register` | `register` | Inscription |
-| `/otp-verify` | `otp-verify` | Vérification OTP |
-| `/home` | `home` | Dashboard |
-| `/declarations` | `declarations` | Liste |
-| `/declarations/new` | `new-declaration` | Formulaire |
-| `/declarations/:id` | `declaration-detail` | Détail |
-| `/matches` | `matches` | 3 onglets |
-| `/matches/:id` | `match-detail` | Détail + actions |
-| `/restitutions/:id` | `restitution-detail` | Restitution + notation |
-| `/messaging` | `messaging` | Liste conversations |
-| `/messaging/:matchId` | `conversation` | Chat WebSocket |
-| `/profile` | `profile` | Profil |
-| `/profile/edit` | `edit-profile` | Modifier |
+Chaque feature suit la structure :
+```
+feature/
+├── models/         ← Entités Dart (fromJson)
+├── repositories/   ← Appels API via Dio
+├── providers/      ← Riverpod (FutureProvider, StateNotifier)
+├── pages/          ← Écrans (ConsumerWidget)
+└── widgets/        ← Composants réutilisables
+```
+
+### Navigation (GoRouter) — ShellRoute avec NavigationBar
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/splash` | `SplashPage` | Vérification auth → redirect |
+| `/login` | `LoginPage` | Connexion téléphone + mdp |
+| `/register` | `RegisterPage` | Inscription nom/prénom/téléphone |
+| `/declarations` | `DeclarationsListPage` | Liste + FAB nouvelle déclaration |
+| `/declarations/new` | `DeclarationFormPage` | Formulaire type/document/lieu |
+| `/declarations/:id` | `DeclarationDetailPage` | Détail complet |
+| `/matches` | `MatchesListPage` | Matchs + score circulaire |
+| `/matches/:id` | `MatchDetailPage` | Confirmer / Rejeter / Chat |
+| `/messages` | `ConversationsPage` | Liste conversations + unread |
+| `/messages/:roomId` | `ChatPage` | Bulles de chat + envoi |
+| `/profile` | `ProfilePage` | Stats + réputation + logout |
+| `/settings` | `SettingsPage` | Compte, notifs, langue |
+| `/restitution/:matchId` | `RestitutionPage` | Code + confirmation + notation |
+
+### Flux principal
+
+```
+Splash ──▶ Login / Register
+              │
+              ▼
+      NavigationBar (4 onglets)
+      ├── Déclarations ──▶ Nouvelle / Détail
+      ├── Matchs ──▶ Détail ──▶ Confirmer ──▶ Restitution
+      ├── Messages ──▶ Chat temps réel
+      └── Profil ──▶ Settings
+```
 
 ---
 
@@ -253,7 +328,7 @@ alembic revision --autogenerate -m "description"
 | `002` | Colonne `fcm_token` sur users |
 | `003` | Colonnes profil (date_of_birth, city, gender, avatar_url…) |
 | `004` | `is_admin`, `is_banned`, `is_flagged`, table `zones_recuperation` |
-| `005` | Table `audit_logs` — traçabilité CDC §11.1 ✅ G |
+| `005` | Table `audit_logs` — traçabilité CDC §11.1 |
 
 ---
 
@@ -269,7 +344,7 @@ cd backend && pytest -v
 | `test_declarations.py` | CRUD, pagination cursor, F-15 offline |
 | `test_matching.py` | Jaro-Winkler, Haversine, compute_score |
 | `test_restitution.py` | Idempotence, rating, réputation, autorisation |
-| `test_admin.py` | Stats, chart, ban/unban/promote, flag, delete, zones, audit-logs, CSV bulk ✅ G |
+| `test_admin.py` | Stats, chart, ban/unban/promote, flag, delete, zones, audit-logs, CSV bulk |
 
 ---
 
@@ -282,12 +357,13 @@ cd backend && pytest -v
 | **S2** | Déclarations (CRUD + photos + pagination) | ✅ |
 | **S3** | Matching automatique + notifications Redis | ✅ |
 | **S4** | Restitutions + messagerie WebSocket + profil | ✅ |
-| **S5** | Mobile — Auth + Déclarations + Profil | ✅ |
-| **S6** | Mobile — Matches + Restitutions | ✅ |
-| **S7** | Mobile — Messagerie WebSocket + Admin backend complet | ✅ |
-| **S8** | OCR Flutter (Google ML Kit) + Vérification identité selfie | ⏳ Prochain |
-| **S9** | CI/CD GitHub Actions + déploiement VPS Hetzner | ⏳ À venir |
-| **S10** | Module freemium + Mobile Money (MTN MoMo / Orange) | ⏳ À venir |
+| **S5** | Mobile — Core (theme, router, api_client, storages) | ✅ |
+| **S6** | Mobile — Auth + Déclarations + Profil | ✅ |
+| **S7** | Mobile — Matchs + Restitution + Chat + Settings | ✅ |
+| **S8** | Admin backend complet + tests | ✅ |
+| **S9** | OCR Flutter (Google ML Kit) + vérification selfie | ⏳ Prochain |
+| **S10** | CI/CD GitHub Actions + déploiement VPS Hetzner | ⏳ À venir |
+| **S11** | Module freemium + Mobile Money (MTN MoMo / Orange) | ⏳ À venir |
 
 ---
 
@@ -300,22 +376,22 @@ cd backend && pytest -v
 | F-04 | Suppression compte CPDP | ✅ |
 | F-05 | Score de réputation | ✅ |
 | F-10 | Déclaration trouvé + photo | ✅ |
-| F-11 | OCR on-device (Google ML Kit Flutter) | ⏳ S8 |
-| F-12 | Masquage données sensibles | ⏳ S8 |
+| F-11 | OCR on-device (Google ML Kit Flutter) | ⏳ S9 |
+| F-12 | Masquage données sensibles | ⏳ S9 |
 | F-13 | Déclaration de perte manuelle | ✅ |
 | F-14 | Géolocalisation (PostGIS) | ✅ |
 | F-15 | Offline cache (Hive Flutter) | ✅ |
 | F-20 | Algorithme matching Jaro-Winkler + Haversine | ✅ |
 | F-21 | Notification push FCM / ntfy.sh | ✅ |
 | F-23 | File matching asynchrone Redis | ✅ |
-| F-30 | Vérification identité selfie + questions | ⏳ S8 |
+| F-30 | Vérification identité selfie + questions | ⏳ S9 |
 | F-31 | Messagerie interne chiffrée WebSocket | ✅ |
 | F-32 | Zones de récupération certifiées | ✅ |
-| F-33 | Confirmation double restitution | ✅ |
+| F-33 | Confirmation double restitution + code | ✅ |
 | F-35 | Historique restitutions | ✅ |
-| F-40 | Dashboard admin + matchs + restitutions | ✅ G |
-| F-41 | Export CSV + Import CSV en lot | ✅ G |
-| F-42 | Analytics KPIs + séries temporelles | ✅ G |
-| F-43 | Badge Point de dépôt certifié | ✅ G |
+| F-40 | Dashboard admin + matchs + restitutions | ✅ |
+| F-41 | Export CSV + Import CSV en lot | ✅ |
+| F-42 | Analytics KPIs + séries temporelles | ✅ |
+| F-43 | Badge Point de dépôt certifié | ✅ |
 | F-44 | API institutionnelle (REST documentée) | ✅ |
-| §11.1 | Audit logs toutes actions sensibles | ✅ G |
+| §11.1 | Audit logs toutes actions sensibles | ✅ |
