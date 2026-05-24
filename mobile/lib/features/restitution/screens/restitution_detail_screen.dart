@@ -62,8 +62,10 @@ class _RestitutionDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final authState = ref.watch(authProvider);
+
+    // FIX [A]: authenticated(accessToken, refreshToken, userId) — userId est en 3ème position
     final currentUserId = authState.maybeWhen(
-      authenticated: (uid, _, __) => uid,
+      authenticated: (_, __, userId) => userId,
       orElse: () => '',
     );
 
@@ -75,11 +77,8 @@ class _RestitutionDetailBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status banner
           _StatusBanner(status: restitution.status),
           const SizedBox(height: 24),
-
-          // Infos
           _InfoCard(title: 'Rôle', value: isRequester ? 'Demandeur' : 'Détenteur'),
           if (restitution.meetingLocation != null)
             _InfoCard(
@@ -105,7 +104,6 @@ class _RestitutionDetailBody extends ConsumerWidget {
               title: 'Note demandeur',
               value: '★ ${restitution.requesterRating!.toStringAsFixed(1)} / 5',
             ),
-
           const SizedBox(height: 32),
 
           // Actions
@@ -113,7 +111,7 @@ class _RestitutionDetailBody extends ConsumerWidget {
             Column(
               children: [
                 if (isRequester)
-                  _ActionButton(
+                  _AsyncActionButton(
                     label: 'Marquer comme remis',
                     icon: Icons.check_circle_outline,
                     color: Colors.green,
@@ -122,17 +120,22 @@ class _RestitutionDetailBody extends ConsumerWidget {
                           context, 'Confirmer la restitution ?',
                           'Le document a bien été remis.');
                       if (!ok) return;
-                      await ref
-                          .read(restitutionListProvider.notifier)
-                          .complete(restitutionId);
-                      if (context.mounted) {
-                        ref.invalidate(restitutionDetailProvider(restitutionId));
-                        context.pop();
+                      try {
+                        await ref
+                            .read(restitutionListProvider.notifier)
+                            .complete(restitutionId);
+                        if (context.mounted) {
+                          ref.invalidate(restitutionDetailProvider(restitutionId));
+                          _showSnack(context, '✅ Restitution confirmée !', success: true);
+                          context.pop();
+                        }
+                      } catch (e) {
+                        if (context.mounted) _showSnack(context, 'Erreur : $e');
                       }
                     },
                   ),
                 const SizedBox(height: 12),
-                _ActionButton(
+                _AsyncActionButton(
                   label: 'Annuler',
                   icon: Icons.cancel_outlined,
                   color: cs.error,
@@ -142,17 +145,23 @@ class _RestitutionDetailBody extends ConsumerWidget {
                         context, 'Annuler la restitution ?',
                         'Cette action est irréversible.');
                     if (!ok) return;
-                    await ref
-                        .read(restitutionListProvider.notifier)
-                        .cancel(restitutionId);
-                    if (context.mounted) context.pop();
+                    try {
+                      await ref
+                          .read(restitutionListProvider.notifier)
+                          .cancel(restitutionId);
+                      if (context.mounted) {
+                        _showSnack(context, 'Restitution annulée.', success: true);
+                        context.pop();
+                      }
+                    } catch (e) {
+                      if (context.mounted) _showSnack(context, 'Erreur : $e');
+                    }
                   },
                 ),
               ],
             ),
 
-          if (canRate) ...
-          [
+          if (canRate) ...[
             const SizedBox(height: 12),
             _RatingSection(
               restitutionId: restitutionId,
@@ -163,19 +172,24 @@ class _RestitutionDetailBody extends ConsumerWidget {
           if (restitution.isCompleted && !restitution.isDisputed)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: _ActionButton(
+              child: _AsyncActionButton(
                 label: 'Signaler un litige',
                 icon: Icons.report_problem_outlined,
                 color: Colors.orange,
                 outlined: true,
                 onTap: () async {
                   final reason = await _promptReason(context);
-                  if (reason == null) return;
-                  await ref
-                      .read(restitutionListProvider.notifier)
-                      .dispute(restitutionId, reason: reason);
-                  if (context.mounted) {
-                    ref.invalidate(restitutionDetailProvider(restitutionId));
+                  if (reason == null || reason.isEmpty) return;
+                  try {
+                    await ref
+                        .read(restitutionListProvider.notifier)
+                        .dispute(restitutionId, reason: reason);
+                    if (context.mounted) {
+                      ref.invalidate(restitutionDetailProvider(restitutionId));
+                      _showSnack(context, 'Litige signalé.', success: true);
+                    }
+                  } catch (e) {
+                    if (context.mounted) _showSnack(context, 'Erreur : $e');
                   }
                 },
               ),
@@ -187,6 +201,17 @@ class _RestitutionDetailBody extends ConsumerWidget {
 
   String _formatDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+
+  void _showSnack(BuildContext ctx, String msg, {bool success = false}) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: success ? Colors.green.shade700 : Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   Future<bool> _confirm(BuildContext ctx, String title, String msg) async {
     return await showDialog<bool>(
@@ -231,74 +256,9 @@ class _RestitutionDetailBody extends ConsumerWidget {
   }
 }
 
-// ── Widgets helpers ──────────────────────────────────────────────────────────────
-class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.status});
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = switch (status) {
-      'requested' => cs.primary,
-      'verified'  => Colors.orange,
-      'completed' => Colors.green,
-      'disputed'  => cs.error,
-      'cancelled' => cs.onSurface.withValues(alpha: 0.4),
-      _           => cs.outline,
-    };
-    final label = switch (status) {
-      'requested' => 'Restitution demandée',
-      'verified'  => 'Identité vérifiée — en attente de remise',
-      'completed' => 'Restitution complétée ✅',
-      'disputed'  => 'Litige en cours',
-      'cancelled' => 'Annulée',
-      _           => status,
-    };
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Text(label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: color, fontWeight: FontWeight.w700, fontSize: 15)),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.value});
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Text('$title : ',
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.5), fontSize: 13)),
-          Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
+// ── Action button avec loading intégré ──────────────────────────────────────
+class _AsyncActionButton extends StatefulWidget {
+  const _AsyncActionButton({
     required this.label,
     required this.icon,
     required this.color,
@@ -308,109 +268,70 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
   final bool outlined;
 
   @override
+  State<_AsyncActionButton> createState() => _AsyncActionButtonState();
+}
+
+class _AsyncActionButtonState extends State<_AsyncActionButton> {
+  bool _loading = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (outlined) {
+    final child = _loading
+        ? const SizedBox(
+            width: 20, height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 18),
+              const SizedBox(width: 8),
+              Text(widget.label),
+            ],
+          );
+
+    if (widget.outlined) {
       return SizedBox(
         width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: onTap,
-          icon: Icon(icon, color: color),
-          label: Text(label, style: TextStyle(color: color)),
+        child: OutlinedButton(
+          onPressed: _loading ? null : _handle,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: color.withValues(alpha: 0.5)),
+            foregroundColor: widget.color,
+            side: BorderSide(color: widget.color.withValues(alpha: 0.5)),
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
+          child: child,
         ),
       );
     }
     return SizedBox(
       width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon),
-        label: Text(label),
+      child: FilledButton(
+        onPressed: _loading ? null : _handle,
         style: FilledButton.styleFrom(
-          backgroundColor: color,
+          backgroundColor: widget.color,
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
+        child: child,
       ),
     );
   }
+
+  Future<void> _handle() async {
+    setState(() => _loading = true);
+    await widget.onTap();
+    if (mounted) setState(() => _loading = false);
+  }
 }
 
-class _RatingSection extends StatefulWidget {
-  const _RatingSection({required this.restitutionId, required this.ref});
-  final String restitutionId;
-  final WidgetRef ref;
-
-  @override
-  State<_RatingSection> createState() => _RatingSectionState();
-}
-
-class _RatingSectionState extends State<_RatingSection> {
-  double _rating = 4;
-  bool _loading = false;
+// ── Widgets helpers ──────────────────────────────────────────────────────────
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.status});
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Noter cette restitution',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              5,
-              (i) => GestureDetector(
-                onTap: () => setState(() => _rating = i + 1.0),
-                child: Icon(
-                  i < _rating ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: Colors.amber,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _loading
-                  ? null
-                  : () async {
-                      setState(() => _loading = true);
-                      await widget.ref
-                          .read(restitutionListProvider.notifier)
-                          .rate(widget.restitutionId, _rating);
-                      widget.ref.invalidate(
-                          restitutionDetailProvider(widget.restitutionId));
-                      setState(() => _loading = false);
-                    },
-              child: _loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Text('Envoyer la note'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+    final cs = T
