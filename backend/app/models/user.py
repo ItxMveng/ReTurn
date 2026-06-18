@@ -23,8 +23,8 @@ class User(Base):
     firebase_uid: Mapped[str] = mapped_column(
         String(128), unique=True, index=True, nullable=True
     )
-    phone_number: Mapped[str] = mapped_column(
-        String(100), unique=True, index=True, nullable=False
+    phone_number: Mapped[str | None] = mapped_column(
+        String(100), unique=True, index=True, nullable=True
     )
     email: Mapped[str | None] = mapped_column(
         String(254), unique=True, index=True, nullable=True
@@ -46,6 +46,8 @@ class User(Base):
         Float, nullable=False, default=5.0, server_default="5.0"
     )
 
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_banned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -61,8 +63,10 @@ class User(Base):
 
     @property
     def is_profile_complete(self) -> bool:
+        has_contact = bool(self.phone_number or self.email)
         return bool(
             self.full_name
+            and has_contact
             and self.date_of_birth
             and self.gender
             and self.city

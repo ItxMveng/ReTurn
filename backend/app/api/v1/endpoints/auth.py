@@ -79,7 +79,8 @@ async def verify_firebase_token_endpoint(
     phone_number: str | None = decoded.get("phone_number")
     email: str | None = decoded.get("email")
 
-    identifier = phone_number or email
+    is_email_auth = phone_number is None and email is not None
+    identifier = email if is_email_auth else phone_number
     if not identifier:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -87,7 +88,11 @@ async def verify_firebase_token_endpoint(
         )
 
     user, is_new = await get_or_create_user(
-        db, identifier, firebase_uid=firebase_uid, email=email
+        db,
+        identifier,
+        firebase_uid=firebase_uid,
+        email=email if is_email_auth else None,
+        is_email_auth=is_email_auth,
     )
 
     # — Log connexion Firebase —

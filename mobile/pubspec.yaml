@@ -34,12 +34,40 @@ dependencies:
   # ── Firebase ─────────────────────────────────────────────────
   firebase_core: ^3.3.0
   firebase_auth: ^5.1.4
+  google_sign_in: ^6.2.1
 
   # ── OCR — Google ML Kit (on-device, F-11) ─────────────────────
   google_mlkit_text_recognition: ^0.13.1
   image_picker: ^1.1.2
   camera: ^0.11.0+2
   permission_handler: ^11.3.1
+
+  # ── Biométrie ─────────────────────────────────────────────────
+  local_auth: ^2.3.0
+
+  # ── Notifications ────────────────────────────────────────────
+  firebase_messaging: ^15.1.0
+  flutter_local_notifications: ^18.0.1
+
+  # ── Localisation & dates ─────────────────────────────────────
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+
+  # ── Géolocalisation ──────────────────────────────────────────
+  geolocator: ^13.0.1
+
+  # ── Connectivité ─────────────────────────────────────────────
+  connectivity_plus: ^6.1.1
+
+  # ── WebSocket ────────────────────────────────────────────────
+  web_socket_channel: ^3.0.1
+
+  # ── Liens externes ───────────────────────────────────────────
+  url_launcher: ^6.3.1
+
+  # ── Logs ─────────────────────────────────────────────────────
+  logger: ^2.4.0
 
   # ── Icônes ───────────────────────────────────────────────────
   cupertino_icons: ^1.0.8
@@ -62,6 +90,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/
     - assets/fonts/
 
   fonts:

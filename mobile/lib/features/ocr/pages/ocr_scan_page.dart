@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_loader.dart';
 
@@ -84,10 +83,10 @@ class OcrScanPage extends ConsumerWidget {
 class _PlaceholderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(Icons.document_scanner_outlined,
               size: 80, color: Colors.white38),
           SizedBox(height: 16),
@@ -119,41 +118,64 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF1A1A1A),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 36),
       child: Row(
         children: [
-          OutlinedButton.icon(
-            icon: const Icon(Icons.photo_library_outlined,
-                color: Colors.white70),
-            label: const Text('Galerie',
-                style: TextStyle(color: Colors.white70)),
+          _IconBtn(
+            icon: Icons.photo_library_outlined,
+            label: 'Galerie',
             onPressed: onPickGallery,
-            style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white30),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14)),
           ),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.camera_alt_outlined,
-                color: Colors.white70),
-            label: const Text('Caméra',
-                style: TextStyle(color: Colors.white70)),
+          const SizedBox(width: 8),
+          _IconBtn(
+            icon: Icons.camera_alt_outlined,
+            label: 'Caméra',
             onPressed: onPickCamera,
-            style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white30),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14)),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: AppButton(
               label: 'Analyser',
-              expand: true,
               onPressed: hasImage ? onAnalyze : null,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _IconBtn({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Colors.white30),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white70, size: 20),
+            const SizedBox(height: 2),
+            Text(label,
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          ],
+        ),
       ),
     );
   }

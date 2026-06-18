@@ -17,6 +17,19 @@ async def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+async def _assert_unique(db: AsyncSession, field: str, value: str, exclude_id) -> None:
+    """Lève 409 si value est déjà pris par un autre utilisateur."""
+    col = getattr(User, field)
+    result = await db.execute(select(User).where(col == value))
+    existing = result.scalar_one_or_none()
+    if existing and existing.id != exclude_id:
+        label = "email" if field == "email" else "numéro de téléphone"
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cet {label} est déjà utilisé par un autre compte.",
+        )
+
+
 @router.patch("/", response_model=UserRead)
 async def update_profile(
     body: UserUpdate,
@@ -24,6 +37,13 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
 ):
     update_data = body.model_dump(exclude_unset=True)
+
+    # Vérifications anti-conflit avant de modifier
+    if "email" in update_data and update_data["email"]:
+        await _assert_unique(db, "email", update_data["email"], current_user.id)
+    if "phone_number" in update_data and update_data["phone_number"]:
+        await _assert_unique(db, "phone_number", update_data["phone_number"], current_user.id)
+
     for field, value in update_data.items():
         setattr(current_user, field, value)
     db.add(current_user)

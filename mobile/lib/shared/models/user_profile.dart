@@ -4,7 +4,7 @@
 /// pour compatibilité mais doit être migrée vers cet import.
 class UserProfile {
   final String id;
-  final String phoneNumber;
+  final String? phoneNumber;
   final String? email;
   final String fullName;
   final String? dateOfBirth;
@@ -19,7 +19,7 @@ class UserProfile {
 
   const UserProfile({
     required this.id,
-    required this.phoneNumber,
+    this.phoneNumber,
     this.email,
     required this.fullName,
     this.dateOfBirth,
@@ -51,7 +51,7 @@ class UserProfile {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'phone_number': phoneNumber,
+        if (phoneNumber != null) 'phone_number': phoneNumber,
         if (email != null) 'email': email,
         'full_name': fullName,
         if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
