@@ -76,11 +76,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 const SizedBox(height: 32),
                 // Infos visuelles sur le processus
-                _ProcessStep(number: '1', label: 'Entrez votre numéro', done: false),
+                const _ProcessStep(number: '1', label: 'Entrez votre numéro', done: false),
                 const SizedBox(height: 8),
-                _ProcessStep(number: '2', label: 'Vérifiez par code OTP', done: false),
+                const _ProcessStep(number: '2', label: 'Vérifiez par code OTP', done: false),
                 const SizedBox(height: 8),
-                _ProcessStep(number: '3', label: 'Complétez votre profil', done: false),
+                const _ProcessStep(number: '3', label: 'Complétez votre profil', done: false),
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _phoneCtrl,

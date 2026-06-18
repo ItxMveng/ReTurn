@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/declarations/providers/declaration_provider.dart';
-import 'package:docretour/shared/models/declaration.dart';
-import 'package:docretour/shared/widgets/document_type_dropdown.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/declarations/providers/declaration_provider.dart';
+import 'package:return_mobile/shared/models/declaration.dart';
+import 'package:return_mobile/shared/widgets/document_type_dropdown.dart';
 
 class DeclarationDetailScreen extends ConsumerWidget {
   final String declarationId;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/storage/auth_storage.dart';
@@ -12,25 +13,34 @@ class SplashPage extends ConsumerStatefulWidget {
 class _SplashPageState extends ConsumerState<SplashPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  late Animation<double> _fade;
+  late Animation<double> _scaleFade;
+  late Animation<double> _subtitleFade;
 
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900));
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+        vsync: this, duration: const Duration(milliseconds: 1200));
+    _scaleFade = CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic));
+    _subtitleFade = CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeOut));
     _ctrl.forward();
     _navigate();
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 2200));
     if (!mounted) return;
-    final loggedIn =
-        await ref.read(authStorageProvider).isLoggedIn;
+    final loggedIn = await ref.read(authStorageProvider).isLoggedIn;
     if (!mounted) return;
-    context.go(loggedIn ? '/declarations' : '/login');
+    context.go(loggedIn ? '/declarations' : '/auth/phone');
   }
 
   @override
@@ -41,43 +51,127 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: cs.primary,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fade,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(24),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0A1F16), Color(0xFF0D2B1F), Color(0xFF113524)],
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+
+                // ── Logo + nom ──────────────────────────────────────
+                FadeTransition(
+                  opacity: _scaleFade,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.75, end: 1.0)
+                        .animate(_scaleFade),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo_ReTurn-removebg.png',
+                          width: 140,
+                          height: 140,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 110,
+                            height: 110,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22C55E).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            child: const Icon(Icons.find_in_page_rounded,
+                                size: 60, color: Color(0xFF22C55E)),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'ReTurn',
+                          style: TextStyle(
+                            fontFamily: 'Satoshi',
+                            fontWeight: FontWeight.w900,
+                            fontSize: 40,
+                            color: Colors.white,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.find_in_page_rounded,
-                    size: 52, color: Colors.white),
-              ),
-              const SizedBox(height: 24),
-              const Text('ReTurn',
-                  style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      fontWeight: FontWeight.w900,
-                      fontSize: 36,
-                      color: Colors.white,
-                      letterSpacing: -0.5)),
-              const SizedBox(height: 8),
-              Text('Retrouver. Restituer. Confiance.',
-                  style: TextStyle(
+
+                const SizedBox(height: 14),
+
+                // ── Tagline ─────────────────────────────────────────
+                FadeTransition(
+                  opacity: _subtitleFade,
+                  child: Text(
+                    'Retrouver. Restituer. Confiance.',
+                    style: TextStyle(
                       fontFamily: 'Satoshi',
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.75))),
-            ],
+                      letterSpacing: 0.5,
+                      color: Colors.white.withOpacity(0.55),
+                    ),
+                  ),
+                ),
+
+                const Spacer(flex: 3),
+
+                // ── Dots animés ─────────────────────────────────────
+                FadeTransition(
+                  opacity: _subtitleFade,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _Dot(active: true, anim: _subtitleFade),
+                        const SizedBox(width: 6),
+                        _Dot(active: false, anim: _subtitleFade),
+                        const SizedBox(width: 6),
+                        _Dot(active: false, anim: _subtitleFade),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _Dot extends StatelessWidget {
+  final bool active;
+  final Animation<double> anim;
+  const _Dot({required this.active, required this.anim});
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: anim,
+        builder: (_, __) => Container(
+          width: active ? 20 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: active
+                ? const Color(0xFF22C55E)
+                : Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+      );
 }

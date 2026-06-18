@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/network/network_info.dart';
-import '../../../core/errors/app_exceptions.dart';
 
 /// Modèle de réponse login/register
 class AuthTokens {
@@ -44,31 +43,31 @@ class AuthRepository {
     required String phone,
     required String fullName,
     required String password,
-  }) =>
-      _net.request(() async {
-        final res = await _dio.post('/auth/register', data: {
-          'phone': phone,
-          'full_name': fullName,
-          'password': password,
-        });
-        final tokens = AuthTokens.fromJson(res.data as Map<String, dynamic>);
-        await _persist(tokens);
-        return tokens;
-      });
+  }) async {
+    if (!await _net.isConnected) throw Exception('Pas de connexion internet');
+    final res = await _dio.post('/auth/register', data: {
+      'phone': phone,
+      'full_name': fullName,
+      'password': password,
+    });
+    final tokens = AuthTokens.fromJson(res.data as Map<String, dynamic>);
+    await _persist(tokens);
+    return tokens;
+  }
 
   Future<AuthTokens> login({
     required String phone,
     required String password,
-  }) =>
-      _net.request(() async {
-        final res = await _dio.post('/auth/login', data: {
-          'phone': phone,
-          'password': password,
-        });
-        final tokens = AuthTokens.fromJson(res.data as Map<String, dynamic>);
-        await _persist(tokens);
-        return tokens;
-      });
+  }) async {
+    if (!await _net.isConnected) throw Exception('Pas de connexion internet');
+    final res = await _dio.post('/auth/login', data: {
+      'phone': phone,
+      'password': password,
+    });
+    final tokens = AuthTokens.fromJson(res.data as Map<String, dynamic>);
+    await _persist(tokens);
+    return tokens;
+  }
 
   Future<void> logout() async {
     try {

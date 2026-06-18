@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:docretour/core/network/dio_provider.dart';
-import 'package:docretour/shared/models/match.dart';
+import 'package:return_mobile/core/network/dio_provider.dart';
+import 'package:return_mobile/shared/models/match.dart';
 
 final matchRepositoryProvider = Provider<MatchRepository>((ref) {
   return MatchRepository(ref.watch(dioProvider));

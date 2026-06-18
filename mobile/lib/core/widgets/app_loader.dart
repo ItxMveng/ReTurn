@@ -60,7 +60,7 @@ class _SkeletonCardState extends State<SkeletonCard>
         height: widget.height,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withOpacity(_anim.value),
+          color: cs.surfaceContainerHighest.withValues(alpha: _anim.value),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -94,12 +94,12 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: cs.onSurface.withOpacity(0.3)),
+            Icon(icon, size: 64, color: cs.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text(title,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 textAlign: TextAlign.center),
-            if (subtitle != null) ...[const SizedBox(height: 8), Text(subtitle!, style: TextStyle(color: cs.onSurface.withOpacity(0.55), fontSize: 14), textAlign: TextAlign.center)],
+            if (subtitle != null) ...[const SizedBox(height: 8), Text(subtitle!, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.55), fontSize: 14), textAlign: TextAlign.center)],
             if (actionLabel != null && onAction != null) ...[const SizedBox(height: 24), ElevatedButton(onPressed: onAction, child: Text(actionLabel!))],
           ],
         ),

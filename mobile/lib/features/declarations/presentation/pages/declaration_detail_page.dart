@@ -28,7 +28,11 @@ class DeclarationDetailPage extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 12),
-              Text(e.toString(), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.onSurfaceVariant)),
+              Text(
+                e.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -47,7 +51,7 @@ class _DeclarationBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // ─ Badge type ─
+        // ─ Badges type ─
         Row(
           children: [
             _Badge(
@@ -59,39 +63,76 @@ class _DeclarationBody extends StatelessWidget {
             const Spacer(),
             _Badge(
               label: decl.status.toUpperCase(),
-              color: decl.status == 'active' ? AppColors.success : AppColors.onSurfaceVariant,
+              color: decl.status == 'active'
+                  ? AppColors.success
+                  : AppColors.onSurfaceVariant,
             ),
           ],
         ),
         const SizedBox(height: 20),
 
         // ─ Photos ─
-        if (decl.photoUrls.isNotEmpty) ..._buildPhotos(decl.photoUrls),
+        if (decl.allPhotoUrls.isNotEmpty) ..._buildPhotos(decl.allPhotoUrls),
 
-        // ─ Informations ─
-        _InfoSection(title: 'Informations sur le document', items: [
-          if (decl.ownerName != null) _InfoRow(label: 'Propriétaire', value: decl.ownerName!),
-          if (decl.documentNumber != null) _InfoRow(label: 'Numéro', value: decl.documentNumber!),
-        ]),
+        // ─ Informations document ─
+        _InfoSection(
+          title: 'Informations sur le document',
+          items: [
+            if (decl.ownerName != null)
+              _InfoRow(label: 'Propriétaire', value: decl.ownerName!),
+            if (decl.documentNumber != null)
+              _InfoRow(label: 'Numéro', value: decl.documentNumber!),
+          ],
+        ),
 
+        // ─ Lieu & date ─
         if (decl.locationDescription != null || decl.eventDate != null)
-          _InfoSection(title: 'Lieu & date', items: [
-            if (decl.locationDescription != null) _InfoRow(label: 'Lieu', value: decl.locationDescription!),
-            if (decl.eventDate != null) _InfoRow(label: 'Date', value: decl.eventDate!),
-          ]),
+          _InfoSection(
+            title: 'Lieu & date',
+            items: [
+              if (decl.locationDescription != null)
+                _InfoRow(
+                  label: 'Lieu',
+                  value: decl.locationDescription!,
+                ),
+              if (decl.eventDate != null)
+                _InfoRow(
+                  label: 'Date',
+                  value: _formatDate(decl.eventDate!),
+                ),
+            ],
+          ),
 
+        // ─ Description ─
         if (decl.description != null)
-          _InfoSection(title: 'Description', items: [
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(decl.description!, style: const TextStyle(fontSize: 14, color: AppColors.onSurface, height: 1.55)),
-            ),
-          ]),
+          _InfoSection(
+            title: 'Description',
+            items: [
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  decl.description!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.onSurface,
+                    height: 1.55,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-        _InfoSection(title: 'Informations techniques', items: [
-          _InfoRow(label: 'ID', value: decl.id),
-          _InfoRow(label: 'Créée le', value: _formatDate(decl.createdAt)),
-        ]),
+        // ─ Infos techniques ─
+        _InfoSection(
+          title: 'Informations techniques',
+          items: [
+            _InfoRow(label: 'ID', value: decl.id),
+            _InfoRow(
+              label: 'Créée le',
+              value: decl.createdAt != null ? _formatDateStr(decl.createdAt!) : '—',
+            ),
+          ],
+        ),
         const SizedBox(height: 32),
       ],
     );
@@ -115,7 +156,11 @@ class _DeclarationBody extends StatelessWidget {
               errorBuilder: (_, __, ___) => Container(
                 width: 240,
                 color: AppColors.surfaceVariant,
-                child: const Icon(Icons.broken_image_outlined, size: 40, color: AppColors.onSurfaceVariant),
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  size: 40,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ),
           ),
@@ -125,10 +170,19 @@ class _DeclarationBody extends StatelessWidget {
     ];
   }
 
-  String _formatDate(String iso) {
+  // Formate un DateTime directement
+  String _formatDate(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}'
+        '/${d.month.toString().padLeft(2, '0')}'
+        '/${d.year} à '
+        '${d.hour.toString().padLeft(2, '0')}h'
+        '${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Formate une String ISO
+  String _formatDateStr(String iso) {
     try {
-      final d = DateTime.parse(iso);
-      return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} à ${d.hour.toString().padLeft(2, '0')}h${d.minute.toString().padLeft(2, '0')}';
+      return _formatDate(DateTime.parse(iso));
     } catch (_) {
       return iso;
     }
@@ -145,10 +199,18 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        // Remplacement de withOpacity (déprécié) par withValues
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 }
@@ -166,13 +228,24 @@ class _InfoSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant, letterSpacing: 0.3)),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.3,
+            ),
+          ),
         ),
         Container(
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+            // Remplacement de withOpacity (déprécié) par withValues
+            border: Border.all(
+              color: AppColors.outline.withValues(alpha: 0.5),
+            ),
           ),
           child: Column(children: items),
         ),
@@ -196,10 +269,24 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 13, color: AppColors.onSurface, fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

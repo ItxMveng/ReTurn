@@ -36,9 +36,12 @@ AppException _fromResponse(int? statusCode, dynamic data) {
       return AppException.notFound(detail ?? 'Ressource introuvable.');
     case 422:
       return AppException.validation(detail ?? 'Validation échouée.');
-    case >= 500:
+    case 500:
       return AppException.server(detail ?? 'Erreur serveur. Réessayez plus tard.');
     default:
+      if (statusCode != null && statusCode >= 500) {
+        return AppException.server(detail ?? 'Erreur serveur. Réessayez plus tard.');
+      }
       return AppException.unknown(detail ?? 'Erreur HTTP $statusCode');
   }
 }

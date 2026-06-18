@@ -27,18 +27,19 @@ class ReportStatus(str, enum.Enum):
 
 class Report(Base):
     __tablename__ = "reports"
+    __table_args__ = {"schema": "docretour"}
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     match_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("matches.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("docretour.matches.id", ondelete="CASCADE"), nullable=False, index=True
     )
     reporter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("docretour.users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     reported_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("docretour.users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     reason: Mapped[ReportReason] = mapped_column(
         Enum(ReportReason), nullable=False

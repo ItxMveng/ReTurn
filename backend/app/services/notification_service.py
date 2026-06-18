@@ -62,6 +62,16 @@ async def _send_fcm(
         logger.warning("FCM send failed: %s", exc)
 
 
+async def push_notification(
+    fcm_token: str,
+    title: str,
+    body: str,
+    data: dict[str, str],
+) -> None:
+    """Wrapper public autour de _send_fcm, utilisé par report_service."""
+    await _send_fcm(token=fcm_token, title=title, body=body, data=data)
+
+
 async def push_match_notification(
     redis: Redis,
     user_id: uuid.UUID,

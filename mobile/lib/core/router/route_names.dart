@@ -22,3 +22,14 @@ class RouteNames {
   static const profile         = 'profile';
   static const editProfile     = 'edit-profile';
 }
+
+/// Chemins de routes (utilisés dans GoRouter et ScaffoldShell)
+class RoutePaths {
+  RoutePaths._();
+
+  static const home         = '/declarations';
+  static const declarations = '/declarations';
+  static const matches      = '/matches';
+  static const messages     = '/messages';
+  static const profile      = '/profile';
+}

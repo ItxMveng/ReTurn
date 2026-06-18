@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});

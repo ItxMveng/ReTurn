@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../shared/widgets/guided_tour.dart';
 
 class HomeShell extends StatelessWidget {
   final Widget child;
@@ -24,24 +25,25 @@ class HomeShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final idx = _indexOf(context);
     final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: idx,
-        onDestinationSelected: (i) => context.go(_tabs[i].path),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        indicatorColor: cs.primary.withOpacity(0.12),
-        destinations: _tabs
-            .asMap()
-            .entries
-            .map((e) => NavigationDestination(
-                  icon: Icon(e.value.icon),
-                  selectedIcon:
-                      Icon(e.value.selectedIcon, color: cs.primary),
-                  label: e.value.label,
-                ))
-            .toList(),
+    return GuidedTourOverlay(
+      child: Scaffold(
+        body: child,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: idx,
+          onDestinationSelected: (i) => context.go(_tabs[i].path),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          indicatorColor: cs.primary.withOpacity(0.12),
+          destinations: _tabs
+              .asMap()
+              .entries
+              .map((e) => NavigationDestination(
+                    icon: Icon(e.value.icon),
+                    selectedIcon: Icon(e.value.selectedIcon, color: cs.primary),
+                    label: e.value.label,
+                  ))
+              .toList(),
+        ),
       ),
     );
   }

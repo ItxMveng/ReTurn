@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../models/declaration.dart';
 import '../providers/declarations_provider.dart';
 import '../widgets/declaration_card.dart';
 

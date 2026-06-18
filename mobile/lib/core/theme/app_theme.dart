@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Couleurs publiques utilisées directement dans les widgets
+const kGreen = Color(0xFF437A22);
+const kGreenDark = Color(0xFF2E4D14);
+
 const _green = Color(0xFF01696F);
 const _greenDark = Color(0xFF4F98A3);
 const _bgLight = Color(0xFFF7F6F2);
@@ -72,11 +76,11 @@ class AppTheme {
         fillColor: surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: onSurface.withOpacity(0.12)),
+          borderSide: BorderSide(color: onSurface.withValues(alpha: 0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: onSurface.withOpacity(0.12)),
+          borderSide: BorderSide(color: onSurface.withValues(alpha: 0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -85,17 +89,17 @@ class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: onSurface.withOpacity(0.08)),
+          side: BorderSide(color: onSurface.withValues(alpha: 0.08)),
         ),
         margin: EdgeInsets.zero,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: seed.withOpacity(0.1),
+        backgroundColor: seed.withValues(alpha: 0.1),
         labelStyle: TextStyle(
             color: seed, fontWeight: FontWeight.w600, fontSize: 12),
         side: BorderSide.none,

@@ -5,19 +5,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/constants/app_constants.dart';
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/auth/application/auth_notifier.dart';
+import 'package:return_mobile/features/auth/application/auth_state.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
-  final String verificationId;
   final String phoneNumber;
 
   const OtpVerifyScreen({
     super.key,
-    required this.verificationId,
     required this.phoneNumber,
+    // verificationId ignoré — architecture OTP backend
+    String? verificationId,
   });
 
   @override
@@ -31,7 +30,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
   Timer? _timer;
-  int _secondsLeft = AppConstants.otpResendDelaySeconds;
+  int _secondsLeft = 60;
 
   @override
   void initState() {
@@ -55,7 +54,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
   }
 
   void _startTimer() {
-    _secondsLeft = AppConstants.otpResendDelaySeconds;
+    _secondsLeft = 60;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
@@ -75,8 +74,8 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
 
   Future<void> _verify() async {
     if (_code.length < 6) return;
-    await ref.read(authProvider.notifier).verifyOtp(
-        verificationId: widget.verificationId, code: _code);
+    await ref.read(otpNotifierProvider.notifier).verifyOtp(
+        phoneNumber: widget.phoneNumber, otpCode: _code);
   }
 
   void _shakeAndReset() {
@@ -104,22 +103,30 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final isLoading = ref
-        .watch(authProvider)
-        .maybeWhen(loading: () => true, orElse: () => false);
 
-    ref.listen(authProvider, (_, next) {
-      next.maybeWhen(
-        authenticated: (_, __, ___) => context.go('/home'),
-        error: (message, __) {
+    final otpState = ref.watch(otpNotifierProvider);
+    final isLoading = otpState.maybeWhen(
+      verifying: () => true,
+      orElse: () => false,
+    );
+
+    // Redirection après auth réussie
+    ref.listen<AuthState>(authNotifierProvider, (_, next) {
+      next.whenOrNull(
+        authenticated: (_) => context.go('/declarations'),
+      );
+    });
+
+    // Écoute erreurs OTP
+    ref.listen<OtpState>(otpNotifierProvider, (_, next) {
+      next.whenOrNull(
+        error: (message) {
           _shakeAndReset();
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(message), backgroundColor: cs.error));
         },
-        orElse: () {},
       );
     });
 
@@ -127,12 +134,10 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
         ? [cs.surface, cs.surfaceContainerHighest]
         : const [Color(0xFF0A1F16), Color(0xFF0D2B1F)];
 
-    // Use resizeToAvoidBottomInset so scaffold pushes content up with keyboard
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
-          // Padding at bottom so content clears the keyboard comfortably
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
@@ -171,9 +176,9 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Text(
-                        l.otpTitle,
-                        style: const TextStyle(
+                      const Text(
+                        'Vérification OTP',
+                        style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.w800),
@@ -185,7 +190,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 14),
                           children: [
-                            TextSpan(text: '${l.otpSentTo} '),
+                            const TextSpan(text: 'Code envoyé au '),
                             TextSpan(
                               text: _maskedPhone,
                               style: const TextStyle(
@@ -234,7 +239,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                               color: cs.onSurface.withValues(alpha: 0.4)),
                           const SizedBox(width: 6),
                           Text(
-                            '${l.otpResendIn} 0:${_secondsLeft.toString().padLeft(2, '0')}',
+                            'Renvoyer dans 0:${_secondsLeft.toString().padLeft(2, '0')}',
                             style: TextStyle(
                                 color: cs.onSurface.withValues(alpha: 0.4),
                                 fontSize: 14),
@@ -244,10 +249,11 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                     : Center(
                         child: TextButton(
                           onPressed: () {
-                            ref.read(authProvider.notifier).resendOtp();
+                            ref.read(otpNotifierProvider.notifier)
+                                .requestOtp(widget.phoneNumber);
                             _startTimer();
                           },
-                          child: Text(l.otpResend),
+                          child: const Text('Renvoyer le code'),
                         ),
                       ),
               ),
@@ -263,7 +269,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                           height: 22,
                           child: CircularProgressIndicator(
                               strokeWidth: 2.5, color: Colors.white))
-                      : Text(l.otpVerify),
+                      : const Text('Vérifier le code'),
                 ),
               ),
             ],

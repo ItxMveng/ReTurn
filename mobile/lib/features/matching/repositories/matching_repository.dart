@@ -9,15 +9,20 @@ class MatchingRepository {
   MatchingRepository(this._ref);
   final Ref _ref;
 
+  ApiClient get _client => _ref.read(apiClientProvider);
+
   Future<List<Match>> fetchMatches() async {
-    final client = _ref.read(apiClientProvider);
-    final res = await client.get('/matches');
-    final data = res.data as List<dynamic>;
+    final data = await _client.get<List<dynamic>>(
+      '/matches',
+      fromJson: (d) => d as List<dynamic>,
+    );
     return data.map((e) => Match.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<void> confirmMatch(String id) async {
-    final client = _ref.read(apiClientProvider);
-    await client.patch('/matches/$id/confirm');
+    await _client.patch<Map<String, dynamic>>(
+      '/matches/$id/confirm',
+      fromJson: (d) => d as Map<String, dynamic>,
+    );
   }
 }

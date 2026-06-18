@@ -4,15 +4,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_loader.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../auth/domain/auth_state.dart';
+import '../../auth/application/auth_notifier.dart';
+import '../providers/profile_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
+    final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -29,25 +29,32 @@ class ProfilePage extends ConsumerWidget {
           ),
         ],
       ),
-      body: auth.when(
-        initial: () => const AppLoader(),
+      body: profileAsync.when(
         loading: () => const AppLoader(message: 'Chargement du profil…'),
-        authenticated: (userId, phone) => _ProfileContent(
-          userId: userId,
-          phone: phone,
-          onLogout: () => ref.read(authProvider.notifier).logout().then(
-                (_) => context.go('/login'),
-              ),
+        error: (error, _) => Center(
+          child: Text(
+            error.toString(),
+            style: const TextStyle(color: AppColors.error),
+          ),
         ),
-        unauthenticated: () {
-          WidgetsBinding.instance
-              .addPostFrameCallback((_) => context.go('/login'));
-          return const SizedBox.shrink();
+        data: (profile) {
+          if (profile == null) {
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => context.go('/auth/phone'));
+            return const SizedBox.shrink();
+          }
+          return _ProfileContent(
+            userId: profile.id,
+            phone: profile.phoneNumber,
+            onLogout: () {
+              ref.read(authNotifierProvider.notifier).logout().then((_) {
+                if (context.mounted) {
+                  context.go('/auth/phone');
+                }
+              });
+            },
+          );
         },
-        error: (msg) => Center(
-          child: Text(msg,
-              style: const TextStyle(color: AppColors.error)),
-        ),
       ),
     );
   }
@@ -141,7 +148,7 @@ class _ProfileContent extends StatelessWidget {
             label: 'Se déconnecter',
             variant: AppButtonVariant.danger,
             expand: true,
-            icon: const Icon(Icons.logout, size: 18, color: Colors.white),
+            iconWidget: const Icon(Icons.logout, size: 18, color: Colors.white),
             onPressed: onLogout,
           ),
         ],
@@ -153,16 +160,16 @@ class _ProfileContent extends StatelessWidget {
 class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
         Expanded(
             child: _StatCard(
                 value: '—', label: 'Déclarations', icon: Icons.article_outlined)),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
             child: _StatCard(
                 value: '—', label: 'Matchs', icon: Icons.compare_arrows)),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
             child: _StatCard(
                 value: '—', label: 'Restitutions', icon: Icons.check_circle_outline)),

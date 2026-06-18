@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:docretour/core/network/dio_provider.dart';
-import 'package:docretour/shared/models/declaration.dart';
+import 'package:return_mobile/core/network/dio_provider.dart';
+import 'package:return_mobile/shared/models/declaration.dart';
 
 final declarationRepositoryProvider = Provider<DeclarationRepository>((ref) {
   return DeclarationRepository(ref.watch(dioProvider));
@@ -47,14 +47,14 @@ class DeclarationRepository {
         ],
     });
     final res = await _dio.post('/api/v1/declarations/', data: formData);
-    return Declaration.fromJson(res.data as Map<String, dynamic>);
+    return DeclarationModel.fromJson(res.data as Map<String, dynamic>);
   }
 
   /// Liste les déclarations de l'utilisateur connecté
   Future<List<Declaration>> listMyDeclarations() async {
     final res = await _dio.get('/api/v1/declarations/');
     return (res.data as List)
-        .map((e) => Declaration.fromJson(e as Map<String, dynamic>))
+        .map((e) => DeclarationModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -62,7 +62,7 @@ class DeclarationRepository {
   /// Utilisé par DeclarationDetailScreen pour afficher les infos complètes
   Future<Declaration> getDeclarationById(String id) async {
     final res = await _dio.get('/api/v1/declarations/$id');
-    return Declaration.fromJson(res.data as Map<String, dynamic>);
+    return DeclarationModel.fromJson(res.data as Map<String, dynamic>);
   }
 
   /// Supprime une déclaration (soft-delete côté backend)
@@ -84,7 +84,7 @@ class DeclarationRepository {
       },
     );
     return (res.data as List)
-        .map((e) => Declaration.fromJson(e as Map<String, dynamic>))
+        .map((e) => DeclarationModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }

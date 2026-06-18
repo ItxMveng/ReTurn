@@ -142,16 +142,19 @@
       <div><span style="font-size:18px;font-weight:700">ReTurn</span><br><small style="color:var(--muted);font-size:11px">Panneau d'administration</small></div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="email">Adresse email</label>
-      <input class="form-input" id="email" type="email" placeholder="admin@return.cm" autocomplete="email" />
+      <label class="form-label" for="phone-number">Numéro administrateur</label>
+      <input class="form-input" id="phone-number" type="tel" placeholder="+237600000000" autocomplete="tel" />
     </div>
     <div class="form-group">
-      <label class="form-label" for="password">Mot de passe</label>
-      <input class="form-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
-      <div class="form-error" id="login-error">Email ou mot de passe incorrect.</div>
+      <label class="form-label" for="otp-code">Code OTP</label>
+      <input class="form-input" id="otp-code" type="text" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" />
+      <div class="form-error" id="login-error">Connexion impossible.</div>
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;margin-top:8px" id="login-btn">Se connecter</button>
-    <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">💡 Double-cliquez sur le logo pour le mode démo</p>
+    <div class="flex gap-2" style="margin-top:8px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center;padding:10px" id="request-otp-btn">Recevoir le code</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center;padding:10px" id="login-btn">Se connecter</button>
+    </div>
+    <p id="otp-help" style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">Utilisez un numéro déjà promu administrateur dans la base réelle.</p>
   </div>
 </div>
 
@@ -206,11 +209,11 @@
         <div class="kpi-card"><div class="kpi-label">Matchs</div><div class="kpi-value" id="kpi-match">—</div><div class="kpi-delta"><span id="kpi-match-rate">—</span>% de taux</div></div>
         <div class="kpi-card"><div class="kpi-label">Restitutions</div><div class="kpi-value" id="kpi-rest">—</div><div class="kpi-delta delta-up">↑ <span id="kpi-rest-d">—</span> cette semaine</div></div>
         <div class="kpi-card"><div class="kpi-label">Signalements ouverts</div><div class="kpi-value" id="kpi-rep">—</div><div class="kpi-delta delta-down" id="kpi-rep-d"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Note moyenne</div><div class="kpi-value" id="kpi-rating">—</div><div class="kpi-delta">sur 5 ⭐</div></div>
+        <div class="kpi-card"><div class="kpi-label">Délai signalements</div><div class="kpi-value" id="kpi-rating">—</div><div class="kpi-delta">jours en moyenne</div></div>
       </div>
       <div class="grid-2 mb-6">
         <div class="card"><div class="card-header"><span class="card-title">Activité (30 jours)</span><span class="text-sm text-muted" id="chart-source-label"></span></div><div class="card-body"><div class="chart-wrap"><canvas id="chart-activity"></canvas></div></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">Répartition des matchs</span></div><div class="card-body"><div class="chart-wrap"><canvas id="chart-matches"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Flux récent</span></div><div class="card-body"><div class="chart-wrap"><canvas id="chart-matches"></canvas></div></div></div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Dernières activités</span></div>
@@ -234,17 +237,17 @@
         <select class="form-input" style="width:auto" id="filter-decl"><option value="all">Tous les types</option><option value="found">Trouvés</option><option value="lost">Perdus</option><option value="flagged">Signalés</option></select>
         <button class="btn btn-ghost btn-sm" id="export-decl-btn">⬇ Export CSV</button>
       </div>
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Type doc</th><th>Catégorie</th><th>Localisation</th><th>Créateur</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="decl-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Type doc</th><th>Catégorie</th><th>Utilisateur</th><th>Créée le</th><th>Signalée</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="decl-table"></tbody></table></div></div>
     </section>
 
     <!-- Matchs -->
     <section class="page" id="page-matches">
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Score</th><th>Type doc</th><th>Décl. trouvée</th><th>Décl. perdue</th><th>Statut</th><th>Créé le</th></tr></thead><tbody id="matches-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Score</th><th>Décl. trouvée</th><th>Décl. perdue</th><th>Propriétaire</th><th>Trouveur</th><th>Statut</th><th>Créé le</th></tr></thead><tbody id="matches-table"></tbody></table></div></div>
     </section>
 
     <!-- Restitutions -->
     <section class="page" id="page-restitutions">
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Match</th><th>Statut</th><th>Note</th><th>Initiée le</th><th>Complétée le</th></tr></thead><tbody id="rest-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Match</th><th>Statut</th><th>Lieu</th><th>Notes</th><th>Initiée le</th><th>Complétée le</th></tr></thead><tbody id="rest-table"></tbody></table></div></div>
     </section>
 
     <!-- Signalements -->
@@ -257,7 +260,7 @@
       <div class="flex items-center gap-3 mb-4">
         <button class="btn btn-primary btn-sm" id="add-zone-btn">+ Nouvelle zone</button>
       </div>
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Nom</th><th>Ville</th><th>Lat</th><th>Lon</th><th>Rayon (km)</th><th>Certifiée</th><th>Actions</th></tr></thead><tbody id="zones-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Nom</th><th>Type</th><th>Adresse</th><th>Lat</th><th>Lon</th><th>Certifiée</th><th>Actions</th></tr></thead><tbody id="zones-table"></tbody></table></div></div>
     </section>
 
     <!-- Audit -->
@@ -276,18 +279,16 @@
     </div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Nom de la zone</label><input class="form-input" id="zone-name" placeholder="Ex: Yaoundé Centre-Ville" /></div>
-      <div class="form-group"><label class="form-label">Ville</label><input class="form-input" id="zone-city" placeholder="Ex: Yaoundé" /></div>
+      <div class="form-group"><label class="form-label">Type</label><input class="form-input" id="zone-type" placeholder="Ex: commissariat" /></div>
+      <div class="form-group"><label class="form-label">Adresse</label><input class="form-input" id="zone-address" placeholder="Ex: Avenue Kennedy, Yaoundé" /></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Latitude</label><input class="form-input" id="zone-lat" type="number" step="0.0001" placeholder="3.8667" /></div>
         <div class="form-group"><label class="form-label">Longitude</label><input class="form-input" id="zone-lon" type="number" step="0.0001" placeholder="11.5167" /></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Rayon (km)</label><input class="form-input" id="zone-radius" type="number" step="0.5" placeholder="2.5" /></div>
-        <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-            <input type="checkbox" id="zone-certified" checked style="width:16px;height:16px;accent-color:var(--primary)" /> Zone certifiée
-          </label>
-        </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="zone-certified" checked style="width:16px;height:16px;accent-color:var(--primary)" /> Zone certifiée
+        </label>
       </div>
     </div>
     <div class="modal-footer">
@@ -313,19 +314,112 @@
 
 <script>
 (function(){
-  const API = (window.RETURN_API_URL || 'http://localhost:8000') + '/api/v1';
-  let token = null;
+  // Priority: ?api=URL param → window.RETURN_API_URL → localStorage → default
+  const _apiParam = new URLSearchParams(window.location.search).get('api');
+  const _apiSaved = window.localStorage.getItem('return_api_url');
+  const _apiBase  = (_apiParam || window.RETURN_API_URL || _apiSaved || 'http://localhost:8000').replace(/\/+$/, '');
+  if (_apiParam) window.localStorage.setItem('return_api_url', _apiParam);
+  const API = _apiBase + '/api/v1';
+  const STORAGE_TOKEN_KEY = 'return_admin_token';
+  const STORAGE_USER_KEY = 'return_admin_user';
+  let token = window.localStorage.getItem(STORAGE_TOKEN_KEY);
   let adminUser = null;
   let _allUsers = [];
+  let _allDeclarations = [];
+  let _allMatches = [];
+  let _allRestitutions = [];
+  let _allReports = [];
+  let _allZones = [];
+  let _allAuditLogs = [];
 
   const loginScreen = document.getElementById('login-screen');
   const app = document.getElementById('app');
   const adminEmailEl = document.getElementById('admin-email');
+  const phoneInput = document.getElementById('phone-number');
+  const otpInput = document.getElementById('otp-code');
+  const loginError = document.getElementById('login-error');
+  const otpHelp = document.getElementById('otp-help');
   const toast = document.getElementById('toast');
+
+  try{
+    adminUser = JSON.parse(window.localStorage.getItem(STORAGE_USER_KEY) || 'null');
+  }catch{
+    adminUser = null;
+  }
 
   function showToast(msg, ms=2800){
     toast.textContent=msg; toast.classList.add('show');
     setTimeout(()=>toast.classList.remove('show'),ms);
+  }
+
+  function escapeHtml(value){
+    return String(value ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function formatDate(value, options){
+    if(!value) return '—';
+    const date = new Date(value);
+    if(Number.isNaN(date.getTime())) return escapeHtml(value);
+    return date.toLocaleDateString('fr-FR', options || {
+      day:'2-digit',
+      month:'2-digit',
+      year:'numeric',
+    });
+  }
+
+  function shortId(value){
+    const text = String(value || '');
+    return text.length > 8 ? `${text.slice(0,8)}…` : text || '—';
+  }
+
+  function tableMessage(columns, message){
+    return `<tr><td colspan="${columns}" class="text-muted">${escapeHtml(message)}</td></tr>`;
+  }
+
+  function clearLoginError(){
+    loginError.style.display='none';
+  }
+
+  function setLoginError(message){
+    loginError.textContent=message;
+    loginError.style.display='block';
+  }
+
+  function setOtpHelp(message){
+    otpHelp.textContent=message;
+  }
+
+  function saveSession(){
+    if(token){
+      window.localStorage.setItem(STORAGE_TOKEN_KEY, token);
+    }else{
+      window.localStorage.removeItem(STORAGE_TOKEN_KEY);
+    }
+    if(adminUser){
+      window.localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(adminUser));
+    }else{
+      window.localStorage.removeItem(STORAGE_USER_KEY);
+    }
+  }
+
+  function clearSession(){
+    token = null;
+    adminUser = null;
+    saveSession();
+  }
+
+  function logout(showMessage=false){
+    clearSession();
+    app.classList.add('hidden');
+    app.style.display='none';
+    loginScreen.classList.remove('hidden');
+    adminEmailEl.textContent='';
+    if(showMessage) showToast('Déconnecté');
   }
 
   // Theme
@@ -346,46 +440,139 @@
     bd.addEventListener('click',e=>{ if(e.target===bd) bd.classList.remove('open'); });
   });
 
-  // Login
-  async function login(email,pass){
+  async function parseResponse(response){
+    if(response.status===204) return null;
+    const contentType = response.headers.get('content-type') || '';
+    if(contentType.includes('application/json')) return await response.json();
+    const text = await response.text();
+    if(!text) return null;
     try{
-      const r = await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone_or_email:email,password:pass})});
-      if(!r.ok) throw new Error();
-      const d = await r.json();
-      token = d.access_token; adminUser={email}; return true;
-    }catch{ return false; }
+      return JSON.parse(text);
+    }catch{
+      return text;
+    }
   }
-  document.getElementById('login-btn').addEventListener('click',async()=>{
-    const email=document.getElementById('email').value.trim();
-    const pass=document.getElementById('password').value;
-    const err=document.getElementById('login-error');
-    err.style.display='none';
-    if(!email||!pass){err.textContent='Remplissez tous les champs.';err.style.display='block';return;}
-    const ok=await login(email,pass);
-    if(ok){showApp();}else{err.style.display='block';}
+
+  async function api(path, opts={}){
+    const headers = {...(opts.headers || {})};
+    if(token) headers.Authorization = `Bearer ${token}`;
+    if(!(opts.body instanceof FormData) && !headers['Content-Type']){
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(`${API}${path}`, {...opts, headers});
+    const data = await parseResponse(response);
+
+    if(!response.ok){
+      const detail = typeof data === 'object' && data && typeof data.detail === 'string'
+        ? data.detail
+        : `Erreur HTTP ${response.status}`;
+      const error = new Error(detail);
+      error.status = response.status;
+      error.payload = data;
+      if(response.status===401){
+        logout();
+      }
+      throw error;
+    }
+
+    return data;
+  }
+
+  async function publicApi(path, opts={}){
+    const headers = {...(opts.headers || {})};
+    if(!(opts.body instanceof FormData) && !headers['Content-Type']){
+      headers['Content-Type'] = 'application/json';
+    }
+    const response = await fetch(`${API}${path}`, {...opts, headers});
+    const data = await parseResponse(response);
+    if(!response.ok){
+      const detail = typeof data === 'object' && data && typeof data.detail === 'string'
+        ? data.detail
+        : `Erreur HTTP ${response.status}`;
+      const error = new Error(detail);
+      error.status = response.status;
+      error.payload = data;
+      throw error;
+    }
+    return data;
+  }
+
+  async function requestOtp(phoneNumber){
+    return await publicApi('/auth/otp/request', {
+      method:'POST',
+      body: JSON.stringify({phone_number: phoneNumber}),
+    });
+  }
+
+  async function verifyOtp(phoneNumber, otpCode){
+    return await publicApi('/auth/otp/verify', {
+      method:'POST',
+      body: JSON.stringify({phone_number: phoneNumber, otp_code: otpCode}),
+    });
+  }
+
+  async function ensureAdminSession(){
+    adminUser = await api('/auth/me');
+    await api('/admin/stats?period_days=30');
+    saveSession();
+  }
+
+  document.getElementById('request-otp-btn').addEventListener('click', async()=>{
+    clearLoginError();
+    const phoneNumber = phoneInput.value.trim();
+    if(!phoneNumber){
+      setLoginError('Saisissez un numéro administrateur.');
+      return;
+    }
+    try{
+      const response = await requestOtp(phoneNumber);
+      if(response?.debug_code){
+        otpInput.value = response.debug_code;
+        setOtpHelp(`Code OTP récupéré depuis l'API locale : ${response.debug_code}`);
+      }else{
+        setOtpHelp('Code OTP demandé. Vérifiez votre canal d’authentification.');
+      }
+      showToast('Code OTP demandé');
+    }catch(error){
+      setLoginError(error.message || 'Impossible de demander le code OTP.');
+    }
   });
-  document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-btn').click();});
-  function tryDemoLogin(){token='demo';adminUser={email:'admin@return.cm'};showApp();}
+
+  document.getElementById('login-btn').addEventListener('click',async()=>{
+    clearLoginError();
+    const phoneNumber = phoneInput.value.trim();
+    const otpCode = otpInput.value.trim();
+    if(!phoneNumber || !otpCode){
+      setLoginError('Saisissez le numéro et le code OTP.');
+      return;
+    }
+    try{
+      const auth = await verifyOtp(phoneNumber, otpCode);
+      token = auth.access_token;
+      await ensureAdminSession();
+      showApp();
+      showToast('Connexion admin réussie');
+    }catch(error){
+      clearSession();
+      if(error.status===403){
+        setLoginError('Ce compte existe, mais il n’a pas encore le rôle administrateur.');
+      }else{
+        setLoginError(error.message || 'Connexion impossible.');
+      }
+    }
+  });
+
+  otpInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-btn').click();});
   function showApp(){
     loginScreen.classList.add('hidden');
     app.classList.remove('hidden'); app.style.display='flex';
-    adminEmailEl.textContent=adminUser?.email||'';
+    adminEmailEl.textContent = adminUser?.full_name || adminUser?.email || adminUser?.phone_number || '';
     loadPage('dashboard');
   }
   document.getElementById('logout-btn').addEventListener('click',()=>{
-    token=null;adminUser=null;
-    app.classList.add('hidden');app.style.display='none';
-    loginScreen.classList.remove('hidden');
+    logout(true);
   });
-  let clickCount=0;
-  document.querySelector('.login-logo')?.addEventListener('click',()=>{if(++clickCount>=2){clickCount=0;tryDemoLogin();}});
-
-  // API helper
-  async function api(path,opts={}){
-    const r=await fetch(`${API}${path}`,{...opts,headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json',...(opts.headers||{})}});
-    if(!r.ok) throw new Error(`${r.status}`);
-    return r.json();
-  }
 
   // Navigation
   const pages={dashboard:"Vue d'ensemble",users:'Utilisateurs',declarations:'Déclarations',matches:'Matchs',restitutions:'Restitutions',reports:'Signalements',zones:'Zones certifiées',audit:'Audit Logs'};
@@ -394,159 +581,186 @@
     document.querySelectorAll('.nav-item[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
     document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${name}`));
     document.getElementById('page-title').textContent=pages[name]||name;
-    render[name]?.();
+    const task = render[name]?.();
+    if(task && typeof task.catch === 'function'){
+      task.catch(error=>showToast(error.message || 'Chargement impossible'));
+    }
   }
 
   // Badge helper
   function badgeStatus(s){
-    const map={active:'badge-green',confirmed:'badge-green',completed:'badge-green',resolved:'badge-green',pending:'badge-orange',open:'badge-orange',rejected:'badge-red',banned:'badge-red',flagged:'badge-red'};
+    const map={active:'badge-green',confirmed:'badge-green',completed:'badge-green',resolved:'badge-green',success:'badge-green',pending:'badge-orange',reviewed:'badge-orange',open:'badge-orange',rejected:'badge-red',banned:'badge-red',flagged:'badge-red',failed:'badge-red'};
     return `<span class="badge ${map[s]||'badge-gray'}">${s||'—'}</span>`;
   }
 
-  // Mock data
-  const MOCK={
-    stats:{total_users:1247,new_users_month:84,total_declarations:3891,new_declarations_week:213,total_matches:927,match_rate:23.8,total_restitutions:412,new_restitutions_week:37,open_reports:12,avg_rating:4.6,
-      confirmed_matches:412,pending_matches:389,rejected_matches:126,
-      activity:[45,62,38,71,55,89,102,76,88,94,112,98,85,74,90,105,118,95,87,103,115,122,98,110,125,108,95,118,130,142]},
-    users:[
-      {id:'u1',full_name:'Alain Nguema',phone:'+237 6 90 12 34 56',is_admin:false,score_reputation:4.8,created_at:'2025-01-15',is_banned:false,total_declarations:12,total_matches:3},
-      {id:'u2',full_name:'Marie Biya',phone:'+237 6 77 88 99 00',is_admin:true,score_reputation:5.0,created_at:'2024-11-02',is_banned:false,total_declarations:5,total_matches:2},
-      {id:'u3',full_name:'Paul Ateba',phone:'+237 6 55 43 21 09',is_admin:false,score_reputation:2.1,created_at:'2025-03-20',is_banned:true,total_declarations:2,total_matches:0},
-    ],
-    declarations:[
-      {id:'d1',document_type:'CNI',type:'found',location:'Yaoundé Centre',owner_name:'A. Nguema',created_at:'2026-05-20',is_flagged:false},
-      {id:'d2',document_type:'Passeport',type:'lost',location:'Douala Akwa',owner_name:'M. Biya',created_at:'2026-05-21',is_flagged:false},
-      {id:'d3',document_type:'Permis',type:'found',location:'Bafoussam',owner_name:'P. Ateba',created_at:'2026-05-22',is_flagged:true},
-    ],
-    matches:[
-      {id:'m1',score:0.92,document_type:'CNI',found_id:'d1',lost_id:'d2',status:'pending',created_at:'2026-05-22'},
-      {id:'m2',score:0.75,document_type:'Passeport',found_id:'d3',lost_id:'d1',status:'confirmed',created_at:'2026-05-21'},
-    ],
-    restitutions:[
-      {id:'r1',match_id:'m2',status:'completed',rating:5,created_at:'2026-05-22',completed_at:'2026-05-23'},
-      {id:'r2',match_id:'m1',status:'pending',rating:null,created_at:'2026-05-23',completed_at:null},
-    ],
-    reports:[
-      {id:'rp1',reporter:'A. Nguema',target:'Décl. d3',reason:'Faux document',status:'open',created_at:'2026-05-22'},
-      {id:'rp2',reporter:'M. Biya',target:'User u3',reason:'Comportement suspect',status:'resolved',created_at:'2026-05-21'},
-    ],
-    zones:[
-      {id:'z1',name:'Yaoundé Centre-Ville',city:'Yaoundé',lat:3.866,lon:11.517,radius_km:2.5,is_certified:true},
-      {id:'z2',name:'Douala Akwa',city:'Douala',lat:4.051,lon:9.704,radius_km:3.0,is_certified:true},
-    ],
-    audit:[
-      {admin:'admin@return.cm',action:'BAN_USER',target:'u3',ip:'41.202.x.x',created_at:'2026-05-23 08:12'},
-      {admin:'admin@return.cm',action:'DELETE_DECL',target:'d3',ip:'41.202.x.x',created_at:'2026-05-22 17:44'},
-    ],
-  };
-
   const render={};
 
-  // ── Dashboard avec graphiques dynamiques ──
+  // ── Dashboard avec données API réelles ──
   render.dashboard = async function(){
-    let s=MOCK.stats;
-    let fromApi=false;
-    try{ s=await api('/admin/stats'); fromApi=true; }catch{}
-    document.getElementById('kpi-users').textContent=s.total_users?.toLocaleString();
-    document.getElementById('kpi-users-d').textContent='+'+(s.new_users_month||0);
-    document.getElementById('kpi-decl').textContent=s.total_declarations?.toLocaleString();
-    document.getElementById('kpi-decl-d').textContent='+'+(s.new_declarations_week||0);
-    document.getElementById('kpi-match').textContent=s.total_matches?.toLocaleString();
-    document.getElementById('kpi-match-rate').textContent=(s.match_rate||0).toFixed(1);
-    document.getElementById('kpi-rest').textContent=s.total_restitutions?.toLocaleString();
-    document.getElementById('kpi-rest-d').textContent='+'+(s.new_restitutions_week||0);
-    document.getElementById('kpi-rep').textContent=s.open_reports;
-    document.getElementById('kpi-rating').textContent=(s.avg_rating||0).toFixed(1)+' ⭐';
-    document.getElementById('chart-source-label').textContent=fromApi?'• données réelles':'• données mock';
+    const [stats, userStats, reportStats, chart, declarations, matches] = await Promise.all([
+      api('/admin/stats?period_days=30'),
+      api('/admin/stats/users'),
+      api('/admin/stats/reports'),
+      api('/admin/stats/chart?period_days=30'),
+      api('/admin/declarations?per_page=8'),
+      api('/admin/matches?per_page=8'),
+    ]);
+
+    const last7Days = chart.slice(-7);
+    const declarationsLastWeek = last7Days.reduce((sum, point)=>sum + (point.declarations || 0), 0);
+    const restitutionsLastWeek = last7Days.reduce((sum, point)=>sum + (point.restitutions || 0), 0);
+    const totals = chart.reduce((acc, point)=>{
+      acc.declarations += point.declarations || 0;
+      acc.matches += point.matches || 0;
+      acc.restitutions += point.restitutions || 0;
+      return acc;
+    }, {declarations:0, matches:0, restitutions:0});
+
+    document.getElementById('kpi-users').textContent=(stats.total_users || 0).toLocaleString();
+    document.getElementById('kpi-users-d').textContent='+'+(userStats.new_last_30_days || 0);
+    document.getElementById('kpi-decl').textContent=(stats.total_declarations || 0).toLocaleString();
+    document.getElementById('kpi-decl-d').textContent='+'+declarationsLastWeek;
+    document.getElementById('kpi-match').textContent=(stats.total_matches || 0).toLocaleString();
+    document.getElementById('kpi-match-rate').textContent=(stats.restitution_success_rate || 0).toFixed(1);
+    document.getElementById('kpi-rest').textContent=(stats.total_restitutions_completed || 0).toLocaleString();
+    document.getElementById('kpi-rest-d').textContent='+'+restitutionsLastWeek;
+    document.getElementById('kpi-rep').textContent=reportStats.pending || 0;
+    document.getElementById('kpi-rep-d').textContent=`${reportStats.resolved || 0} résolus`;
+    document.getElementById('kpi-rating').textContent=reportStats.avg_resolution_days != null
+      ? Number(reportStats.avg_resolution_days).toFixed(1)
+      : '—';
+    document.getElementById('chart-source-label').textContent='API réelle';
 
     const isDark=root.getAttribute('data-theme')==='dark';
     const gridColor=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
     const textColor=isDark?'#7a7977':'#9a9994';
 
-    // Graphique activité — données API ou mock
-    const actData = s.activity || MOCK.stats.activity;
+    const actData = chart.map(point=>point.declarations || 0);
     const actCtx=document.getElementById('chart-activity').getContext('2d');
     if(window._chartActivity) window._chartActivity.destroy();
-    const labels=Array.from({length:actData.length},(_,i)=>{
-      const d=new Date(); d.setDate(d.getDate()-actData.length+1+i);
-      return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-    });
+    const labels=chart.map(point=>formatDate(point.date,{day:'numeric',month:'short'}));
     window._chartActivity=new Chart(actCtx,{
       type:'line',
       data:{labels,datasets:[{label:'Déclarations',data:actData,borderColor:'#01696f',backgroundColor:'rgba(1,105,111,.1)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:textColor,maxTicksLimit:6,maxRotation:0}},y:{grid:{color:gridColor},ticks:{color:textColor}}}}
     });
 
-    // Graphique donut — données API ou mock
-    const confirmed = s.confirmed_matches || MOCK.stats.confirmed_matches;
-    const pending   = s.pending_matches   || MOCK.stats.pending_matches;
-    const rejected  = s.rejected_matches  || MOCK.stats.rejected_matches;
     const mCtx=document.getElementById('chart-matches').getContext('2d');
     if(window._chartMatches) window._chartMatches.destroy();
     window._chartMatches=new Chart(mCtx,{
       type:'doughnut',
-      data:{labels:['Confirmés','En attente','Rejetés'],datasets:[{data:[confirmed,pending,rejected],backgroundColor:['#01696f','#f0a832','#e05a4e'],borderWidth:0}]},
+      data:{labels:['Déclarations','Matchs','Restitutions'],datasets:[{data:[totals.declarations,totals.matches,totals.restitutions],backgroundColor:['#01696f','#f0a832','#5bba6f'],borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:textColor,boxWidth:10}}}}
     });
 
-    // Activité récente
     const tbody=document.getElementById('recent-activity');
-    tbody.innerHTML=[
-      ...MOCK.declarations.map(d=>({type:'Déclaration',detail:`${d.document_type} — ${d.location}`,user:d.owner_name,date:d.created_at,status:d.is_flagged?'flagged':'active'})),
-      ...MOCK.matches.map(m=>({type:'Match',detail:`Score ${(m.score*100).toFixed(0)}%`,user:'Système',date:m.created_at,status:m.status})),
-    ].slice(0,8).map(r=>`<tr><td><span class="badge badge-gray">${r.type}</span></td><td>${r.detail}</td><td>${r.user}</td><td class="text-muted">${r.date}</td><td>${badgeStatus(r.status)}</td></tr>`).join('');
+    const recentRows = [
+      ...declarations.map(d=>({
+        type:'Déclaration',
+        detail:`${d.document_type} — ${d.declaration_type}`,
+        user:shortId(d.user_id),
+        date:d.created_at,
+        status:d.is_flagged ? 'flagged' : d.status,
+      })),
+      ...matches.map(m=>({
+        type:'Match',
+        detail:`Score ${(Number(m.score || 0) * 100).toFixed(0)}%`,
+        user:`${shortId(m.user_found_id)} / ${shortId(m.user_lost_id)}`,
+        date:m.created_at,
+        status:m.status,
+      })),
+    ]
+      .sort((a,b)=>new Date(b.date) - new Date(a.date))
+      .slice(0,8);
+
+    tbody.innerHTML = recentRows.length
+      ? recentRows.map(r=>`<tr><td><span class="badge badge-gray">${escapeHtml(r.type)}</span></td><td>${escapeHtml(r.detail)}</td><td>${escapeHtml(r.user)}</td><td class="text-muted">${formatDate(r.date)}</td><td>${badgeStatus(r.status)}</td></tr>`).join('')
+      : tableMessage(5, 'Aucune activité récente.');
   };
 
-  // ── Utilisateurs avec vue détail + promouvoir ──
+  // ── Utilisateurs ──
   render.users = async function(){
-    try{ const d=await api('/admin/users'); _allUsers=d.users||d; }catch{ _allUsers=MOCK.users; }
+    _allUsers = await api('/admin/users?per_page=100');
     renderUsers(_allUsers);
   };
   function renderUsers(users){
     const q=document.getElementById('search-users').value.toLowerCase();
     const f=document.getElementById('filter-users').value;
     const filtered=users.filter(u=>{
-      const match=!q||u.full_name?.toLowerCase().includes(q)||u.phone?.includes(q);
-      const role=f==='all'||(f==='admin'&&u.is_admin)||(f==='banned'&&u.is_banned)||(f==='active'&&!u.is_banned&&!u.is_admin);
+      const match=!q
+        || u.full_name?.toLowerCase().includes(q)
+        || u.phone_number?.toLowerCase().includes(q)
+        || String(u.id).toLowerCase().includes(q);
+      const role=f==='all'||(f==='admin'&&u.is_admin)||(f==='banned'&&u.is_banned)||(f==='active'&&!u.is_banned);
       return match&&role;
     });
-    document.getElementById('users-table').innerHTML=filtered.map(u=>`<tr>
-      <td><div class="user-cell"><div class="avatar">${(u.full_name||'?')[0].toUpperCase()}</div><div><div style="font-weight:600">${u.full_name||'—'}</div></div></div></td>
-      <td class="font-mono text-sm">${u.phone||'—'}</td>
+    document.getElementById('users-table').innerHTML=filtered.length ? filtered.map(u=>`<tr>
+      <td><div class="user-cell"><div class="avatar">${escapeHtml((u.full_name||'?')[0].toUpperCase())}</div><div><div style="font-weight:600">${escapeHtml(u.full_name||'—')}</div></div></div></td>
+      <td class="font-mono text-sm">${escapeHtml(u.phone_number||'—')}</td>
       <td>${u.is_admin?'<span class="badge badge-blue">Admin</span>':'<span class="badge badge-gray">Utilisateur</span>'}</td>
-      <td>${u.score_reputation?.toFixed(1)||'—'} ⭐</td>
-      <td class="text-muted">${u.created_at?.slice(0,10)||'—'}</td>
+      <td>${Number(u.score_reputation || 0).toFixed(1)} ⭐</td>
+      <td class="text-muted">${formatDate(u.created_at)}</td>
       <td>${u.is_banned?'<span class="badge badge-red">Banni</span>':'<span class="badge badge-green">Actif</span>'}</td>
       <td><div class="flex gap-2">
-        <button class="btn btn-ghost btn-sm" onclick="showUserDetail('${u.id}')">Détail</button>
+        <button class="btn btn-ghost btn-sm" onclick="showUserDetail('${String(u.id)}')">Détail</button>
         ${u.is_banned
-          ?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${u.id}')">Rétablir</button>`
-          :`<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">Bannir</button>`}
-        ${!u.is_admin?`<button class="btn btn-warning btn-sm" onclick="promoteUser('${u.id}')">Promouvoir</button>`:''}
+          ?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${String(u.id)}')">Rétablir</button>`
+          :`<button class="btn btn-danger btn-sm" onclick="banUser('${String(u.id)}')">Bannir</button>`}
+        ${!u.is_admin?`<button class="btn btn-warning btn-sm" onclick="promoteUser('${String(u.id)}')">Promouvoir</button>`:''}
       </div></td>
-    </tr>`).join('');
+    </tr>`).join('') : tableMessage(7, 'Aucun utilisateur trouvé.');
   }
 
-  window.banUser=async(id)=>{try{await api(`/admin/users/${id}/ban`,{method:'PATCH'});}catch{} showToast('Utilisateur banni ✓'); render.users();};
-  window.unbanUser=async(id)=>{try{await api(`/admin/users/${id}/unban`,{method:'PATCH'});}catch{} showToast('Utilisateur rétabli ✓'); render.users();};
+  window.banUser=async(id)=>{
+    if(!confirm('Bannir cet utilisateur ?')) return;
+    try{
+      await api(`/admin/users/${id}/ban`,{
+        method:'PATCH',
+        body:JSON.stringify({reason:'Action manuelle depuis le backoffice'}),
+      });
+      showToast('Utilisateur banni');
+      await render.users();
+    }catch(error){
+      showToast(error.message || 'Bannissement impossible');
+    }
+  };
+  window.unbanUser=async(id)=>{
+    try{
+      await api(`/admin/users/${id}/unban`,{method:'PATCH'});
+      showToast('Utilisateur rétabli');
+      await render.users();
+    }catch(error){
+      showToast(error.message || 'Rétablissement impossible');
+    }
+  };
   window.promoteUser=async(id)=>{
     if(!confirm('Promouvoir cet utilisateur en admin ?')) return;
-    try{await api(`/admin/users/${id}/promote`,{method:'PATCH'});}catch{}
-    showToast('Utilisateur promu admin ✓'); render.users();
+    try{
+      await api(`/admin/users/${id}/promote`,{method:'PATCH'});
+      showToast('Utilisateur promu administrateur');
+      await render.users();
+    }catch(error){
+      showToast(error.message || 'Promotion impossible');
+    }
   };
 
-  // ── Vue détail utilisateur ──
-  window.showUserDetail=function(id){
-    const u=_allUsers.find(x=>x.id===id)||MOCK.users.find(x=>x.id===id);
+  window.showUserDetail=async function(id){
+    let u;
+    try{
+      u = await api(`/admin/users/${id}`);
+    }catch(error){
+      showToast(error.message || 'Impossible de charger le détail utilisateur');
+      return;
+    }
     if(!u) return;
     const body=document.getElementById('user-detail-body');
     const footer=document.getElementById('user-detail-footer');
     body.innerHTML=`
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-        <div class="avatar-lg">${(u.full_name||'?')[0].toUpperCase()}</div>
+        <div class="avatar-lg">${escapeHtml((u.full_name||'?')[0].toUpperCase())}</div>
         <div>
-          <div style="font-size:17px;font-weight:700">${u.full_name||'—'}</div>
-          <div class="text-muted text-sm">${u.phone||'—'}</div>
+          <div style="font-size:17px;font-weight:700">${escapeHtml(u.full_name||'—')}</div>
+          <div class="text-muted text-sm">${escapeHtml(u.phone_number||'—')}</div>
           <div style="margin-top:6px;display:flex;gap:6px">
             ${u.is_admin?'<span class="badge badge-blue">Admin</span>':''}
             ${u.is_banned?'<span class="badge badge-red">Banni</span>':'<span class="badge badge-green">Actif</span>'}
@@ -554,18 +768,21 @@
         </div>
       </div>
       <div class="detail-panel">
-        <div class="detail-row"><span class="detail-key">ID</span><span class="font-mono text-sm">${u.id}</span></div>
-        <div class="detail-row"><span class="detail-key">Réputation</span><span>${u.score_reputation?.toFixed(1)||'—'} ⭐</span></div>
-        <div class="detail-row"><span class="detail-key">Inscrit le</span><span>${u.created_at?.slice(0,10)||'—'}</span></div>
+        <div class="detail-row"><span class="detail-key">ID</span><span class="font-mono text-sm">${escapeHtml(String(u.id))}</span></div>
+        <div class="detail-row"><span class="detail-key">Email</span><span>${escapeHtml(u.email||'—')}</span></div>
+        <div class="detail-row"><span class="detail-key">Réputation</span><span>${Number(u.score_reputation || 0).toFixed(1)} ⭐</span></div>
+        <div class="detail-row"><span class="detail-key">Inscrit le</span><span>${formatDate(u.created_at)}</span></div>
         <div class="detail-row"><span class="detail-key">Déclarations</span><span>${u.total_declarations??'—'}</span></div>
         <div class="detail-row"><span class="detail-key">Matchs</span><span>${u.total_matches??'—'}</span></div>
+        <div class="detail-row"><span class="detail-key">Signalements reçus</span><span>${u.total_reports_received??'—'}</span></div>
+        <div class="detail-row"><span class="detail-key">Dernière IP</span><span>${escapeHtml(u.last_login_ip||'—')}</span></div>
       </div>`;
     footer.innerHTML=`
       <button class="btn btn-ghost" onclick="closeModal('modal-user-detail')">Fermer</button>
       ${u.is_banned
-        ?`<button class="btn btn-ghost" onclick="unbanUser('${u.id}');closeModal('modal-user-detail')">Rétablir</button>`
-        :`<button class="btn btn-danger" onclick="banUser('${u.id}');closeModal('modal-user-detail')">Bannir</button>`}
-      ${!u.is_admin?`<button class="btn btn-warning" onclick="promoteUser('${u.id}');closeModal('modal-user-detail')">Promouvoir admin</button>`:''}`;
+        ?`<button class="btn btn-ghost" onclick="unbanUser('${String(u.id)}');closeModal('modal-user-detail')">Rétablir</button>`
+        :`<button class="btn btn-danger" onclick="banUser('${String(u.id)}');closeModal('modal-user-detail')">Bannir</button>`}
+      ${!u.is_admin?`<button class="btn btn-warning" onclick="promoteUser('${String(u.id)}');closeModal('modal-user-detail')">Promouvoir admin</button>`:''}`;
     openModal('modal-user-detail');
   };
 
@@ -574,138 +791,202 @@
 
   // ── Déclarations ──
   render.declarations=async function(){
-    let decls=MOCK.declarations;
-    try{const d=await api('/admin/declarations');decls=d.declarations||d;}catch{}
-    renderDecl(decls);
+    _allDeclarations = await api('/admin/declarations?per_page=100');
+    renderDecl(_allDeclarations);
   };
   function renderDecl(decls){
     const q=document.getElementById('search-decl').value.toLowerCase();
     const f=document.getElementById('filter-decl').value;
     const filtered=decls.filter(d=>{
-      const match=!q||d.document_type?.toLowerCase().includes(q)||d.location?.toLowerCase().includes(q);
-      const type=f==='all'||(f==='flagged'&&d.is_flagged)||d.type===f;
+      const match=!q
+        || d.document_type?.toLowerCase().includes(q)
+        || d.declaration_type?.toLowerCase().includes(q)
+        || String(d.id).toLowerCase().includes(q)
+        || String(d.user_id).toLowerCase().includes(q);
+      const type=f==='all'||(f==='flagged'&&d.is_flagged)||d.declaration_type===f;
       return match&&type;
     });
-    document.getElementById('decl-table').innerHTML=filtered.map(d=>`<tr>
-      <td class="font-mono text-sm truncate">${d.id}</td>
-      <td><strong>${d.document_type}</strong></td>
-      <td>${d.type==='found'?'<span class="badge badge-green">Trouvé</span>':'<span class="badge badge-orange">Perdu</span>'}</td>
-      <td>${d.location||'—'}</td>
-      <td>${d.owner_name||'—'}</td>
-      <td class="text-muted">${d.created_at?.slice(0,10)||'—'}</td>
-      <td>${d.is_flagged?'<span class="badge badge-red">Signalé</span>':'<span class="badge badge-gray">Normal</span>'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteDecl('${d.id}')">Suppr.</button></td>
-    </tr>`).join('');
+    document.getElementById('decl-table').innerHTML=filtered.length ? filtered.map(d=>`<tr>
+      <td class="font-mono text-sm truncate">${escapeHtml(String(d.id))}</td>
+      <td><strong>${escapeHtml(d.document_type)}</strong></td>
+      <td>${d.declaration_type==='found'?'<span class="badge badge-green">Trouvé</span>':'<span class="badge badge-orange">Perdu</span>'}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(d.user_id))}</td>
+      <td class="text-muted">${formatDate(d.created_at)}</td>
+      <td>${d.is_flagged?'<span class="badge badge-red">Oui</span>':'<span class="badge badge-gray">Non</span>'}</td>
+      <td>${badgeStatus(d.status)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteDecl('${String(d.id)}')">Suppr.</button></td>
+    </tr>`).join('') : tableMessage(8, 'Aucune déclaration trouvée.');
   }
-  window.deleteDecl=async(id)=>{if(!confirm('Supprimer cette déclaration ?'))return;try{await api(`/admin/declarations/${id}`,{method:'DELETE'});}catch{} showToast('Déclaration supprimée ✓');render.declarations();};
-  document.getElementById('search-decl').addEventListener('input',()=>render.declarations());
-  document.getElementById('filter-decl').addEventListener('change',()=>render.declarations());
-  document.getElementById('export-decl-btn').addEventListener('click',()=>window.open(`${API}/admin/export/declarations?token=${token}`));
+  window.deleteDecl=async(id)=>{
+    if(!confirm('Supprimer cette déclaration ?')) return;
+    try{
+      await api(`/admin/declarations/${id}`,{method:'DELETE'});
+      showToast('Déclaration supprimée');
+      await render.declarations();
+    }catch(error){
+      showToast(error.message || 'Suppression impossible');
+    }
+  };
+  document.getElementById('search-decl').addEventListener('input',()=>renderDecl(_allDeclarations));
+  document.getElementById('filter-decl').addEventListener('change',()=>renderDecl(_allDeclarations));
+  document.getElementById('export-decl-btn').addEventListener('click',async()=>{
+    try{
+      const response = await fetch(`${API}/admin/export/declarations`, {
+        headers:{Authorization:`Bearer ${token}`},
+      });
+      if(!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'declarations.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('Export téléchargé');
+    }catch(error){
+      showToast(error.message || 'Export impossible');
+    }
+  });
 
   // ── Matchs ──
   render.matches=async function(){
-    let matches=MOCK.matches;
-    try{const d=await api('/admin/matches');matches=d.matches||d;}catch{}
-    document.getElementById('matches-table').innerHTML=matches.map(m=>`<tr>
-      <td class="font-mono text-sm truncate">${m.id}</td>
-      <td><strong style="color:${m.score>=.8?'var(--success)':m.score>=.5?'var(--warning)':'var(--danger)'}">${(m.score*100).toFixed(0)}%</strong></td>
-      <td>${m.document_type||'—'}</td>
-      <td class="font-mono text-sm">${m.found_id||m.found_declaration_id||'—'}</td>
-      <td class="font-mono text-sm">${m.lost_id||m.lost_declaration_id||'—'}</td>
+    _allMatches = await api('/admin/matches?per_page=100');
+    document.getElementById('matches-table').innerHTML=_allMatches.length ? _allMatches.map(m=>`<tr>
+      <td class="font-mono text-sm truncate">${escapeHtml(String(m.id))}</td>
+      <td><strong style="color:${m.score>=.8?'var(--success)':m.score>=.5?'var(--warning)':'var(--danger)'}">${(Number(m.score || 0)*100).toFixed(0)}%</strong></td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(m.declaration_found_id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(m.declaration_lost_id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(m.user_lost_id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(m.user_found_id))}</td>
       <td>${badgeStatus(m.status)}</td>
-      <td class="text-muted">${m.created_at?.slice(0,10)||'—'}</td>
-    </tr>`).join('');
+      <td class="text-muted">${formatDate(m.created_at)}</td>
+    </tr>`).join('') : tableMessage(8, 'Aucun match disponible.');
   };
 
   // ── Restitutions ──
   render.restitutions=async function(){
-    let rest=MOCK.restitutions;
-    try{const d=await api('/admin/restitutions');rest=d.restitutions||d;}catch{}
-    document.getElementById('rest-table').innerHTML=rest.map(r=>`<tr>
-      <td class="font-mono text-sm truncate">${r.id}</td>
-      <td class="font-mono text-sm">${r.match_id||'—'}</td>
+    _allRestitutions = await api('/admin/restitutions?per_page=100');
+    document.getElementById('rest-table').innerHTML=_allRestitutions.length ? _allRestitutions.map(r=>`<tr>
+      <td class="font-mono text-sm truncate">${escapeHtml(String(r.id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(r.match_id))}</td>
       <td>${badgeStatus(r.status)}</td>
-      <td>${r.rating?r.rating+' ⭐':'—'}</td>
-      <td class="text-muted">${r.created_at?.slice(0,10)||'—'}</td>
-      <td class="text-muted">${r.completed_at?.slice(0,10)||'—'}</td>
-    </tr>`).join('');
+      <td>${escapeHtml(r.meeting_location || '—')}</td>
+      <td>${r.rating_by_owner ?? '—'} / ${r.rating_by_finder ?? '—'}</td>
+      <td class="text-muted">${formatDate(r.created_at)}</td>
+      <td class="text-muted">${formatDate(r.completed_at)}</td>
+    </tr>`).join('') : tableMessage(7, 'Aucune restitution disponible.');
   };
 
   // ── Signalements ──
   render.reports=async function(){
-    let reps=MOCK.reports;
-    try{const d=await api('/admin/reports');reps=d.reports||d;}catch{}
-    document.getElementById('reports-table').innerHTML=reps.map(r=>`<tr>
-      <td class="font-mono text-sm">${r.id}</td>
-      <td>${r.reporter||'—'}</td>
-      <td>${r.target||'—'}</td>
-      <td>${r.reason||'—'}</td>
+    _allReports = await api('/admin/reports?limit=100');
+    document.getElementById('reports-table').innerHTML=_allReports.length ? _allReports.map(r=>`<tr>
+      <td class="font-mono text-sm">${escapeHtml(String(r.id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(r.reporter_id))}</td>
+      <td class="font-mono text-sm">${escapeHtml(shortId(r.reported_id))}</td>
+      <td>${escapeHtml(String(r.reason || '—').replaceAll('_',' '))}</td>
       <td>${badgeStatus(r.status)}</td>
-      <td class="text-muted">${r.created_at?.slice(0,10)||'—'}</td>
-      <td>${r.status==='open'?`<button class="btn btn-primary btn-sm" onclick="resolveReport('${r.id}')">Résoudre</button>`:''}</td>
-    </tr>`).join('');
+      <td class="text-muted">${formatDate(r.created_at)}</td>
+      <td>${r.status==='pending' || r.status==='reviewed' ? `<button class="btn btn-primary btn-sm" onclick="resolveReport('${String(r.id)}')">Résoudre</button>` : ''}</td>
+    </tr>`).join('') : tableMessage(7, 'Aucun signalement disponible.');
   };
-  window.resolveReport=async(id)=>{try{await api(`/admin/reports/${id}`,{method:'PATCH',body:JSON.stringify({status:'resolved'})});}catch{} showToast('Signalement résolu ✓');render.reports();};
+  window.resolveReport=async(id)=>{
+    try{
+      await api(`/admin/reports/${id}`,{
+        method:'PATCH',
+        body:JSON.stringify({status:'resolved',admin_note:'Résolu depuis le backoffice'}),
+      });
+      showToast('Signalement résolu');
+      await render.reports();
+    }catch(error){
+      showToast(error.message || 'Résolution impossible');
+    }
+  };
 
-  // ── Zones avec modal de création ──
+  // ── Zones certifiées ──
   render.zones=async function(){
-    let zones=MOCK.zones;
-    try{const d=await api('/admin/zones');zones=d.zones||d;}catch{}
-    document.getElementById('zones-table').innerHTML=zones.map(z=>`<tr>
-      <td><strong>${z.name}</strong></td>
-      <td>${z.city||'—'}</td>
-      <td class="font-mono">${z.lat?.toFixed(3)||'—'}</td>
-      <td class="font-mono">${z.lon?.toFixed(3)||'—'}</td>
-      <td>${z.radius_km||'—'}</td>
-      <td>${z.is_certified?'<span class="badge badge-green">✓ Certifiée</span>':'<span class="badge badge-gray">Non</span>'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteZone('${z.id}')">Suppr.</button></td>
-    </tr>`).join('');
+    _allZones = await api('/admin/zones');
+    document.getElementById('zones-table').innerHTML=_allZones.length ? _allZones.map(z=>`<tr>
+      <td><strong>${escapeHtml(z.name)}</strong></td>
+      <td>${escapeHtml(z.zone_type||'—')}</td>
+      <td>${escapeHtml(z.address||'—')}</td>
+      <td class="font-mono">${typeof z.latitude === 'number' ? z.latitude.toFixed(3) : '—'}</td>
+      <td class="font-mono">${typeof z.longitude === 'number' ? z.longitude.toFixed(3) : '—'}</td>
+      <td>${z.is_certified?'<span class="badge badge-green">Oui</span>':'<span class="badge badge-gray">Non</span>'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteZone('${String(z.id)}')">Suppr.</button></td>
+    </tr>`).join('') : tableMessage(7, 'Aucune zone certifiée.');
   };
-  window.deleteZone=async(id)=>{if(!confirm('Supprimer cette zone ?'))return;try{await api(`/admin/zones/${id}`,{method:'DELETE'});}catch{} showToast('Zone supprimée ✓');render.zones();};
+  window.deleteZone=async(id)=>{
+    if(!confirm('Supprimer cette zone ?')) return;
+    try{
+      await api(`/admin/zones/${id}`,{method:'DELETE'});
+      showToast('Zone supprimée');
+      await render.zones();
+    }catch(error){
+      showToast(error.message || 'Suppression impossible');
+    }
+  };
 
   document.getElementById('add-zone-btn').addEventListener('click',()=>{
     document.getElementById('zone-name').value='';
-    document.getElementById('zone-city').value='';
+    document.getElementById('zone-type').value='';
+    document.getElementById('zone-address').value='';
     document.getElementById('zone-lat').value='';
     document.getElementById('zone-lon').value='';
-    document.getElementById('zone-radius').value='';
     document.getElementById('zone-certified').checked=true;
     openModal('modal-zone');
   });
   document.getElementById('save-zone-btn').addEventListener('click',async()=>{
     const name=document.getElementById('zone-name').value.trim();
-    const city=document.getElementById('zone-city').value.trim();
-    const lat=parseFloat(document.getElementById('zone-lat').value);
-    const lon=parseFloat(document.getElementById('zone-lon').value);
-    const radius_km=parseFloat(document.getElementById('zone-radius').value);
+    const zone_type=document.getElementById('zone-type').value.trim();
+    const address=document.getElementById('zone-address').value.trim();
+    const latitude=parseFloat(document.getElementById('zone-lat').value);
+    const longitude=parseFloat(document.getElementById('zone-lon').value);
     const is_certified=document.getElementById('zone-certified').checked;
-    if(!name||!city||isNaN(lat)||isNaN(lon)||isNaN(radius_km)){
-      showToast('Remplissez tous les champs ⚠️'); return;
+    if(!name||!zone_type||!address||isNaN(latitude)||isNaN(longitude)){
+      showToast('Remplissez tous les champs');
+      return;
     }
     try{
-      await api('/admin/zones',{method:'POST',body:JSON.stringify({name,city,lat,lon,radius_km,is_certified})});
-      showToast('Zone créée avec succès ✓');
-    }catch{
-      // En mode mock, on l'ajoute localement
-      MOCK.zones.push({id:'z'+Date.now(),name,city,lat,lon,radius_km,is_certified});
-      showToast('Zone créée (mode mock) ✓');
+      await api('/admin/zones',{
+        method:'POST',
+        body:JSON.stringify({name,zone_type,address,latitude,longitude,is_certified}),
+      });
+      showToast('Zone créée');
+    }catch(error){
+      showToast(error.message || 'Création impossible');
+      return;
     }
     closeModal('modal-zone');
-    render.zones();
+    await render.zones();
   });
 
   // ── Audit ──
   render.audit=async function(){
-    let logs=MOCK.audit;
-    try{const d=await api('/admin/audit-logs');logs=d.logs||d;}catch{}
-    document.getElementById('audit-table').innerHTML=logs.map(l=>`<tr>
-      <td>${l.admin||'—'}</td>
-      <td><span class="badge badge-gray font-mono">${l.action}</span></td>
-      <td class="font-mono text-sm">${l.target||'—'}</td>
-      <td class="font-mono text-sm text-muted">${l.ip||'—'}</td>
-      <td class="text-muted">${l.created_at||'—'}</td>
-    </tr>`).join('');
+    _allAuditLogs = await api('/admin/audit-logs?per_page=100');
+    document.getElementById('audit-table').innerHTML=_allAuditLogs.length ? _allAuditLogs.map(l=>`<tr>
+      <td class="font-mono text-sm">${escapeHtml(shortId(l.admin_id))}</td>
+      <td><span class="badge badge-gray font-mono">${escapeHtml(l.action_type || '—')}</span></td>
+      <td class="font-mono text-sm">${escapeHtml(l.target_type ? `${l.target_type}:${shortId(l.target_id)}` : '—')}</td>
+      <td class="font-mono text-sm text-muted">${escapeHtml(l.ip_address || '—')}</td>
+      <td class="text-muted">${formatDate(l.created_at, {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+    </tr>`).join('') : tableMessage(5, 'Aucun log d’audit disponible.');
   };
+
+  async function bootstrapSession(){
+    if(!token) return;
+    try{
+      await ensureAdminSession();
+      showApp();
+    }catch{
+      logout();
+      setOtpHelp('Reconnectez-vous avec un compte administrateur valide.');
+    }
+  }
+
+  bootstrapSession();
 
 })();
 </script>

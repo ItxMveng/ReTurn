@@ -108,6 +108,18 @@ class DeclarationsNotifier extends _$DeclarationsNotifier {
   void addItem(DeclarationModel decl) {
     state = state.copyWith(items: [decl, ...state.items]);
   }
+
+  /// Création d'une déclaration via l'API
+  Future<DeclarationModel?> create(Map<String, dynamic> payload) async {
+    try {
+      final decl = await _repo.createDeclaration(payload);
+      addItem(decl);
+      return decl;
+    } catch (e) {
+      state = state.copyWith(error: friendlyError(e));
+      return null;
+    }
+  }
 }
 
 /// Provider pour le détail d’une déclaration spécifique

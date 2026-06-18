@@ -19,7 +19,7 @@ class AppErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ex = mapException(error);
-    final isRetryable = ex.isRetryable && onRetry != null;
+    final isRetryable = ex is NetworkException && onRetry != null;
 
     if (compact) {
       return Row(
@@ -27,7 +27,7 @@ class AppErrorWidget extends StatelessWidget {
           const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 16),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(ex.userMessage, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+            child: Text(ex.message, style: const TextStyle(color: AppColors.error, fontSize: 13)),
           ),
           if (isRetryable)
             TextButton(onPressed: onRetry, child: const Text('Réessayer')),
@@ -44,7 +44,7 @@ class AppErrorWidget extends StatelessWidget {
             Icon(
               _iconForException(ex),
               size: 56,
-              color: AppColors.error.withOpacity(0.7),
+              color: AppColors.error.withValues(alpha: 0.7),
             ),
             const SizedBox(height: 16),
             Text(
@@ -54,7 +54,7 @@ class AppErrorWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              ex.userMessage,
+              ex.message,
               style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
@@ -76,7 +76,6 @@ class AppErrorWidget extends StatelessWidget {
   IconData _iconForException(AppException ex) => switch (ex) {
     NetworkException() => Icons.wifi_off_rounded,
     UnauthorizedException() => Icons.lock_outline_rounded,
-    ForbiddenException() => Icons.block_rounded,
     NotFoundException() => Icons.search_off_rounded,
     ServerException() => Icons.cloud_off_rounded,
     _ => Icons.error_outline_rounded,
@@ -85,7 +84,6 @@ class AppErrorWidget extends StatelessWidget {
   String _titleForException(AppException ex) => switch (ex) {
     NetworkException() => 'Pas de connexion',
     UnauthorizedException() => 'Session expirée',
-    ForbiddenException() => 'Accès refusé',
     NotFoundException() => 'Introuvable',
     ServerException() => 'Erreur serveur',
     _ => 'Une erreur est survenue',

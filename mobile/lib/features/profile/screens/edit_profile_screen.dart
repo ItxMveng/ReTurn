@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/profile/providers/profile_provider.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/profile/providers/profile_provider.dart';
 
 /// Écran d'édition du profil avec upload avatar + champs modifiables
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -237,7 +237,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 28),
 
               // ── Champ téléphone → OTP ───────────────────────────
-              _SectionTitle('Numéro de téléphone'),
+              const _SectionTitle('Numéro de téléphone'),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -273,7 +273,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 20),
 
               // ── Email ────────────────────────────────────────────
-              _SectionTitle('Adresse email'),
+              const _SectionTitle('Adresse email'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _emailCtrl,
@@ -299,7 +299,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 20),
 
               // ── Nom complet ──────────────────────────────────────
-              _SectionTitle('Nom complet'),
+              const _SectionTitle('Nom complet'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameCtrl,
@@ -317,7 +317,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 20),
 
               // ── Ville ────────────────────────────────────────────
-              _SectionTitle('Ville'),
+              const _SectionTitle('Ville'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _cityCtrl,
@@ -332,7 +332,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 20),
 
               // ── Région ──────────────────────────────────────────
-              _SectionTitle('Région (optionnel)'),
+              const _SectionTitle('Région (optionnel)'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _regionCtrl,
@@ -346,7 +346,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 20),
 
               // ── Adresse ─────────────────────────────────────────
-              _SectionTitle('Adresse (optionnel)'),
+              const _SectionTitle('Adresse (optionnel)'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _addressCtrl,

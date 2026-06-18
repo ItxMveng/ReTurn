@@ -1,13 +1,10 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:docretour/core/network/dio_provider.dart';
-import 'package:docretour/core/services/notification_service.dart';
-import 'package:docretour/core/utils/token_storage.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
+import 'package:return_mobile/core/network/dio_provider.dart';
+import 'package:return_mobile/core/services/notification_service.dart';
+import 'package:return_mobile/core/utils/token_storage.dart';
 
 class UserProfile {
   final String id;
@@ -58,15 +55,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   Dio get _dio => ref.read(dioProvider);
 
   @override
-  Future<UserProfile?> build() async {
-    final authState = ref.watch(authProvider);
-    final isAuth = authState.maybeWhen(
-      authenticated: (_, __, ___) => true,
-      orElse: () => false,
-    );
-    if (!isAuth) return null;
-    return _fetch();
-  }
+  Future<UserProfile?> build() => _fetch();
 
   Future<UserProfile?> _fetch() async {
     try {

@@ -64,7 +64,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 8),
                 Text('Bienvenue sur ReTurn',
                     style: TextStyle(
-                        color: cs.onSurface.withOpacity(0.6),
+                        color: cs.onSurface.withValues(alpha: 0.6),
                         fontSize: 15)),
                 const SizedBox(height: 32),
                 TextFormField(
@@ -102,7 +102,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: cs.error.withOpacity(0.08),
+                        color: cs.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(children: [

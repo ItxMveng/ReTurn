@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/matches_provider.dart';
-import '../models/match_model.dart';
+import '../models/match.dart';
 
 class MatchesListPage extends ConsumerWidget {
   const MatchesListPage({super.key});
@@ -22,7 +22,7 @@ class MatchesListPage extends ConsumerWidget {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.compare_arrows,
                       size: 64,
-                      color: cs.onSurface.withOpacity(0.2)),
+                      color: cs.onSurface.withValues(alpha: 0.2)),
                   const SizedBox(height: 16),
                   const Text('Aucun match pour le moment',
                       style: TextStyle(fontWeight: FontWeight.w600)),
@@ -31,7 +31,7 @@ class MatchesListPage extends ConsumerWidget {
                       'Les matchs apparaissent automatiquement\nlorsqu\'un document correspond',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: cs.onSurface.withOpacity(0.5),
+                          color: cs.onSurface.withValues(alpha: 0.5),
                           fontSize: 13)),
                 ]),
               )
@@ -54,16 +54,17 @@ class MatchesListPage extends ConsumerWidget {
 }
 
 class _MatchTile extends StatelessWidget {
-  final MatchModel match;
+  final Match match;
   final VoidCallback onTap;
   const _MatchTile({required this.match, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final color = match.scorePercent >= 80
+    final scorePercent = (match.score * 100).round();
+    final color = scorePercent >= 80
         ? Colors.green
-        : match.scorePercent >= 60
+        : scorePercent >= 60
             ? Colors.orange
             : Colors.red;
 
@@ -76,7 +77,7 @@ class _MatchTile extends StatelessWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           border:
-              Border.all(color: cs.onSurface.withOpacity(0.08)),
+              Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
         ),
         child: Row(children: [
           Stack(
@@ -87,12 +88,12 @@ class _MatchTile extends StatelessWidget {
                 height: 48,
                 child: CircularProgressIndicator(
                   value: match.score,
-                  backgroundColor: color.withOpacity(0.15),
+                  backgroundColor: color.withValues(alpha: 0.15),
                   valueColor: AlwaysStoppedAnimation(color),
                   strokeWidth: 4,
                 ),
               ),
-              Text('${match.scorePercent}%',
+              Text('$scorePercent%',
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -109,10 +110,12 @@ class _MatchTile extends StatelessWidget {
                         fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                    '${match.createdAt.day}/${match.createdAt.month}/${match.createdAt.year}',
+                    match.createdAt == null
+                        ? 'Date inconnue'
+                        : '${match.createdAt!.day}/${match.createdAt!.month}/${match.createdAt!.year}',
                     style: TextStyle(
                         fontSize: 12,
-                        color: cs.onSurface.withOpacity(0.5))),
+                        color: cs.onSurface.withValues(alpha: 0.5))),
               ],
             ),
           ),
@@ -121,11 +124,9 @@ class _MatchTile extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: match.isConfirmed
-                        ? Colors.green
-                        : cs.onSurface.withOpacity(0.6))),
-            backgroundColor:
-                match.isConfirmed ? Colors.green.withOpacity(0.1) : null,
+                    color: match.isPending
+                        ? Colors.orange
+                        : cs.onSurface.withValues(alpha: 0.6))),
             side: BorderSide.none,
             visualDensity: VisualDensity.compact,
           ),

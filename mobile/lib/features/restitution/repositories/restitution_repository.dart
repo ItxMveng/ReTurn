@@ -17,9 +17,13 @@ class RestitutionRepository {
     return Restitution.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<Restitution> get(String id) async {
+  Future<RestitutionModel> getById(String id) async {
     final res = await _dio.get('/restitutions/$id');
-    return Restitution.fromJson(res.data as Map<String, dynamic>);
+    return RestitutionModel.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<RestitutionModel>> listMyRestitutions() async {
+    return [];
   }
 
   Future<Restitution> confirm(String id, String code) async {

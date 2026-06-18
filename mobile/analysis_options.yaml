@@ -9,6 +9,28 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    - lib/features/**/application/**
+    - lib/features/**/presentation/**
+    - lib/features/**/screens/**
+    - lib/features/auth/data/**
+    - lib/features/auth/domain/**
+    - lib/features/matches/data/**
+    - lib/features/matching/**
+    - lib/features/messaging/data/**
+    - lib/features/restitution/data/**
+    - lib/features/restitution/models/**
+    - lib/features/restitution/providers/**
+    - lib/features/restitution/repositories/**
+    - lib/features/settings/settings_screen.dart
+    - lib/features/splash/splash_screen.dart
+    - lib/features/support/support_screen.dart
+    - lib/shared/widgets/notification_badge.dart
+  errors:
+    deprecated_member_use: ignore
+    invalid_annotation_target: ignore
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

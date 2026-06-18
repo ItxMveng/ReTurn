@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
+
+// Couleur principale de l'app (teal)
+const _kPrimary = Color(0xFF01696F);
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -43,24 +45,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final size = MediaQuery.of(context).size;
 
     final pages = [
-      _PageData(icon: Icons.find_in_page_outlined,
-          title: l.onboarding1Title, body: l.onboarding1Body, colorIdx: 0),
-      _PageData(icon: Icons.search_outlined,
-          title: l.onboarding2Title, body: l.onboarding2Body, colorIdx: 1),
-      _PageData(icon: Icons.verified_user_outlined,
-          title: l.onboarding3Title, body: l.onboarding3Body, colorIdx: 2),
+      _PageData(
+          icon: Icons.find_in_page_outlined,
+          title: l.onboarding1Title,
+          body: l.onboarding1Body,
+          colorIdx: 0),
+      _PageData(
+          icon: Icons.search_outlined,
+          title: l.onboarding2Title,
+          body: l.onboarding2Body,
+          colorIdx: 1),
+      _PageData(
+          icon: Icons.verified_user_outlined,
+          title: l.onboarding3Title,
+          body: l.onboarding3Body,
+          colorIdx: 2),
     ];
 
-    final cardColor = Theme.of(context).colorScheme.brightness == Brightness.light
-        ? Colors.white
-        : Theme.of(context).colorScheme.surfaceContainerHighest;
-    // Top section height: skip button + logo
+    final cardColor =
+        Theme.of(context).colorScheme.brightness == Brightness.light
+            ? Colors.white
+            : Theme.of(context).colorScheme.surfaceContainerHighest;
     final topH = size.height * 0.42;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Dark gradient top
+          // Fond haut sombre
           Container(
             height: topH,
             decoration: const BoxDecoration(
@@ -71,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Card bottom
+          // Carte basse
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -85,12 +96,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Content
+          // Contenu
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Skip button
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
@@ -114,11 +124,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       'assets/images/logo_ReTurn-removebg.png',
                       height: 80,
                       errorBuilder: (_, __, ___) => const Icon(
-                          Icons.find_in_page, size: 80, color: kGreen),
+                        Icons.find_in_page,
+                        size: 80,
+                        color: _kPrimary,
+                      ),
                     ),
                   ),
                 ),
-                // Pages
                 Expanded(
                   child: PageView.builder(
                     controller: _controller,
@@ -127,7 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     itemBuilder: (_, i) => _OnboardingPage(data: pages[i]),
                   ),
                 ),
-                // Dots
+                // Points de pagination
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -140,14 +152,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: _page == i
-                            ? kGreen
+                            ? _kPrimary
                             : Theme.of(context).colorScheme.outline,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                   ),
                 ),
-                // CTA
+                // Bouton CTA
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
                   child: SizedBox(

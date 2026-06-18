@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/profile/providers/profile_provider.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/profile/providers/profile_provider.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});

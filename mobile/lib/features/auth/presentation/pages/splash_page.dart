@@ -62,7 +62,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: AppColors.onPrimary.withOpacity(0.15),
+                    color: AppColors.onPrimary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(28),
                   ),
                   child: const Icon(Icons.find_in_page_rounded, size: 56, color: AppColors.onPrimary),

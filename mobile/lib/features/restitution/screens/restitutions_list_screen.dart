@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/features/restitution/providers/restitution_provider.dart';
-import 'package:docretour/shared/models/restitution.dart';
+import 'package:return_mobile/features/restitution/providers/restitution_provider.dart';
+import 'package:return_mobile/shared/models/restitution.dart';
 
 class RestitutionsListScreen extends ConsumerWidget {
   const RestitutionsListScreen({super.key});

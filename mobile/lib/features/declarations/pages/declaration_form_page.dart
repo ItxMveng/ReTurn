@@ -35,7 +35,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
   /// Lance le scanner OCR et pré-remplit les champs automatiquement
   Future<void> _launchOcr() async {
     final result = await context.push<Map<String, dynamic>>('/ocr/scan');
-    if (result == null) return;
+    if (!mounted || result == null) return;
 
     setState(() {
       if ((result['last_name'] as String?)?.isNotEmpty == true) {
@@ -101,7 +101,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
 
             // ── Type de document ──────────────────────────────
             DropdownButtonFormField<String>(
-              value: _docKind,
+              initialValue: _docKind,
               decoration: const InputDecoration(
                 labelText: 'Type de document',
                 prefixIcon: Icon(Icons.badge_outlined),
@@ -153,10 +153,10 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
             // ── Lieu ─────────────────────────────────────────
             TextFormField(
               controller: _locationCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: isFound ? 'Lieu où trouvé' : 'Lieu de perte',
-                prefixIcon: Icon(Icons.location_on_outlined),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.location_on_outlined),
+                border: const OutlineInputBorder(),
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Champ requis' : null,

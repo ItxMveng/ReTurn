@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});

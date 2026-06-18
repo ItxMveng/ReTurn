@@ -6,12 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/declarations/providers/declaration_provider.dart';
-import 'package:docretour/features/declarations/services/ocr_service.dart';
-import 'package:docretour/features/profile/providers/profile_provider.dart';
-import 'package:docretour/l10n/app_localizations.dart';
-import 'package:docretour/shared/widgets/document_type_dropdown.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/declarations/providers/declaration_provider.dart';
+import 'package:return_mobile/features/declarations/services/ocr_service.dart';
+import 'package:return_mobile/features/profile/providers/profile_provider.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
+import 'package:return_mobile/shared/widgets/document_type_dropdown.dart';
 
 class DeclarationFormScreen extends ConsumerStatefulWidget {
   final String declarationType; // "found" | "lost"

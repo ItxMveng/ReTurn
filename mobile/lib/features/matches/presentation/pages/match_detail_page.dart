@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../application/matches_notifier.dart';
 import '../../data/models/match_model.dart';
+import '../../declarations/application/declarations_notifier.dart';
 
 class MatchDetailPage extends ConsumerWidget {
   const MatchDetailPage({super.key, required this.id});
@@ -31,14 +32,16 @@ class _MatchBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final found = match.declarationFound;
-    final lost  = match.declarationLost;
+    final asyncFound = ref.watch(declarationDetailProvider(match.foundDeclarationId));
+    final asyncLost  = ref.watch(declarationDetailProvider(match.lostDeclarationId));
+    final found = asyncFound.valueOrNull;
+    final lost  = asyncLost.valueOrNull;
 
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         // ─ Score ─
-        _ScoreBanner(score: match.scorePercent),
+        _ScoreBanner(score: match.scorePercent.toInt()),
         const SizedBox(height: 20),
 
         // ─ Les deux déclarations ─
@@ -73,7 +76,7 @@ class _MatchBody extends ConsumerWidget {
         if (match.isPending) ..._buildActions(context, ref),
 
         // ─ Lien restitution (si confirmed + restitutionId) ─
-        if (match.isConfirmed && match.restitutionId != null) ..[
+        if (match.isConfirmed && match.restitutionId != null) ...[
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: () => context.pushNamed('restitution-detail', pathParameters: {'id': match.restitutionId!}),
@@ -145,7 +148,7 @@ class _ScoreBanner extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text('Score de correspondance', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant)),
+          const Text('Score de correspondance', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant)),
           const SizedBox(height: 8),
           Text('$score%', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: _color)),
           const SizedBox(height: 8),
@@ -229,16 +232,17 @@ class _ConfirmStatus extends StatelessWidget {
 class _ConfirmRow extends StatelessWidget {
   const _ConfirmRow({required this.label, required this.confirmed});
   final String label;
-  final bool confirmed;
+  final bool? confirmed;
 
   @override
   Widget build(BuildContext context) {
+    final isConfirmed = confirmed ?? false;
     return Row(
       children: [
-        Icon(confirmed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-          size: 18, color: confirmed ? AppColors.success : AppColors.onSurfaceVariant),
+        Icon(isConfirmed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          size: 18, color: isConfirmed ? AppColors.success : AppColors.onSurfaceVariant),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(fontSize: 13, color: confirmed ? AppColors.onSurface : AppColors.onSurfaceVariant, fontWeight: confirmed ? FontWeight.w600 : FontWeight.w400)),
+        Text(label, style: TextStyle(fontSize: 13, color: isConfirmed ? AppColors.onSurface : AppColors.onSurfaceVariant, fontWeight: isConfirmed ? FontWeight.w600 : FontWeight.w400)),
       ],
     );
   }

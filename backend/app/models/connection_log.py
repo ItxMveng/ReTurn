@@ -20,6 +20,7 @@ class ConnectionStatus(str, enum.Enum):
 class ConnectionLog(Base):
     """Enregistre chaque tentative de connexion pour traçabilité légale."""
     __tablename__ = "connection_logs"
+    __table_args__ = {"schema": "docretour"}
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -27,7 +28,7 @@ class ConnectionLog(Base):
     # NULL si l'utilisateur n'existe pas encore (tentative avec numéro inconnu)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("docretour.users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

@@ -60,14 +60,13 @@ app = FastAPI(
 )
 
 _cors_origins = settings.CORS_ORIGINS
-# Allow all origins only in non-production environments
-_allow_all = settings.ENVIRONMENT != "production"
+_is_prod = settings.ENVIRONMENT == "production"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if _allow_all else _cors_origins,
-    # credentials=True is incompatible with wildcard origin
-    allow_credentials=not _allow_all,
+    # Non-prod: accept all origins + explicit "null" (file:// admin panel)
+    allow_origins=_cors_origins if _is_prod else ["*", "null"],
+    allow_credentials=_is_prod,  # wildcard origin is incompatible with credentials
     allow_methods=["*"],
     allow_headers=["*"],
 )

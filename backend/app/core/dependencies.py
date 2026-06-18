@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/otp/verify")
 
 
 async def get_current_user(
@@ -36,7 +36,8 @@ async def get_current_user(
     result = await db.execute(
         select(User).where(
             User.id == uuid.UUID(user_id),
-            User.is_active == True,  # noqa: E712
+            User.is_active == True,   # noqa: E712
+            User.is_banned == False,  # noqa: E712 — banni = plus accès API
         )
     )
     user = result.scalar_one_or_none()

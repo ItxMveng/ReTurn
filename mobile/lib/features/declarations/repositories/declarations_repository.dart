@@ -18,18 +18,18 @@ class DeclarationsRepository {
     });
     final items = (res.data['items'] as List);
     return items
-        .map((e) => Declaration.fromJson(e as Map<String, dynamic>))
+        .map((e) => DeclarationModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<Declaration> get(String id) async {
     final res = await _dio.get('/declarations/$id');
-    return Declaration.fromJson(res.data as Map<String, dynamic>);
+    return DeclarationModel.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<Declaration> create(Map<String, dynamic> data) async {
     final res = await _dio.post('/declarations', data: data);
-    return Declaration.fromJson(res.data as Map<String, dynamic>);
+    return DeclarationModel.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<void> delete(String id) => _dio.delete('/declarations/$id');

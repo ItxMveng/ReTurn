@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:docretour/features/matching/repositories/match_repository.dart';
-import 'package:docretour/shared/models/match.dart';
+import 'package:return_mobile/features/matching/repositories/match_repository.dart';
+import 'package:return_mobile/shared/models/match.dart';
 
-export 'package:docretour/features/matching/repositories/match_repository.dart'
+export 'package:return_mobile/features/matching/repositories/match_repository.dart'
     show matchRepositoryProvider;
 
 final matchListProvider =

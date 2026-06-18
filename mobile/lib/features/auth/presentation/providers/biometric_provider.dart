@@ -3,9 +3,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:logger/logger.dart';
 
-import 'package:docretour/core/constants/app_constants.dart';
-import 'package:docretour/core/providers/settings_provider.dart';
-import 'package:docretour/core/services/biometric_service.dart';
+import 'package:return_mobile/core/providers/settings_provider.dart';
+import 'package:return_mobile/core/services/biometric_service.dart';
 
 part 'biometric_provider.freezed.dart';
 

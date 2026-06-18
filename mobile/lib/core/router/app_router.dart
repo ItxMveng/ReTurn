@@ -1,8 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/splash/splash_page.dart';
-import '../../features/auth/pages/login_page.dart';
-import '../../features/auth/pages/register_page.dart';
+import '../../features/auth/screens/phone_input_screen.dart';
+import '../../features/auth/screens/otp_verify_screen.dart';
 import '../../features/home/home_shell.dart';
 import '../../features/declarations/pages/declarations_list_page.dart';
 import '../../features/declarations/pages/declaration_form_page.dart';
@@ -25,8 +25,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
-      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-      GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
+      GoRoute(path: '/auth/phone', builder: (_, __) => const PhoneInputScreen()),
+      GoRoute(
+        path: '/auth/otp',
+        builder: (_, state) =>
+            OtpVerifyScreen(phoneNumber: state.extra as String),
+      ),
 
       // ── OCR (hors shell — plein écran) ─────────────────────────
       GoRoute(path: '/ocr/scan', builder: (_, __) => const OcrScanPage()),

@@ -31,7 +31,7 @@ class DeclarationsRepository {
 
       final response = await apiClient.get<Map<String, dynamic>>(
         '/declarations',
-        queryParameters: queryParams,
+        query: queryParams,
         fromJson: (d) => d as Map<String, dynamic>,
       );
       final items = response['items'] as List<dynamic>? ?? [];
@@ -78,6 +78,21 @@ class DeclarationsRepository {
   Future<void> deleteDeclaration(String id) async {
     try {
       await apiClient.delete('/declarations/$id');
+    } on DioException catch (e) {
+      throw mapException(e);
+    } catch (e) {
+      throw AppException.unknown(e.toString());
+    }
+  }
+
+  Future<List<String>> getDocumentTypes() async {
+    try {
+      final response = await apiClient.get<Map<String, dynamic>>(
+        '/declarations/document-types',
+        fromJson: (d) => d as Map<String, dynamic>,
+      );
+      final items = response['types'] as List<dynamic>? ?? [];
+      return items.map((e) => e as String).toList();
     } on DioException catch (e) {
       throw mapException(e);
     } catch (e) {

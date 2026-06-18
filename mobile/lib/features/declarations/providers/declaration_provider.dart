@@ -1,18 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:docretour/features/declarations/repositories/declaration_repository.dart';
-import 'package:docretour/features/matching/providers/match_provider.dart';
-import 'package:docretour/shared/models/declaration.dart';
+import '../repositories/declaration_repository.dart';
+import '../../matching/providers/match_provider.dart';
+import '../data/models/declaration_model.dart';
 
 final declarationListProvider =
-    AsyncNotifierProvider<DeclarationListNotifier, List<Declaration>>(
+    AsyncNotifierProvider<DeclarationListNotifier, List<DeclarationModel>>(
         DeclarationListNotifier.new);
 
-class DeclarationListNotifier extends AsyncNotifier<List<Declaration>> {
+class DeclarationListNotifier extends AsyncNotifier<List<DeclarationModel>> {
   DeclarationRepository get _repo =>
       ref.read(declarationRepositoryProvider);
 
   @override
-  Future<List<Declaration>> build() {
+  Future<List<DeclarationModel>> build() {
     // Écouter les changements de matchs pour auto-synchroniser les statuts
     ref.listen(matchListProvider, (_, next) {
       next.whenData((matches) => _syncStatusFromMatches(matches));
@@ -27,9 +27,9 @@ class DeclarationListNotifier extends AsyncNotifier<List<Declaration>> {
     final matchedDeclIds = <String>{};
     for (final m in matches) {
       // Un match actif (non rejeté) marque les deux déclarations comme 'matched'
-      if (m.status != 'rejected') {
-        matchedDeclIds.add(m.declarationFoundId as String);
-        matchedDeclIds.add(m.declarationLostId as String);
+      if (m.status != 'rejected' && m.status != 'cancelled') {
+        if (m.declarationFoundId != null) matchedDeclIds.add(m.declarationFoundId as String);
+        if (m.declarationLostId != null) matchedDeclIds.add(m.declarationLostId as String);
       }
     }
     final updated = current.map((d) {
@@ -48,7 +48,7 @@ class DeclarationListNotifier extends AsyncNotifier<List<Declaration>> {
     state = await AsyncValue.guard(_repo.listMyDeclarations);
   }
 
-  Future<Declaration> create({
+  Future<DeclarationModel> create({
     required String declarationType,
     required String documentType,
     String? documentNumber,

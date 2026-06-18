@@ -12,16 +12,15 @@ final dioProvider = Provider<Dio>((ref) {
     receiveTimeout: const Duration(seconds: 15),
     headers: {'Content-Type': 'application/json'},
   ));
-  dio.interceptors.add(AuthInterceptor(dio, ref));
+  dio.interceptors.add(AuthInterceptor(dio));
   return dio;
 });
 
 class AuthInterceptor extends Interceptor {
   final Dio _dio;
-  final Ref _ref;
   static const _storage = FlutterSecureStorage();
 
-  AuthInterceptor(this._dio, this._ref);
+  AuthInterceptor(this._dio);
 
   @override
   Future<void> onRequest(

@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/errors/error_handler.dart';
-import '../../auth/application/auth_notifier.dart';
 import '../data/models/message_model.dart';
 import '../data/repositories/messaging_repository.dart';
 
@@ -40,15 +38,10 @@ class ConversationState {
 @riverpod
 class ConversationNotifier extends _$ConversationNotifier {
   late final String _matchId;
-  StreamSubscription<MessageModel>? _wsSub;
 
   @override
   ConversationState build(String matchId) {
     _matchId = matchId;
-    ref.onDispose(() {
-      _wsSub?.cancel();
-      _repo.disconnectWs();
-    });
     _init();
     return const ConversationState(isLoading: true);
   }
@@ -58,25 +51,12 @@ class ConversationNotifier extends _$ConversationNotifier {
   Future<void> _init() async {
     // 1. Charger l’historique
     await _loadHistory();
-    // 2. Connecter le WebSocket
-    final token = ref.read(authNotifierProvider).maybeWhen(
-      authenticated: (u) => u.accessToken,
-      orElse: () => null,
-    );
-    if (token != null) {
-      _repo.connectWs(_matchId, token);
-      _wsSub = _repo.messageStream.listen((msg) {
-        state = state.copyWith(
-          messages: [...state.messages, msg],
-        );
-      });
-    }
   }
 
   Future<void> _loadHistory({String? before}) async {
     state = state.copyWith(isLoading: true);
     try {
-      final msgs = await _repo.getHistory(_matchId, before: before);
+      final msgs = await _repo.getMessages(_matchId, cursor: before);
       final merged = before != null
           ? [...msgs, ...state.messages]
           : msgs;
@@ -93,7 +73,7 @@ class ConversationNotifier extends _$ConversationNotifier {
   /// Charger les messages plus anciens (pagination infinie vers le haut)
   Future<void> loadMore() async {
     if (!state.hasMore || state.isLoading || state.messages.isEmpty) return;
-    await _loadHistory(before: state.messages.first.createdAt);
+    await _loadHistory(before: state.messages.first.createdAt?.toIso8601String());
   }
 
   Future<void> send(String content) async {
@@ -103,20 +83,20 @@ class ConversationNotifier extends _$ConversationNotifier {
       // Optimistic update
       final tempMsg = MessageModel(
         id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-        matchId: _matchId,
+        conversationId: _matchId,
         senderId: 'me',
         content: content.trim(),
-        createdAt: DateTime.now().toIso8601String(),
+        createdAt: DateTime.now(),
         isRead: false,
       );
       state = state.copyWith(
         messages: [...state.messages, tempMsg],
         isSending: false,
       );
-      // Envoi HTTP de secours (WebSocket est le canal principal)
       await _repo.sendMessage(_matchId, content.trim());
     } catch (e) {
       state = state.copyWith(isSending: false, error: friendlyError(e));
     }
   }
 }
+

@@ -37,7 +37,7 @@ class HomePage extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bonjour 👋', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w400)),
+                  const Text('Bonjour 👋', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w400)),
                   Text(displayName, style: const TextStyle(fontSize: 16, color: AppColors.onSurface, fontWeight: FontWeight.w700)),
                 ],
               ),
@@ -137,8 +137,8 @@ class HomePage extends ConsumerWidget {
                   ...matches.pending.take(3).map((m) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _MatchPreview(
-                      score: m.scorePercent,
-                      docType: m.declarationFound?.documentLabel ?? '?',
+                      score: m.scorePercent.toInt(),
+                      docType: 'Document',
                       onTap: () => context.pushNamed(RouteNames.matchDetail, pathParameters: {'id': m.id}),
                     ),
                   )),

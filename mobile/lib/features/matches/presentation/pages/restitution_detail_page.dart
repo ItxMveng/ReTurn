@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../application/matches_notifier.dart';
-import '../../data/models/restitution_model.dart';
 import '../../data/repositories/matches_repository.dart';
+import '../../../restitution/data/models/restitution_model.dart';
 
 class RestitutionDetailPage extends ConsumerStatefulWidget {
   const RestitutionDetailPage({super.key, required this.id});
@@ -74,7 +74,7 @@ class _RestitutionDetailPageState extends ConsumerState<RestitutionDetailPage> {
             const SizedBox(height: 20),
 
             // ─ Lieu de rendez-vous ─
-            _SectionTitle(title: 'Lieu de remise'),
+            const _SectionTitle(title: 'Lieu de remise'),
             const SizedBox(height: 10),
             rest.meetingPoint != null
                 ? _InfoBox(value: rest.meetingPoint!)
@@ -100,7 +100,7 @@ class _RestitutionDetailPageState extends ConsumerState<RestitutionDetailPage> {
 
             // ─ Photos de preuve ─
             if (rest.proofPhotoUrls.isNotEmpty) ...[
-              _SectionTitle(title: 'Photos de preuve'),
+              const _SectionTitle(title: 'Photos de preuve'),
               const SizedBox(height: 10),
               SizedBox(
                 height: 140,
@@ -119,7 +119,7 @@ class _RestitutionDetailPageState extends ConsumerState<RestitutionDetailPage> {
 
             // ─ Notation (si completed) ─
             if (rest.isCompleted && !_ratingSubmitted) ...[
-              _SectionTitle(title: 'Notez cette restitution'),
+              const _SectionTitle(title: 'Notez cette restitution'),
               const SizedBox(height: 10),
               _StarRating(
                 rating: _selectedRating ?? 0,

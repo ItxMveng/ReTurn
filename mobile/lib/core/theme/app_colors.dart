@@ -29,6 +29,10 @@ abstract final class AppColors {
   static const success           = Color(0xFF437A22);
   static const warning           = Color(0xFF964219);
 
+  // Couleurs additionnelles utilisées dans l'interface
+  static const kGreen            = Color(0xFF437A22);
+  static const kGreenDark        = Color(0xFF2E4D14);
+
   // ── Dark mode ────────────────────────────────────────────────
   static const darkBackground    = Color(0xFF171614);
   static const darkSurface       = Color(0xFF1C1B19);

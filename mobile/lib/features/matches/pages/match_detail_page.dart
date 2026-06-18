@@ -34,11 +34,11 @@ class MatchDetailPage extends ConsumerWidget {
                         value: m.score,
                         strokeWidth: 8,
                         backgroundColor:
-                            cs.primary.withOpacity(0.15),
+                            cs.primary.withValues(alpha: 0.15),
                         valueColor: AlwaysStoppedAnimation(cs.primary),
                       ),
                     ),
-                    Text('${m.scorePercent}%',
+                    Text('${m.scorePercent.toInt()}%',
                         style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900)),
@@ -49,48 +49,48 @@ class MatchDetailPage extends ConsumerWidget {
               Center(
                 child: Text('Score de correspondance',
                     style: TextStyle(
-                        color: cs.onSurface.withOpacity(0.5),
+                        color: cs.onSurface.withValues(alpha: 0.5),
                         fontSize: 13)),
               ),
               const SizedBox(height: 28),
               _info('Statut', m.status),
-              _info('Déclaration trouvée', m.declarationFoundId),
-              _info('Déclaration perdue', m.declarationLostId),
-              _info('Date',
-                  '${m.createdAt.day}/${m.createdAt.month}/${m.createdAt.year}'),
+              _info('Déclaration trouvée', m.foundDeclarationId),
+              _info('Déclaration perdue', m.lostDeclarationId),
+              if (m.createdAt != null)
+                _info('Date',
+                    '${m.createdAt!.day}/${m.createdAt!.month}/${m.createdAt!.year}'),
               const SizedBox(height: 24),
-              if (m.isPending) ...
-                [
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await ref
-                          .read(matchesRepositoryProvider)
-                          .confirm(m.id);
-                      ref.invalidate(matchDetailProvider(id));
-                      if (context.mounted)
-                        context.go('/restitution/${m.id}');
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text('Confirmer le match'),
-                    style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50)),
-                  ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      await ref
-                          .read(matchesRepositoryProvider)
-                          .reject(m.id);
-                      ref.invalidate(matchesProvider);
-                      if (context.mounted) context.pop();
-                    },
-                    icon: const Icon(Icons.close),
-                    label: const Text('Rejeter'),
-                    style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50)),
-                  ),
-                ]
-              else if (m.isConfirmed)
+              if (m.isPending) ...[
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    await ref
+                        .read(matchesRepositoryProvider)
+                        .confirmMatch(m.id);
+                    ref.invalidate(matchDetailProvider(id));
+                    if (context.mounted) {
+                      context.go('/restitution/${m.id}');
+                    }
+                  },
+                  icon: const Icon(Icons.check),
+                  label: const Text('Confirmer le match'),
+                  style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50)),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref
+                        .read(matchesRepositoryProvider)
+                        .rejectMatch(m.id);
+                    ref.invalidate(matchesProvider);
+                    if (context.mounted) context.pop();
+                  },
+                  icon: const Icon(Icons.close),
+                  label: const Text('Rejeter'),
+                  style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50)),
+                ),
+              ] else if (m.isConfirmed)
                 ElevatedButton.icon(
                   onPressed: () =>
                       context.go('/messages/${m.id}'),

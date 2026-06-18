@@ -10,7 +10,6 @@ class DeclarationDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(declarationDetailProvider(id));
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Détail')),
@@ -33,9 +32,10 @@ class DeclarationDetailPage extends ConsumerWidget {
               if (d.lieu != null) _row('Lieu', d.lieu!),
               if (d.description != null)
                 _row('Description', d.description!),
-              _row('Statut', d.status.name),
-              _row('Date',
-                  '${d.createdAt.day}/${d.createdAt.month}/${d.createdAt.year}'),
+              _row('Statut', d.status),
+              if (d.createdAtDate != null)
+                _row('Date',
+                    '${d.createdAtDate!.day}/${d.createdAtDate!.month}/${d.createdAtDate!.year}'),
               if (d.lat != null && d.lon != null)
                 _row('Coordonnées',
                     '${d.lat!.toStringAsFixed(4)}, ${d.lon!.toStringAsFixed(4)}'),

@@ -11,7 +11,6 @@ ApiClient apiClient(Ref ref) {
   return ApiClient(
     baseUrl: AppConfig.apiBaseUrl,
     storage: ref.watch(secureStorageProvider),
-    ref: ref,
   );
 }
 
@@ -19,9 +18,7 @@ class ApiClient {
   ApiClient({
     required String baseUrl,
     required SecureStorageService storage,
-    required Ref ref,
-  })  : _storage = storage,
-        _ref = ref {
+  }) : _storage = storage {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -29,14 +26,13 @@ class ApiClient {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
     ));
     _dio.interceptors.addAll([
-      _AuthInterceptor(_storage, _dio, _ref),
+      _AuthInterceptor(_storage, _dio),
       LogInterceptor(requestBody: AppConfig.isDebug, responseBody: AppConfig.isDebug),
     ]);
   }
 
   late final Dio _dio;
   final SecureStorageService _storage;
-  final Ref _ref;
 
   Future<T> get<T>(String path, {required T Function(dynamic) fromJson, Map<String, dynamic>? query}) async {
     final r = await _dio.get(path, queryParameters: query);
@@ -65,10 +61,9 @@ class ApiClient {
 
 /// Intercepteur JWT : injecte l'access token et gère le refresh auto
 class _AuthInterceptor extends Interceptor {
-  _AuthInterceptor(this._storage, this._dio, this._ref);
+  _AuthInterceptor(this._storage, this._dio);
   final SecureStorageService _storage;
   final Dio _dio;
-  final Ref _ref;
 
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {

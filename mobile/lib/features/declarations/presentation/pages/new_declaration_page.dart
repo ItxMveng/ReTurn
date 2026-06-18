@@ -44,15 +44,15 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
     setState(() => _loading = true);
     try {
       final repo = ref.read(declarationsRepositoryProvider);
-      final decl = await repo.createDeclaration(
-        declarationType:     _declarationType,
-        documentType:        _documentType!,
-        documentNumber:      _docNumberCtrl.text.trim().isEmpty ? null : _docNumberCtrl.text.trim(),
-        ownerName:           _ownerNameCtrl.text.trim().isEmpty ? null : _ownerNameCtrl.text.trim(),
-        description:         _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-        locationDescription: _locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim(),
-        eventDate:           _eventDate?.toIso8601String().split('T').first,
-      );
+      final decl = await repo.createDeclaration({
+        'declaration_type':  _declarationType,
+        'document_type':     _documentType!,
+        'document_number':   _docNumberCtrl.text.trim().isEmpty ? null : _docNumberCtrl.text.trim(),
+        'owner_name':        _ownerNameCtrl.text.trim().isEmpty ? null : _ownerNameCtrl.text.trim(),
+        'description':       _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        'location_description': _locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim(),
+        'event_date':        _eventDate?.toIso8601String().split('T').first,
+      });
       if (!mounted) return;
       ref.read(declarationsNotifierProvider.notifier).addItem(decl);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -108,7 +108,7 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
           children: [
 
             // ── Type de déclaration ───────────────────────────────────────
-            _SectionLabel(label: 'Que souhaitez-vous déclarer ?'),
+            const _SectionLabel(label: 'Que souhaitez-vous déclarer ?'),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -132,13 +132,13 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
             const SizedBox(height: 24),
 
             // ── Type de document ───────────────────────────────────────────
-            _SectionLabel(label: 'Type de document'),
+            const _SectionLabel(label: 'Type de document'),
             const SizedBox(height: 10),
             docTypesAsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (e, _) => Text('Erreur : $e', style: const TextStyle(color: AppColors.error)),
               data: (types) => DropdownButtonFormField<String>(
-                value: _documentType,
+                initialValue: _documentType,
                 hint: const Text('Sélectionner le type'),
                 decoration: const InputDecoration(),
                 items: types.map((t) => DropdownMenuItem(
@@ -152,7 +152,7 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
             const SizedBox(height: 20),
 
             // ── Infos sur le document ──────────────────────────────────────
-            _SectionLabel(label: 'Informations sur le document'),
+            const _SectionLabel(label: 'Informations sur le document'),
             const SizedBox(height: 10),
             TextFormField(
               controller: _ownerNameCtrl,
@@ -175,7 +175,7 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
             const SizedBox(height: 24),
 
             // ── Lieu & date ────────────────────────────────────────────────
-            _SectionLabel(label: 'Lieu & date'),
+            const _SectionLabel(label: 'Lieu & date'),
             const SizedBox(height: 10),
             TextFormField(
               controller: _locationCtrl,
@@ -208,7 +208,7 @@ class _NewDeclarationPageState extends ConsumerState<NewDeclarationPage> {
             const SizedBox(height: 24),
 
             // ── Description libre ────────────────────────────────────────────
-            _SectionLabel(label: 'Description (optionnel)'),
+            const _SectionLabel(label: 'Description (optionnel)'),
             const SizedBox(height: 10),
             TextFormField(
               controller: _descCtrl,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/matches_provider.dart';
+import '../application/matches_notifier.dart';
 import '../data/models/match_model.dart';
 
 class MatchesListScreen extends ConsumerWidget {
@@ -12,32 +12,33 @@ class MatchesListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Correspondances')),
-      body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
-        data: (matches) => matches.isEmpty
-            ? const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.compare_arrows, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('Aucune correspondance trouvée',
-                        style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(matchesNotifierProvider.notifier).refresh(),
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: matches.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (ctx, i) => _MatchCard(match: matches[i]),
-                ),
-              ),
-      ),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : state.error != null
+              ? Center(child: Text('Erreur : ${state.error}'))
+              : state.items.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.compare_arrows, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('Aucune correspondance trouvée',
+                              style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(matchesNotifierProvider.notifier).fetch(),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, i) =>
+                            _MatchCard(match: state.items[i]),
+                      ),
+                    ),
     );
   }
 }
@@ -76,7 +77,7 @@ class _MatchCard extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => ref
                           .read(matchesNotifierProvider.notifier)
-                          .reject(match.id),
+                          .actOnMatch(match.id, 'ignored'),
                       icon: const Icon(Icons.close, color: Colors.red),
                       label: const Text('Rejeter',
                           style: TextStyle(color: Colors.red)),
@@ -87,7 +88,7 @@ class _MatchCard extends ConsumerWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => ref
                           .read(matchesNotifierProvider.notifier)
-                          .confirm(match.id),
+                          .actOnMatch(match.id, 'confirmed'),
                       icon: const Icon(Icons.check),
                       label: const Text('Confirmer'),
                     ),

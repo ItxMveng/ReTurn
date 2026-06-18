@@ -2,7 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../application/auth_notifier.dart';
-import '../domain/auth_state.dart';
+import '../application/auth_state.dart';
+
+class _GoogleBtn extends StatelessWidget {
+  final VoidCallback? onPressed;
+  const _GoogleBtn({this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: cs.outlineVariant),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                  color: Color(0xFF4285F4), shape: BoxShape.circle),
+              child: const Text('G',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14)),
+            ),
+            const SizedBox(width: 10),
+            Text('Continuer avec Google',
+                style: TextStyle(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class PhoneInputScreen extends ConsumerStatefulWidget {
   const PhoneInputScreen({super.key});
@@ -23,15 +66,27 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final otpState = ref.watch(otpNotifierProvider);
     final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState is _Loading;
+    final isOtpLoading = otpState.maybeWhen(sending: () => true, orElse: () => false);
+    final isGoogleLoading = authState.maybeWhen(loading: () => true, orElse: () => false);
+    final isLoading = isOtpLoading || isGoogleLoading;
 
-    ref.listen(authNotifierProvider, (_, next) {
-      next.maybeWhen(
-        otpSent: (phone) => context.go('/auth/otp', extra: phone),
+    // Navigue vers OTP quand le code est envoyé
+    ref.listen<OtpState>(otpNotifierProvider, (_, next) {
+      next.whenOrNull(
+        sent: (phone) => context.go('/auth/otp', extra: phone),
         error: (msg) => ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg))),
-        orElse: () {},
+      );
+    });
+
+    // Redirige vers home si Google Sign-In réussi
+    ref.listen<AuthState>(authNotifierProvider, (_, next) {
+      next.whenOrNull(
+        authenticated: (_) => context.go('/declarations'),
+        error: (msg) => ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg), backgroundColor: Theme.of(context).colorScheme.error)),
       );
     });
 
@@ -78,16 +133,42 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                     : () {
                         if (_formKey.currentState!.validate()) {
                           ref
-                              .read(authNotifierProvider.notifier)
+                              .read(otpNotifierProvider.notifier)
                               .requestOtp(_phoneCtrl.text.trim());
                         }
                       },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                child: isOtpLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5))
                     : const Text('Recevoir le code'),
+              ),
+              const SizedBox(height: 20),
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('ou',
+                      style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.4))),
+                ),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 20),
+              _GoogleBtn(
+                onPressed: isLoading
+                    ? null
+                    : () => ref
+                        .read(authNotifierProvider.notifier)
+                        .signInWithGoogle(),
               ),
             ],
           ),

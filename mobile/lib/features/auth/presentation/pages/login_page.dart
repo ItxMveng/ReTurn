@@ -33,16 +33,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!mounted) return;
     setState(() => _loading = false);
     final otpState = ref.read(otpNotifierProvider);
-    otpState.when(
-      idle: () {},
-      sending: () {},
+    otpState.whenOrNull(
       sent: (phone) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => OtpVerifyPage(phoneNumber: phone)),
+          MaterialPageRoute(
+              builder: (_) => OtpVerifyPage(phoneNumber: phone)),
         );
       },
-      verifying: () {},
-      verified: () {},
       error: (msg) => _showError(msg),
     );
   }
@@ -77,7 +74,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 56),
-                // Logo
                 Row(
                   children: [
                     Container(
@@ -87,18 +83,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.find_in_page_rounded, color: AppColors.onPrimary, size: 28),
+                      child: const Icon(Icons.find_in_page_rounded,
+                          color: AppColors.onPrimary, size: 28),
                     ),
                     const SizedBox(width: 12),
-                    const Text('ReTurn', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    const Text('ReTurn',
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary)),
                   ],
                 ),
                 const SizedBox(height: 48),
-                const Text('Connexion', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                const Text('Connexion',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface)),
                 const SizedBox(height: 6),
                 const Text(
                   'Entrez votre numéro de téléphone.\nNous vous enverrons un code de vérification.',
-                  style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant, height: 1.5),
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.5),
                 ),
                 const SizedBox(height: 36),
                 TextFormField(
@@ -112,8 +120,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Numéro requis';
-                    final cleaned = v.trim().replaceAll(RegExp(r'[\s\-]'), '');
-                    if (cleaned.length < 9) return 'Numéro invalide (min. 9 chiffres)';
+                    final cleaned =
+                        v.trim().replaceAll(RegExp(r'[\s\-]'), '');
+                    if (cleaned.length < 9) {
+                      return 'Numéro invalide (min. 9 chiffres)';
+                    }
                     return null;
                   },
                 ),
@@ -121,7 +132,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ElevatedButton(
                   onPressed: _loading ? null : _requestOtp,
                   child: _loading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5))
                       : const Text('Recevoir le code OTP'),
                 ),
                 const SizedBox(height: 20),
@@ -132,8 +147,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       text: const TextSpan(
                         style: TextStyle(fontSize: 14),
                         children: [
-                          TextSpan(text: 'Pas de compte ? ', style: TextStyle(color: AppColors.onSurfaceVariant)),
-                          TextSpan(text: 'Créer un compte', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                          TextSpan(
+                              text: 'Pas de compte ? ',
+                              style: TextStyle(
+                                  color: AppColors.onSurfaceVariant)),
+                          TextSpan(
+                              text: 'Créer un compte',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),

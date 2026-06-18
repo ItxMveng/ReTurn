@@ -28,7 +28,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          _SectionHeader(label: 'Notifications'),
+          const _SectionHeader(label: 'Notifications'),
           _SwitchTile(
             icon: Icons.compare_arrows,
             label: 'Nouvelles correspondances',
@@ -48,7 +48,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onChanged: (v) => setState(() => _notifRestitution = v),
           ),
           const SizedBox(height: 8),
-          _SectionHeader(label: 'Apparence'),
+          const _SectionHeader(label: 'Apparence'),
           _SwitchTile(
             icon: Icons.dark_mode_outlined,
             label: 'Mode sombre',
@@ -56,7 +56,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onChanged: (v) => setState(() => _darkMode = v),
           ),
           const SizedBox(height: 8),
-          _SectionHeader(label: 'Compte'),
+          const _SectionHeader(label: 'Compte'),
           _ActionTile(
             icon: Icons.lock_outline,
             label: 'Changer le mot de passe',
@@ -68,7 +68,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onTap: () {},
           ),
           const SizedBox(height: 8),
-          _SectionHeader(label: 'À propos'),
+          const _SectionHeader(label: 'À propos'),
           _ActionTile(
             icon: Icons.info_outline,
             label: 'Version 1.0.0',
@@ -135,7 +135,7 @@ class _SwitchTile extends StatelessWidget {
               color: AppColors.onSurface)),
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
     );
   }
 }

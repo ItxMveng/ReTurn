@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/auth/presentation/providers/auth_provider.dart';
 
 /// Écran de modification du numéro de téléphone avec validation OTP
 /// Flux : saisir nouveau numéro → envoi OTP → saisir code → confirmation

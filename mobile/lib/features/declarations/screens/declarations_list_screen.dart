@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/declarations_provider.dart';
+import '../application/declarations_notifier.dart';
 import '../data/models/declaration_model.dart';
 
 class DeclarationsListScreen extends ConsumerWidget {
@@ -27,34 +27,61 @@ class DeclarationsListScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Déclarer'),
       ),
-      body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
-        data: (declarations) => declarations.isEmpty
-            ? const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('Aucune déclaration pour l'instant',
-                        style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: () => ref
-                    .read(declarationsNotifierProvider.notifier)
-                    .refresh(),
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: declarations.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (ctx, i) =>
-                      _DeclarationCard(declaration: declarations[i]),
-                ),
-              ),
-      ),
+      body: state.isLoading && state.items.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : state.error != null && state.items.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const SizedBox(height: 12),
+                      Text('Erreur : ${state.error}',
+                          style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => ref
+                            .read(declarationsNotifierProvider.notifier)
+                            .refresh(),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              : state.items.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('Aucune déclaration pour l\'instant',
+                              style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () => ref
+                          .read(declarationsNotifierProvider.notifier)
+                          .refresh(),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.items.length +
+                            (state.isFetchingMore ? 1 : 0),
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, i) {
+                          if (i == state.items.length) {
+                            return const Center(
+                                child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ));
+                          }
+                          return _DeclarationCard(
+                              declaration: state.items[i]);
+                        },
+                      ),
+                    ),
     );
   }
 }
@@ -75,7 +102,7 @@ class _DeclarationCard extends StatelessWidget {
             color: isFound ? Colors.green : Colors.red,
           ),
         ),
-        title: Text(declaration.ownerName),
+        title: Text(declaration.ownerName ?? 'Inconnu'),
         subtitle: Text(
           '${declaration.documentType} • ${declaration.locationName ?? 'Lieu inconnu'}',
         ),

@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:docretour/core/constants/app_constants.dart';
-import 'package:docretour/core/utils/token_storage.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
+import '../constants/app_constants.dart';
+import '../utils/token_storage.dart';
 
 /// Single Dio instance shared by all repositories.
 /// Handles:
@@ -20,7 +19,7 @@ final dioProvider = Provider<Dio>((ref) {
 
   dio.interceptors.add(_AppInterceptor(
     dio: dio,
-    onForceLogout: () => ref.read(authProvider.notifier).logout(),
+    onForceLogout: () async {},
   ));
 
   // Dispose Dio when provider is destroyed (e.g. full app restart)

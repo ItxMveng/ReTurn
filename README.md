@@ -140,95 +140,136 @@ Interface d'administration **100 % statique** (`admin/index.html`) — aucun bui
 
 | Section | Capacités |
 |---------|----------|
-| **Vue d'ensemble** | KPIs en temps réel (utilisateurs, déclarations, matchs, restitutions, signalements, note moyenne), graphique activité 30 j dynamique, donut répartition matchs dynamique, tableau activité récente |
+| **Vue d'ensemble** | KPIs en temps réel (utilisateurs, déclarations, matchs, restitutions, signalements, délai moyen de résolution), graphique activité 30 j dynamique, synthèse du flux récent, tableau activité récente |
 | **Utilisateurs** | Liste paginable, recherche, filtre (actif / banni / admin), **vue détail complète** (historique, stats), bannir / rétablir, **promouvoir admin** |
 | **Déclarations** | Liste, recherche, filtre type, flag suspect, suppression, export CSV |
 | **Matchs** | Score coloré (vert ≥80 %, orange ≥50 %, rouge <50 %), statut, liens déclarations |
 | **Restitutions** | Statut, note, dates d'initiation et de complétion |
 | **Signalements** | Résolution en 1 clic |
-| **Zones certifiées** | **Formulaire de création complet** (nom, ville, lat/lon, rayon, certification), suppression |
+| **Zones certifiées** | Création et suppression de zones réelles (nom, type, adresse, latitude, longitude, certification) |
 | **Audit Logs** | Historique chronologique des actions admin |
-| **Mode démo** | Double-clic sur le logo → accès immédiat sans backend |
 | **Mode sombre** | Bascule clair/sombre intégrée |
 
-### Lancer le dashboard admin
+### Important
 
-#### ✅ Option 1 — Python (recommandé, zéro dépendance)
+- Le backoffice admin n'utilise plus de données fictives.
+- Il n'y a plus de connexion email/mot de passe locale.
+- La connexion admin passe par le **même backend réel** que le mobile, via **OTP**.
+- Le numéro utilisé dans l'écran admin doit exister en base et avoir `is_admin = true`.
+
+### Lancement complet en données réelles
+
+#### 1. Démarrer Docker proprement
+
+Depuis la racine du projet :
 
 ```bash
-# Depuis la racine du projet
+docker compose --env-file infra/.env -f infra/docker-compose.yml up -d postgres redis minio
+```
+
+Si Docker retourne une erreur du type :
+
+```text
+dockerDesktopLinuxEngine ... request returned 500 Internal Server Error
+```
+
+faites ceci avant de relancer :
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.yml down
+docker compose --env-file infra/.env -f infra/docker-compose.yml pull
+docker compose --env-file infra/.env -f infra/docker-compose.yml up -d postgres redis minio
+```
+
+Si l'erreur persiste, le problème vient de Docker Desktop et non du projet :
+- redémarrer Docker Desktop
+- vérifier que Docker Desktop est bien en mode conteneurs Linux
+- relancer ensuite la commande `docker compose ... up -d`
+
+#### 2. Appliquer les migrations backend
+
+Le backend lit maintenant automatiquement `infra/.env`, donc il n'est plus nécessaire de dupliquer la configuration dans `backend/.env`.
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+Si vous voyez encore `ModuleNotFoundError: No module named 'app'`, assurez-vous simplement d'être bien dans le dossier `backend` avant d'exécuter la commande.
+
+#### 3. Démarrer l'API
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+API disponible sur `http://localhost:8000`
+
+#### 4. Créer ou activer le compte administrateur
+
+Le compte admin est un **vrai utilisateur** de la plateforme, promu côté base.
+
+Étape A : créez le compte utilisateur avec le flux OTP réel.
+
+PowerShell :
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://localhost:8000/api/v1/auth/otp/request `
+  -ContentType 'application/json' `
+  -Body '{"phone_number":"+237600000000"}'
+```
+
+En environnement local avec `DEBUG=true`, l'API renvoie aussi `debug_code`. Utilisez ce code pour vérifier l'OTP :
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://localhost:8000/api/v1/auth/otp/verify `
+  -ContentType 'application/json' `
+  -Body '{"phone_number":"+237600000000","otp_code":"123456"}'
+```
+
+Cette vérification crée l'utilisateur en base s'il n'existe pas encore.
+
+Étape B : promouvez ensuite ce compte en administrateur.
+
+Exemple avec les valeurs par défaut de `infra/.env` :
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.yml exec postgres psql -U docretour_user -d docretour_db -c "UPDATE docretour.users SET is_admin = true WHERE phone_number = '+237600000000';"
+```
+
+Si vous avez changé `POSTGRES_USER` ou `POSTGRES_DB` dans `infra/.env`, remplacez ces valeurs dans la commande ci-dessus.
+
+Vous pouvez vérifier :
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.yml exec postgres psql -U docretour_user -d docretour_db -c "SELECT phone_number, is_admin FROM docretour.users ORDER BY created_at DESC;"
+```
+
+#### 5. Lancer le backoffice admin
+
+Option recommandée :
+
+```bash
 cd admin
-python3 -m http.server 3000
+python -m http.server 3000
 ```
 
-> Ouvrir **http://localhost:3000** dans le navigateur.
+Ouvrir ensuite `http://localhost:3000`
 
-#### Option 2 — Node.js / npx
+#### 6. Connexion au panneau admin
 
-```bash
-npx serve admin -l 3000
-```
+1. Saisir le **numéro de téléphone** du compte promu administrateur.
+2. Cliquer sur `Recevoir le code`.
+3. En local, si `DEBUG=true`, le code renvoyé par l'API est automatiquement injecté dans le champ OTP.
+4. Cliquer sur `Se connecter`.
 
-#### Option 3 — Ouvrir directement (mode démo uniquement)
-
-```bash
-open admin/index.html       # macOS
-start admin/index.html      # Windows
-xdg-open admin/index.html   # Linux
-```
-
-> ⚠️ En `file://`, les appels API sont bloqués par CORS. Utilisez un serveur local pour les données réelles.
-
----
-
-### Se connecter en mode développement (mock data)
-
-Pas besoin de backend. Deux options :
-
-**Option A — Double-clic sur le logo ReTurn** dans l'écran de login
-- Accès immédiat avec email `admin@return.cm`
-- Toutes les sections affichent des données fictives réalistes
-
-**Option B — Saisir n'importe quel email + mot de passe valides**
-- Si l'API n'est pas joignable, le dashboard bascule automatiquement en mode mock
-
----
-
-### Se connecter en mode production (API réelle)
-
-**Étape 1 — Démarrer le backend**
-
-```bash
-# Infrastructure (PostgreSQL, Redis, MinIO)
-docker compose -f infra/docker-compose.yml up -d
-
-# Migrations
-cd backend && alembic upgrade head
-
-# API
-uvicorn app.main:app --reload
-# → http://localhost:8000
-```
-
-**Étape 2 — Créer votre premier compte admin**
-
-Inscrivez-vous d'abord via l'API (ou l'app mobile), puis promouvez le compte en admin :
-
-```sql
--- Via psql, pgAdmin ou DBeaver
-UPDATE users SET is_admin = true WHERE phone = '+237XXXXXXXXX';
--- ou par email :
-UPDATE users SET is_admin = true WHERE email = 'votre@email.com';
-```
-
-Alternativement, depuis le dashboard lui-même (si vous êtes déjà admin) :
-> **Utilisateurs → trouver le compte → bouton "Promouvoir admin"**
-
-**Étape 3 — Se connecter**
-
-Ouvrir **http://localhost:3000**, saisir l'email et le mot de passe du compte admin.
-
----
+Si la connexion retourne `403`, cela signifie généralement :
+- que le compte existe mais n'a pas encore `is_admin = true`
+- ou que l'OTP a bien été validé mais avec le mauvais numéro
 
 ### Configurer l'URL de l'API
 
@@ -257,10 +298,11 @@ location /admin {
 ### Auth
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `POST` | `/auth/register` | Inscription |
-| `POST` | `/auth/login` | Connexion → JWT |
-| `POST` | `/auth/refresh` | Renouvellement token |
-| `POST` | `/auth/logout` | Invalidation token |
+| `POST` | `/auth/otp/request` | Demande un code OTP |
+| `POST` | `/auth/otp/verify` | Vérifie l'OTP et retourne les JWT |
+| `POST` | `/auth/verify-firebase-token` | Connexion via token Firebase |
+| `POST` | `/auth/refresh` | Renouvelle les tokens |
+| `GET` | `/auth/me` | Retourne l'utilisateur connecté |
 
 ### Profil
 | Méthode | Route | Description |

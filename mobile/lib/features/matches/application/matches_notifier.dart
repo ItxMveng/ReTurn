@@ -56,8 +56,9 @@ class MatchesNotifier extends _$MatchesNotifier {
       final updatedItems = state.items.map((m) {
         if (m.id != matchId) return m;
         String newStatus = m.status;
-        if (action == 'ignored') newStatus = 'ignored';
-        else if (response.bothConfirmed) newStatus = 'confirmed';
+        if (action == 'ignored') {
+          newStatus = 'ignored';
+        } else if (response.bothConfirmed) newStatus = 'confirmed';
         return m.copyWith(
           status: newStatus,
           confirmedByOwner: response.confirmedByOwner,

@@ -32,7 +32,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state =
           AuthState.authenticated(userId: tokens.userId, phone: tokens.phone);
     } on Exception catch (e) {
-      state = AuthState.error(e.toString());
+      state = AuthState.error(message: e.toString());
     }
   }
 
@@ -46,7 +46,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state =
           AuthState.authenticated(userId: tokens.userId, phone: tokens.phone);
     } on Exception catch (e) {
-      state = AuthState.error(e.toString());
+      state = AuthState.error(message: e.toString());
     }
   }
 

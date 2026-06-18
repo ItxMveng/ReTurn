@@ -29,7 +29,7 @@ class AuthInterceptor extends Interceptor {
       try {
         final refreshToken = await _storage.getRefreshToken();
         if (refreshToken == null) {
-          await _storage.clearTokens();
+          await _storage.clearAll();
           return handler.next(err);
         }
         // Appel refresh
@@ -44,7 +44,7 @@ class AuthInterceptor extends Interceptor {
         final retryRes = await _dio.fetch(opts);
         return handler.resolve(retryRes);
       } catch (_) {
-        await _storage.clearTokens();
+        await _storage.clearAll();
         return handler.next(err);
       }
     }
@@ -98,12 +98,12 @@ class ErrorInterceptor extends Interceptor {
         case 401:
           appEx = const AppException.unauthorized('Session expirée. Veuillez vous reconnecter.');
         case 403:
-          appEx = const AppException.forbidden('Accès refusé.');
+          appEx = const AppException.unauthorized('Accès refusé.');
         case 404:
           appEx = const AppException.notFound('Ressource introuvable.');
         case 409:
           final msg = err.response?.data?['detail'] ?? 'Conflit de données.';
-          appEx = AppException.conflict(msg.toString());
+          appEx = AppException.server(msg.toString());
         case 422:
           final msg = err.response?.data?['detail'] ?? 'Données invalides.';
           appEx = AppException.validation(msg.toString());

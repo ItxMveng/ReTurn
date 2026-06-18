@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:docretour/core/providers/settings_provider.dart';
-import 'package:docretour/core/theme/app_theme.dart';
-import 'package:docretour/features/auth/presentation/providers/auth_provider.dart';
-import 'package:docretour/features/profile/providers/profile_provider.dart';
-import 'package:docretour/l10n/app_localizations.dart';
+import 'package:return_mobile/core/providers/settings_provider.dart';
+import 'package:return_mobile/core/theme/app_theme.dart';
+import 'package:return_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:return_mobile/features/profile/providers/profile_provider.dart';
+import 'package:return_mobile/l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -135,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Profil ────────────────────────────────────────────────
-                _SectionLabel('Mon profil'),
+                const _SectionLabel('Mon profil'),
                 const SizedBox(height: 10),
                 _TapTile(
                   icon: Icons.contact_phone_outlined,

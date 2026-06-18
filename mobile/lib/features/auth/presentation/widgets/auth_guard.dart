@@ -5,8 +5,8 @@ import '../../../../core/router/route_names.dart';
 import '../../application/auth_notifier.dart';
 import '../../application/auth_state.dart';
 
-/// Widget guard : redirige vers login si non authentifié
-/// Usage : wraper n’importe quelle page protégée
+/// Widget guard : redirige vers login si non authentifié.
+/// Wrape n'importe quelle page protégée.
 class AuthGuard extends ConsumerWidget {
   const AuthGuard({super.key, required this.child});
   final Widget child;
@@ -46,7 +46,8 @@ class _LoadingScreen extends StatelessWidget {
   }
 }
 
-/// Provider exposant l’utilisateur courant (non-null si authentifié)
-extension AuthNotifierX on WidgetRef {
-  bool get isAuthenticated => read(authNotifierProvider) is AuthAuthenticated;
+/// Extension utilitaire sur WidgetRef
+extension AuthStateX on WidgetRef {
+  bool get isAuthenticated =>
+      read(authNotifierProvider) is AuthAuthenticated;
 }

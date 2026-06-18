@@ -9,22 +9,34 @@ class MatchesRepository {
   MatchesRepository(this._ref);
   final Ref _ref;
 
+  ApiClient get _client => _ref.read(apiClientProvider);
+
   Future<List<Match>> fetchMatches() async {
-    final client = _ref.read(apiClientProvider);
-    final res = await client.get('/matches');
-    return (res.data as List)
-        .map((e) => Match.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final res = await _client.get<List<dynamic>>(
+      '/matches',
+      fromJson: (d) => d as List<dynamic>,
+    );
+    return res.map((e) => Match.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<Match> fetchMatch(String id) async {
-    final client = _ref.read(apiClientProvider);
-    final res = await client.get('/matches/$id');
-    return Match.fromJson(res.data as Map<String, dynamic>);
+    return _client.get<Match>(
+      '/matches/$id',
+      fromJson: (d) => Match.fromJson(d as Map<String, dynamic>),
+    );
   }
 
   Future<void> confirmMatch(String id) async {
-    final client = _ref.read(apiClientProvider);
-    await client.patch('/matches/$id/confirm');
+    await _client.patch<Map<String, dynamic>>(
+      '/matches/$id/confirm',
+      fromJson: (d) => d as Map<String, dynamic>,
+    );
+  }
+
+  Future<void> rejectMatch(String id) async {
+    await _client.patch<Map<String, dynamic>>(
+      '/matches/$id/reject',
+      fromJson: (d) => d as Map<String, dynamic>,
+    );
   }
 }

@@ -19,7 +19,9 @@ class ScaffoldWithNavBar extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     for (var i = 0; i < _tabs.length; i++) {
       if (location.startsWith('/${_tabs[i].route}') ||
-          location == '/${_tabs[i].route}') return i;
+          location == '/${_tabs[i].route}') {
+        return i;
+      }
     }
     return 0;
   }
@@ -30,7 +32,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
         ),
         child: BottomNavigationBar(

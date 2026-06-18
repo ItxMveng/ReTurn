@@ -8,7 +8,9 @@ class AppButton extends StatelessWidget {
   final bool loading;
   final AppButtonVariant variant;
   final IconData? icon;
+  final Widget? iconWidget;
   final double? width;
+  final bool expand;
 
   const AppButton({
     super.key,
@@ -17,7 +19,9 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.variant = AppButtonVariant.primary,
     this.icon,
+    this.iconWidget,
     this.width,
+    this.expand = false,
   });
 
   @override
@@ -38,7 +42,8 @@ class AppButton extends StatelessWidget {
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
+              if (iconWidget != null) ...[iconWidget!, const SizedBox(width: 8)]
+              else if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
               Text(label),
             ],
           );
@@ -67,7 +72,7 @@ class AppButton extends StatelessWidget {
     };
 
     return SizedBox(
-      width: width ?? double.infinity,
+      width: expand ? double.infinity : width,
       height: 48,
       child: btn,
     );

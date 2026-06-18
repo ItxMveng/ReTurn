@@ -1,12 +1,28 @@
 import json
+from pathlib import Path
 from typing import Any
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+REPO_ROOT = BACKEND_DIR.parent
+ENV_FILES = tuple(
+    str(path)
+    for path in (
+        BACKEND_DIR / ".env",
+        REPO_ROOT / ".env",
+        REPO_ROOT / "infra" / ".env",
+    )
+)
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILES,
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # App
     APP_NAME: str = "DocRetour"
@@ -59,6 +75,19 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return json.loads(value)
         return value
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, value: Any) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug", "development"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "release", "production"}:
+                return False
+        return bool(value)
 
 
 settings = Settings()

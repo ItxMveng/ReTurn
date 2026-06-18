@@ -1,4 +1,4 @@
-import 'package:docretour/shared/models/declaration.dart';
+import 'package:return_mobile/shared/models/declaration.dart';
 
 class Match {
   final String id;
@@ -35,15 +35,16 @@ class Match {
         status: json['status'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
         declarationFound: json['declaration_found'] != null
-            ? Declaration.fromJson(
+            ? DeclarationModel.fromJson(
                 json['declaration_found'] as Map<String, dynamic>)
             : null,
         declarationLost: json['declaration_lost'] != null
-            ? Declaration.fromJson(
+            ? DeclarationModel.fromJson(
                 json['declaration_lost'] as Map<String, dynamic>)
             : null,
       );
 
   int get scorePercent => (score * 100).round();
   bool get isPending => status == 'pending';
+  bool get isConfirmed => status == 'confirmed';
 }
