@@ -374,10 +374,14 @@
 
 <script>
 (function(){
-  // Priority: ?api=URL param → window.RETURN_API_URL → localStorage → default
+  // Priority: ?api=URL param → window.RETURN_API_URL → localStorage → défaut.
+  // Défaut intelligent : en local (localhost) on vise le backend local ;
+  // hébergé (github.io / prod) on vise l'API de production Render.
   const _apiParam = new URLSearchParams(window.location.search).get('api');
   const _apiSaved = window.localStorage.getItem('return_api_url');
-  const _apiBase  = (_apiParam || window.RETURN_API_URL || _apiSaved || 'http://localhost:8000').replace(/\/+$/, '');
+  const _isLocal = /^(localhost|127\.|10\.0\.2\.2)/.test(window.location.hostname) || window.location.protocol === 'file:';
+  const _default = _isLocal ? 'http://localhost:8000' : 'https://docretour-api.onrender.com';
+  const _apiBase  = (_apiParam || window.RETURN_API_URL || _apiSaved || _default).replace(/\/+$/, '');
   if (_apiParam) window.localStorage.setItem('return_api_url', _apiParam);
   const API = _apiBase + '/api/v1';
   const STORAGE_TOKEN_KEY = 'return_admin_token';
