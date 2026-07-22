@@ -10,6 +10,10 @@ on:
     tags: ["v*"]
   workflow_dispatch: {}
 
+# Autorise le token GitHub Actions à créer la Release et y attacher l'APK.
+permissions:
+  contents: write
+
 jobs:
   build:
     name: APK release
