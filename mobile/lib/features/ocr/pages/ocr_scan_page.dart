@@ -76,8 +76,11 @@ class _OcrScanPageState extends ConsumerState<OcrScanPage> {
       return;
     }
     if (result.file != null) {
-      ref.read(_pickedImageProvider.notifier).state = File(result.file!.path);
-      ref.read(ocrProvider.notifier).reset();
+      final file = File(result.file!.path);
+      ref.read(_pickedImageProvider.notifier).state = file;
+      // Lance le scan AUTOMATIQUEMENT dès que la photo est prise/choisie —
+      // l'utilisateur n'a plus à appuyer sur « Analyser ».
+      ref.read(ocrProvider.notifier).processImage(file);
     }
   }
 
