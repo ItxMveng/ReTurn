@@ -83,7 +83,19 @@
     .cta-note { font-size: 13.5px; color: var(--muted); margin-top: 16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .cta-note b { color: var(--ink); font-weight: 600; }
 
-    .phone-wrap { display:flex; justify-content:center; }
+    /* Héros : une seule colonne sur mobile (sinon le mockup déborde et se coupe) */
+    @media (max-width: 900px){
+      .hero { padding: 48px 0 40px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 44px; text-align: center; }
+      .hero .lead { margin-left: auto; margin-right: auto; }
+      .hero .cta-row, .hero .cta-note { justify-content: center; }
+      .phone-wrap { order: 2; }
+    }
+    @media (max-width: 360px){
+      .phone { width: 240px; height: 486px; }
+    }
+
+    .phone-wrap { display:flex; justify-content:center; width: 100%; }
     .phone {
       width: 280px; height: 566px; border-radius: 40px; padding: 13px;
       background: linear-gradient(165deg, #0A1F16, #01696F 70%); box-shadow: var(--shadow); position: relative;
