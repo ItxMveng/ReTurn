@@ -33,6 +33,22 @@ jobs:
       - name: Dépendances Flutter
         run: flutter pub get
 
+      - name: Restaurer la config Firebase (gitignorée, fournie via secrets)
+        env:
+          FIREBASE_OPTIONS_B64: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64 }}
+          GOOGLE_SERVICES_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -z "$FIREBASE_OPTIONS_B64" ] || [ -z "$GOOGLE_SERVICES_B64" ]; then
+            echo "::error::Secrets FIREBASE_OPTIONS_DART_BASE64 et/ou GOOGLE_SERVICES_JSON_BASE64 manquants."
+            exit 1
+          fi
+          echo "$FIREBASE_OPTIONS_B64" | base64 -d > lib/firebase_options.dart
+          echo "$GOOGLE_SERVICES_B64" | base64 -d > android/app/google-services.json
+          echo "✓ firebase_options.dart + google-services.json restaurés."
+
+      - name: Générer le code (Freezed / Riverpod / json_serializable)
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Configurer la signature release (keystore depuis les secrets)
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
