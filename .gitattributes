@@ -1,0 +1,8 @@
+# Fins de ligne : LF forcé pour les fichiers exécutés sous Linux (Render/Docker).
+# Évite qu'un CRLF Windows casse le shebang des scripts au démarrage du conteneur.
+*.sh            text eol=lf
+Dockerfile*     text eol=lf
+start.sh        text eol=lf
+
+# Laisse Git gérer normalement le reste
+*               text=auto

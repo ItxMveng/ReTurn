@@ -39,6 +39,23 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _force_asyncpg_driver(cls, value: Any) -> Any:
+        """Force le driver asyncpg.
+
+        Render (et d'autres hébergeurs) injectent l'URL au format
+        `postgres://…` ou `postgresql://…`, que SQLAlchemy async ne sait pas
+        piloter (il faut `postgresql+asyncpg://…`). On réécrit le schéma pour
+        que l'app ET Alembic fonctionnent sans dépendre du format fourni.
+        """
+        if isinstance(value, str):
+            if value.startswith("postgres://"):
+                return "postgresql+asyncpg://" + value[len("postgres://"):]
+            if value.startswith("postgresql://"):
+                return "postgresql+asyncpg://" + value[len("postgresql://"):]
+        return value
+
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
