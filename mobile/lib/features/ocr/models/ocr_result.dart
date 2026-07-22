@@ -49,11 +49,40 @@ class OcrResult {
   };
 
   bool get isEmpty => rawText.trim().isEmpty;
+
+  OcrResult copyWithRawText(String rawText) => OcrResult(
+        rawText: rawText,
+        documentNumber: documentNumber,
+        lastName: lastName,
+        firstName: firstName,
+        birthDate: birthDate,
+        expiryDate: expiryDate,
+        mrz: mrz,
+        kind: kind,
+      );
 }
 
 enum DocumentKind {
-  cni,        // Carte Nationale d'Identité camerounaise
-  passport,   // Passeport
-  driverLicense, // Permis de conduire
-  unknown,
+  cni,                 // Carte Nationale d'Identité camerounaise
+  passport,            // Passeport
+  driverLicense,       // Permis de conduire
+  birthCertificate,    // Acte de naissance
+  diploma,             // Diplôme
+  vehicleRegistration, // Carte grise
+  other,               // Autre document reconnu
+  unknown,             // Type non détecté
+}
+
+/// Correspondance avec les types attendus par le backend (DOCUMENT_TYPES).
+extension DocumentKindBackend on DocumentKind {
+  String get backendType => switch (this) {
+        DocumentKind.cni => 'cni',
+        DocumentKind.passport => 'passport',
+        DocumentKind.driverLicense => 'driving_license',
+        DocumentKind.birthCertificate => 'birth_certificate',
+        DocumentKind.diploma => 'diploma',
+        DocumentKind.vehicleRegistration => 'vehicle_registration',
+        DocumentKind.other => 'other',
+        DocumentKind.unknown => 'other',
+      };
 }

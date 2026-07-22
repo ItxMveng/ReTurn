@@ -12,9 +12,18 @@ from app.services import storage_service
 
 
 async def count_active(db: AsyncSession, user_id: uuid.UUID) -> int:
-    """Return the number of active declarations for a user (used for F-15 limit)."""
+    """Nombre de déclarations actives pour la limite F-15.
+
+    Un dossier multi-documents (group_id partagé) compte pour UNE seule
+    déclaration : on compte les groupes distincts, les déclarations isolées
+    comptant chacune pour elles-mêmes.
+    """
     result = await db.execute(
-        select(func.count()).where(
+        select(
+            func.count(
+                func.distinct(func.coalesce(Declaration.group_id, Declaration.id))
+            )
+        ).where(
             Declaration.user_id == user_id,
             Declaration.status == "active",
         )
@@ -51,6 +60,47 @@ async def create_declaration(
     db.add(decl)
     await db.flush()
     return decl
+
+
+async def create_declarations_group(
+    db: AsyncSession,
+    user: User,
+    items: list[DeclarationCreate],
+    photos: list[UploadFile],
+) -> list[Declaration]:
+    """Dossier multi-documents : crée une déclaration par document, toutes
+    reliées par un group_id commun (ex. portefeuille avec CNI + permis).
+
+    Les photos (max 3) sont partagées par toutes les déclarations du dossier ;
+    le matching tourne ensuite individuellement pour chaque document.
+    """
+    group_id = uuid.uuid4()
+    photo_urls: list[str] = []
+
+    for photo in photos[:3]:
+        content = await photo.read()
+        if content:
+            url = await storage_service.upload_photo(
+                content,
+                str(user.id),
+                f"group_{group_id}",
+                photo.content_type or "image/jpeg",
+            )
+            photo_urls.append(url)
+
+    declarations: list[Declaration] = []
+    for item in items:
+        decl = Declaration(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            photo_urls=photo_urls,
+            group_id=group_id,
+            **item.model_dump(),
+        )
+        db.add(decl)
+        declarations.append(decl)
+    await db.flush()
+    return declarations
 
 
 async def list_declarations_cursor(

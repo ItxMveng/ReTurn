@@ -7,3 +7,4 @@ from app.models.verification import IdentityVerification  # noqa: F401
 from app.models.restitution import Restitution  # noqa: F401
 from app.models.zone import Zone  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.app_config import AppConfig  # noqa: F401

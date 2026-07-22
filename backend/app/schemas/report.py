@@ -8,7 +8,10 @@ from app.models.report import ReportReason, ReportStatus
 
 
 class ReportCreate(BaseModel):
-    reported_id: uuid.UUID = Field(..., description="ID de l'utilisateur signalé")
+    # Optionnel : si absent, le serveur le déduit de l'autre participant du match.
+    reported_id: Optional[uuid.UUID] = Field(
+        None, description="ID de l'utilisateur signalé (déduit si absent)"
+    )
     reason: ReportReason = Field(..., description="Motif du signalement")
     description: Optional[str] = Field(
         None, max_length=1000, description="Description détaillée (optionnel)"
@@ -23,6 +26,9 @@ class ReportRead(BaseModel):
     match_id: uuid.UUID
     reporter_id: uuid.UUID
     reported_id: uuid.UUID
+    # Libellés lisibles renseignés par l'API admin (nom ou téléphone).
+    reporter_name: Optional[str] = None
+    reported_name: Optional[str] = None
     reason: ReportReason
     description: Optional[str]
     screenshot_url: Optional[str]

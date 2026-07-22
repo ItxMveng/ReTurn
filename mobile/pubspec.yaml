@@ -32,8 +32,8 @@ dependencies:
   hive_flutter: ^1.1.0
 
   # ── Firebase ─────────────────────────────────────────────────
-  firebase_core: ^3.3.0
-  firebase_auth: ^5.1.4
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
   google_sign_in: ^6.2.1
 
   # ── OCR — Google ML Kit (on-device, F-11) ─────────────────────
@@ -46,7 +46,7 @@ dependencies:
   local_auth: ^2.3.0
 
   # ── Notifications ────────────────────────────────────────────
-  firebase_messaging: ^15.1.0
+  firebase_messaging: ^16.4.1
   flutter_local_notifications: ^18.0.1
 
   # ── Localisation & dates ─────────────────────────────────────

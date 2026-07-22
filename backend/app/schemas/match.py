@@ -17,11 +17,14 @@ class MatchRead(BaseModel):
     user_lost_id: uuid.UUID
     score: float
     status: str
-    confirmed_by_owner: bool
-    confirmed_by_finder: bool
+    accepted_by_owner: bool
+    accepted_by_finder: bool
     created_at: datetime
     declaration_found: DeclarationRead | None = None
     declaration_lost: DeclarationRead | None = None
+    # Renseignés par l'API selon l'utilisateur courant (l'autre participant).
+    other_user_name: str | None = None
+    other_user_avatar: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -31,10 +34,10 @@ class MatchAction(BaseModel):
 
 
 class MatchConfirmResponse(BaseModel):
-    """Returned after a confirm action — includes restitution_id if both sides confirmed."""
+    """Returned after a confirm action — includes restitution_id if both sides accepted."""
     match_id: uuid.UUID
-    confirmed_by_owner: bool
-    confirmed_by_finder: bool
+    accepted_by_owner: bool
+    accepted_by_finder: bool
     both_confirmed: bool
     restitution_id: uuid.UUID | None = None
 

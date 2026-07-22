@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReTurn — Retrouvez vos documents perdus</title>
+  <meta name="description" content="ReTurn : l'application camerounaise qui vous aide à récupérer vos documents perdus en toute sécurité. Déclarez, matchez, récupérez." />
+  <meta property="og:title" content="ReTurn — Retrouvez vos documents perdus" />
+  <meta property="og:description" content="Déclarez un document perdu ou trouvé. Vérification anti-fraude. Remise sécurisée." />
+  <meta property="og:type" content="website" />
+  <style>
+    :root {
+      --primary: #01696F;
+      --primary-dark: #014f54;
+      --accent: #4FCFD6;
+      --bg: #FFFFFF;
+      --surface: #F7F6F2;
+      --ink: #0A1F1B;
+      --muted: #5b6b67;
+      --border: #E0DDD8;
+      --radius: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      color: var(--ink); background: var(--bg); line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(10px); background: rgba(255,255,255,0.82);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
+    .logo {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: grid; place-items: center; color: #fff; font-weight: 900;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--primary); color: #fff; font-weight: 700;
+      padding: 12px 22px; border-radius: 999px; border: none; cursor: pointer;
+      font-size: 15px; transition: transform .15s, background .15s;
+    }
+    .btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn.ghost { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+
+    /* Hero */
+    .hero { padding: 72px 0 56px; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+    .badge {
+      display: inline-block; background: var(--surface); color: var(--primary);
+      font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 999px;
+      border: 1px solid var(--border); margin-bottom: 18px;
+    }
+    h1 { font-size: 48px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+    h1 .grad { background: linear-gradient(120deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .lead { font-size: 18px; color: var(--muted); margin: 20px 0 28px; max-width: 34ch; }
+    .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .cta-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+    .phone {
+      justify-self: center; width: 260px; height: 530px; border-radius: 36px;
+      background: linear-gradient(160deg, #0A1F16, #01696F);
+      padding: 12px; box-shadow: 0 30px 60px -20px rgba(1,105,111,0.45);
+    }
+    .screen {
+      width: 100%; height: 100%; border-radius: 26px; background: var(--surface);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .screen-top { background: var(--primary); color: #fff; padding: 22px 18px; }
+    .screen-top small { opacity: .8; }
+    .screen-top b { display: block; font-size: 18px; }
+    .screen-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .card-mini { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .card-mini .row { display: flex; align-items: center; gap: 10px; }
+    .dot { width: 34px; height: 34px; border-radius: 9px; background: rgba(1,105,111,.1); display: grid; place-items: center; }
+    .bar { height: 6px; border-radius: 99px; background: rgba(1,105,111,.12); margin-top: 8px; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: var(--primary); }
+
+    /* Steps */
+    section { padding: 64px 0; }
+    .section-title { text-align: center; font-size: 32px; font-weight: 800; letter-spacing: -0.01em; }
+    .section-sub { text-align: center; color: var(--muted); margin: 12px auto 44px; max-width: 52ch; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+    .step .n { width: 40px; height: 40px; border-radius: 11px; background: var(--primary); color: #fff; display: grid; place-items: center; font-weight: 800; margin-bottom: 14px; }
+    .step h3 { font-size: 18px; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 15px; }
+
+    /* Features */
+    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .feat { display: flex; gap: 14px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .feat .ic { flex: none; width: 42px; height: 42px; border-radius: 11px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: grid; place-items: center; font-size: 20px; }
+    .feat h4 { font-size: 16px; margin-bottom: 4px; }
+    .feat p { color: var(--muted); font-size: 14px; }
+
+    /* Download */
+    .download { background: linear-gradient(160deg, #0A1F16, #01696F); color: #fff; border-radius: 24px; padding: 48px; text-align: center; }
+    .download h2 { font-size: 30px; margin-bottom: 10px; }
+    .download p { opacity: .85; max-width: 46ch; margin: 0 auto 26px; }
+    .btn.big { padding: 16px 34px; font-size: 17px; }
+    .btn.white { background: #fff; color: var(--primary); }
+    .install-steps { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 30px; font-size: 13px; opacity: .9; }
+    .install-steps span { display: flex; align-items: center; gap: 6px; }
+
+    footer { border-top: 1px solid var(--border); padding: 32px 0; color: var(--muted); font-size: 14px; }
+    .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 820px) {
+      .hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .lead { margin-inline: auto; }
+      .cta-row { justify-content: center; }
+      h1 { font-size: 38px; }
+      .steps { grid-template-columns: 1fr; }
+      .features { grid-template-columns: 1fr; }
+      .phone { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand"><span class="logo">R</span> ReTurn</div>
+      <a class="btn" href="#download">Télécharger l'app</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="badge">🇨🇲 Bêta ouverte · Yaoundé & Douala</span>
+          <h1>Retrouvez vos <span class="grad">documents perdus</span>, en toute sécurité.</h1>
+          <p class="lead">CNI, passeport, permis, carte grise… Déclarez votre document en 60 secondes. ReTurn le met en relation avec la personne qui l'a retrouvé.</p>
+          <div class="cta-row">
+            <a class="btn big" href="#download">⬇ Télécharger l'APK</a>
+            <a class="btn ghost" href="#how">Comment ça marche ?</a>
+          </div>
+          <p class="cta-note">Gratuit · Android · Vérification anti-fraude intégrée</p>
+        </div>
+        <div class="phone" aria-hidden="true">
+          <div class="screen">
+            <div class="screen-top">
+              <small>Bonjour 👋</small>
+              <b>Un document entre vos mains ?</b>
+            </div>
+            <div class="screen-body">
+              <div class="card-mini">
+                <div class="row">
+                  <span class="dot">📄</span>
+                  <div>
+                    <b>Carte Nationale d'Identité</b><br>
+                    <small style="color:var(--muted)">Correspondance trouvée</small>
+                  </div>
+                </div>
+                <div class="bar"><span style="width:88%"></span></div>
+              </div>
+              <div class="card-mini">
+                <div class="row">
+                  <span class="dot">🛡️</span>
+                  <div><b>Identité vérifiée</b><br><small style="color:var(--muted)">Remise sécurisée</small></div>
+                </div>
+              </div>
+              <div class="card-mini">
+                <div class="row">
+                  <span class="dot">💬</span>
+                  <div><b>Conversation ouverte</b><br><small style="color:var(--muted)">Convenez d'un lieu public</small></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW -->
+    <section id="how">
+      <div class="wrap">
+        <div class="section-title">3 étapes, pas plus</div>
+        <p class="section-sub">Pensé pour être utilisé par tout le monde, sans notice.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="n">1</div>
+            <h3>Déclarez</h3>
+            <p>Scannez ou photographiez le document. L'IA lit automatiquement les informations.</p>
+          </div>
+          <div class="step">
+            <div class="n">2</div>
+            <h3>On rapproche</h3>
+            <p>ReTurn met en correspondance les documents perdus et trouvés, et vous notifie.</p>
+          </div>
+          <div class="step">
+            <div class="n">3</div>
+            <h3>Récupérez</h3>
+            <p>Le propriétaire vérifie son identité, puis les deux parties conviennent d'un lieu sûr.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section style="background:var(--surface);">
+      <div class="wrap">
+        <div class="section-title">Sécurisé par conception</div>
+        <p class="section-sub">La confiance est au cœur de ReTurn.</p>
+        <div class="features">
+          <div class="feat"><span class="ic">🛡️</span><div><h4>Vérification anti-fraude</h4><p>Seul le vrai propriétaire, après vérification d'identité, accède aux coordonnées.</p></div></div>
+          <div class="feat"><span class="ic">🔒</span><div><h4>Données masquées</h4><p>Les numéros et informations sensibles restent floutés jusqu'à la vérification.</p></div></div>
+          <div class="feat"><span class="ic">💬</span><div><h4>Messagerie intégrée</h4><p>Discutez et organisez la remise sans jamais partager votre numéro.</p></div></div>
+          <div class="feat"><span class="ic">⭐</span><div><h4>Réputation & notation</h4><p>Chaque restitution est notée : une communauté de confiance.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section id="download">
+      <div class="wrap">
+        <div class="download">
+          <h2>Prêt à essayer ReTurn ?</h2>
+          <p>Téléchargez l'application, installez-la, et rejoignez la bêta. Vos retours nous aident à l'améliorer.</p>
+          <a class="btn big white" href="https://github.com/ItxMveng/ReTurn/releases/latest/download/return.apk">⬇ Télécharger ReTurn.apk</a>
+          <div class="install-steps">
+            <span>1 · Ouvrez le fichier téléchargé</span>
+            <span>2 · Autorisez « installer depuis cette source »</span>
+            <span>3 · Installez & créez votre compte</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>© <span id="y"></span> ReTurn — Récupération de documents · Cameroun</div>
+      <div><a href="https://github.com/ItxMveng/ReTurn/releases">Versions</a></div>
+    </div>
+  </footer>
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>

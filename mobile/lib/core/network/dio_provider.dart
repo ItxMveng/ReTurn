@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../constants/app_constants.dart';
-import '../utils/token_storage.dart';
+import '../config/app_config.dart';
+import '../storage/secure_storage.dart';
 
 /// Single Dio instance shared by all repositories.
 /// Handles:
 ///   - Attaching Bearer token to every request
-///   - 401 → automatic token refresh → retry original request
-///   - Refresh failure → logout + clear tokens
+///   - 401 → automatic token refresh (mutex partagé) → retry original request
+///   - Refresh failure → session expirée gérée par TokenRefresher
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
-    baseUrl: AppConstants.apiBaseUrl,
+    baseUrl: AppConfig.apiBaseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
     sendTimeout: const Duration(seconds: 30),
@@ -19,7 +19,7 @@ final dioProvider = Provider<Dio>((ref) {
 
   dio.interceptors.add(_AppInterceptor(
     dio: dio,
-    onForceLogout: () async {},
+    storage: ref.read(secureStorageProvider),
   ));
 
   // Dispose Dio when provider is destroyed (e.g. full app restart)
@@ -29,21 +29,17 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 class _AppInterceptor extends Interceptor {
-  _AppInterceptor({required this.dio, required this.onForceLogout});
+  _AppInterceptor({required this.dio, required this.storage});
 
   final Dio dio;
-  final Future<void> Function() onForceLogout;
-
-  bool _isRefreshing = false;
-  final List<({RequestOptions opts, ErrorInterceptorHandler handler})> _queue =
-      [];
+  final SecureStorageService storage;
 
   @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await getAccessToken();
+    final token = await storage.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -66,63 +62,18 @@ class _AppInterceptor extends Interceptor {
       return;
     }
 
-    if (_isRefreshing) {
-      _queue.add((opts: err.requestOptions, handler: handler));
-      return;
-    }
-
-    _isRefreshing = true;
-    try {
-      final refreshTok = await getRefreshToken();
-      if (refreshTok == null) {
-        await _forceLogout(handler, err);
+    // Refresh mutualisé : les appels concurrents attendent le même future.
+    final refreshed =
+        await TokenRefresher.refresh(storage, dio.options.baseUrl);
+    if (refreshed) {
+      try {
+        final newToken = await storage.getAccessToken();
+        handler.resolve(await dio.fetch(
+          err.requestOptions..headers['Authorization'] = 'Bearer $newToken',
+        ));
         return;
-      }
-
-      final refreshRes = await dio.post(
-        '/api/v1/auth/refresh',
-        data: {'refresh_token': refreshTok},
-        options: Options(
-          headers: <String, dynamic>{},
-          extra: {'skipAuthRetry': true},
-        ),
-      );
-
-      final newAccess = refreshRes.data['access_token'] as String;
-      final newRefresh = refreshRes.data['refresh_token'] as String;
-      await saveTokens(accessToken: newAccess, refreshToken: newRefresh);
-
-      // Retry original request
-      handler.resolve(await _retry(err.requestOptions, newAccess));
-
-      // Drain queued requests
-      final pending = List.of(_queue);
-      _queue.clear();
-      for (final item in pending) {
-        item.handler.resolve(await _retry(item.opts, newAccess));
-      }
-    } catch (_) {
-      final pending = List.of(_queue);
-      _queue.clear();
-      for (final item in pending) {
-        item.handler.next(err);
-      }
-      await _forceLogout(handler, err);
-    } finally {
-      _isRefreshing = false;
+      } catch (_) {/* la requête rejouée a échoué : on propage l'erreur */}
     }
-  }
-
-  Future<Response<dynamic>> _retry(
-      RequestOptions options, String newToken) async {
-    return dio.fetch(options
-      ..headers['Authorization'] = 'Bearer $newToken');
-  }
-
-  Future<void> _forceLogout(
-      ErrorInterceptorHandler handler, DioException err) async {
-    await clearTokens();
-    await onForceLogout();
     handler.next(err);
   }
 }

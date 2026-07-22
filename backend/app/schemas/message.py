@@ -16,6 +16,17 @@ class MessageRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ConversationRead(BaseModel):
+    """Une conversation = un match. Format attendu par l'app mobile."""
+
+    room_id: str
+    other_user_name: str
+    other_user_avatar: str | None = None
+    last_message: str | None = None
+    last_at: str | None = None
+    unread: int = 0
+
+
 class WsIncoming(BaseModel):
     content: str
     message_type: str = "text"

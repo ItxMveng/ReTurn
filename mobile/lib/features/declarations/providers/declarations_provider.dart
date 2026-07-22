@@ -13,3 +13,10 @@ final declarationDetailProvider =
   final repo = ref.read(declarationsRepositoryProvider);
   return repo.get(id);
 });
+
+/// Compteur « X / Y déclarations actives » (limite configurable côté admin).
+final declarationLimitsProvider =
+    FutureProvider<({int activeCount, int limit})>((ref) async {
+  final repo = ref.read(declarationsRepositoryProvider);
+  return repo.limits();
+});

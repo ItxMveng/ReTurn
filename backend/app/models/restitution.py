@@ -45,12 +45,25 @@ class Restitution(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False, index=True
     )
-    # Ratings left after handoff (1-5 stars each)
+    # Double validation de la remise physique (F-33) — chaque partie confirme dans l'app
+    handoff_confirmed_by_owner: Mapped[bool] = mapped_column(
+        __import__("sqlalchemy").Boolean, default=False, nullable=False
+    )
+    handoff_confirmed_by_finder: Mapped[bool] = mapped_column(
+        __import__("sqlalchemy").Boolean, default=False, nullable=False
+    )
+    # Ratings left after handoff (1-5 stars each) + commentaire optionnel
     rating_by_owner: Mapped[int | None] = mapped_column(
         __import__("sqlalchemy").Integer, nullable=True
     )
     rating_by_finder: Mapped[int | None] = mapped_column(
         __import__("sqlalchemy").Integer, nullable=True
+    )
+    comment_by_owner: Mapped[str | None] = mapped_column(
+        String(140), nullable=True
+    )
+    comment_by_finder: Mapped[str | None] = mapped_column(
+        String(140), nullable=True
     )
 
     completed_at: Mapped[datetime | None] = mapped_column(

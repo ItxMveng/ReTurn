@@ -54,7 +54,9 @@ from app.models.match import Match
 from app.models.report import Report, ReportReason, ReportStatus
 from app.models.restitution import Restitution
 from app.models.user import User
+from app.models.verification import IdentityVerification
 from app.models.zone import Zone
+from app.services import config_service, verification_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -92,6 +94,29 @@ def _get_ip(request: Optional[Request]) -> Optional[str]:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else None
+
+
+async def _user_labels(db: AsyncSession, user_ids: set) -> dict:
+    """id utilisateur → libellé lisible (nom complet, sinon téléphone/email)."""
+    ids = {i for i in user_ids if i is not None}
+    if not ids:
+        return {}
+    rows = (await db.execute(select(User).where(User.id.in_(ids)))).scalars().all()
+    return {
+        u.id: (u.full_name or "").strip() or u.phone_number or u.email or "—"
+        for u in rows
+    }
+
+
+async def _declarations_by_id(db: AsyncSession, decl_ids: set) -> dict:
+    """id déclaration → objet Declaration (batch, pour affichage admin)."""
+    ids = {i for i in decl_ids if i is not None}
+    if not ids:
+        return {}
+    rows = (
+        await db.execute(select(Declaration).where(Declaration.id.in_(ids)))
+    ).scalars().all()
+    return {d.id: d for d in rows}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +162,8 @@ class ChartDataPoint(BaseModel):
 
 class UserAdminRead(BaseModel):
     id: uuid.UUID
-    phone_number: str
+    # Nullable depuis la migration 005 (comptes Google sans téléphone).
+    phone_number: Optional[str] = None
     full_name: Optional[str]
     score_reputation: float
     is_admin: bool
@@ -150,7 +176,7 @@ class UserAdminRead(BaseModel):
 
 class UserAdminDetail(BaseModel):
     id: uuid.UUID
-    phone_number: str
+    phone_number: Optional[str] = None
     full_name: Optional[str]
     email: Optional[str]
     score_reputation: float
@@ -201,7 +227,13 @@ class DeclarationAdminRead(BaseModel):
     declaration_type: str
     status: str
     created_at: datetime
-    is_flagged: bool
+    # Tolère NULL sur les lignes antérieures à la migration 004.
+    is_flagged: Optional[bool] = False
+    # Champs lisibles pour le backoffice
+    owner_name: Optional[str] = None
+    document_number: Optional[str] = None
+    location_description: Optional[str] = None
+    user_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -215,9 +247,14 @@ class MatchAdminRead(BaseModel):
     user_lost_id: uuid.UUID
     score: float
     status: str
-    confirmed_by_owner: bool
-    confirmed_by_finder: bool
+    accepted_by_owner: bool
+    accepted_by_finder: bool
     created_at: datetime
+    # Champs lisibles pour le backoffice
+    document_type: Optional[str] = None
+    owner_name: Optional[str] = None
+    user_found_name: Optional[str] = None
+    user_lost_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -228,13 +265,56 @@ class RestitutionAdminRead(BaseModel):
     match_id: uuid.UUID
     status: str
     meeting_location: Optional[str]
+    handoff_confirmed_by_owner: Optional[bool] = False
+    handoff_confirmed_by_finder: Optional[bool] = False
     rating_by_owner: Optional[int]
     rating_by_finder: Optional[int]
     completed_at: Optional[datetime]
     created_at: datetime
+    # Champs lisibles pour le backoffice
+    document_type: Optional[str] = None
+    owner_name: Optional[str] = None
+    user_found_name: Optional[str] = None
+    user_lost_name: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class VerificationAdminRead(BaseModel):
+    id: uuid.UUID
+    match_id: uuid.UUID
+    user_id: uuid.UUID
+    status: str
+    verification_level: Optional[int] = 1
+    questions_passed: Optional[bool] = False
+    selfie_url: Optional[str]
+    doc_photo_url: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime
+    # Champs lisibles pour le backoffice
+    user_name: Optional[str] = None
+    document_type: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class VerificationRejectRequest(BaseModel):
+    reason: str
+
+
+class AppConfigRead(BaseModel):
+    active_declarations_limit: int
+    min_score: float
+    geo_max_km: float
+
+
+class AppConfigUpdate(BaseModel):
+    active_declarations_limit: Optional[int] = None
+    min_score: Optional[float] = None
+    geo_max_km: Optional[float] = None
 
 
 class ZoneCreate(BaseModel):
@@ -879,7 +959,13 @@ async def list_all_declarations(
     if flagged_only:
         q = q.where(Declaration.is_flagged == True)  # noqa: E712
     q = q.offset((page - 1) * per_page).limit(per_page)
-    return (await db.execute(q)).scalars().all()
+    decls = list((await db.execute(q)).scalars().all())
+
+    # Libellés lisibles pour le backoffice (nom du déclarant).
+    labels = await _user_labels(db, {d.user_id for d in decls})
+    for d in decls:
+        d.user_name = labels.get(d.user_id)
+    return decls
 
 
 @router.delete("/declarations/{declaration_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -972,7 +1058,24 @@ async def list_all_matches(
     if status_filter:
         q = q.where(Match.status == status_filter)
     q = q.offset((page - 1) * per_page).limit(per_page)
-    return (await db.execute(q)).scalars().all()
+    matches = list((await db.execute(q)).scalars().all())
+
+    # Libellés lisibles : participants + document concerné.
+    labels = await _user_labels(
+        db,
+        {m.user_found_id for m in matches} | {m.user_lost_id for m in matches},
+    )
+    decls = await _declarations_by_id(
+        db, {m.declaration_found_id for m in matches}
+    )
+    for m in matches:
+        m.user_found_name = labels.get(m.user_found_id)
+        m.user_lost_name = labels.get(m.user_lost_id)
+        found = decls.get(m.declaration_found_id)
+        if found is not None:
+            m.document_type = found.document_type
+            m.owner_name = found.owner_name
+    return matches
 
 
 @router.get("/restitutions", response_model=list[RestitutionAdminRead])
@@ -987,7 +1090,150 @@ async def list_all_restitutions(
     if status_filter:
         q = q.where(Restitution.status == status_filter)
     q = q.offset((page - 1) * per_page).limit(per_page)
-    return (await db.execute(q)).scalars().all()
+    restitutions = list((await db.execute(q)).scalars().all())
+
+    # Libellés lisibles via le match associé (participants + document).
+    match_ids = {r.match_id for r in restitutions}
+    matches = {}
+    if match_ids:
+        rows = (
+            await db.execute(select(Match).where(Match.id.in_(match_ids)))
+        ).scalars().all()
+        matches = {m.id: m for m in rows}
+    labels = await _user_labels(
+        db,
+        {m.user_found_id for m in matches.values()}
+        | {m.user_lost_id for m in matches.values()},
+    )
+    decls = await _declarations_by_id(
+        db, {m.declaration_found_id for m in matches.values()}
+    )
+    for r in restitutions:
+        m = matches.get(r.match_id)
+        if m is None:
+            continue
+        r.user_found_name = labels.get(m.user_found_id)
+        r.user_lost_name = labels.get(m.user_lost_id)
+        found = decls.get(m.declaration_found_id)
+        if found is not None:
+            r.document_type = found.document_type
+            r.owner_name = found.owner_name
+    return restitutions
+
+
+@router.get("/verifications", response_model=list[VerificationAdminRead])
+async def list_all_verifications(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=100),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Vérifications d'identité (F-30) — revue admin (selfies, statut)."""
+    q = select(IdentityVerification).order_by(
+        IdentityVerification.created_at.desc()
+    )
+    if status_filter:
+        q = q.where(IdentityVerification.status == status_filter)
+    q = q.offset((page - 1) * per_page).limit(per_page)
+    verifications = list((await db.execute(q)).scalars().all())
+
+    # Libellés lisibles : demandeur + document du match concerné.
+    labels = await _user_labels(db, {v.user_id for v in verifications})
+    match_ids = {v.match_id for v in verifications}
+    matches = {}
+    if match_ids:
+        rows = (
+            await db.execute(select(Match).where(Match.id.in_(match_ids)))
+        ).scalars().all()
+        matches = {m.id: m for m in rows}
+    decls = await _declarations_by_id(
+        db, {m.declaration_found_id for m in matches.values()}
+    )
+    for v in verifications:
+        v.user_name = labels.get(v.user_id)
+        m = matches.get(v.match_id)
+        if m is not None:
+            found = decls.get(m.declaration_found_id)
+            if found is not None:
+                v.document_type = found.document_type
+    return verifications
+
+
+@router.post("/verifications/{verification_id}/approve", response_model=VerificationAdminRead)
+async def approve_verification(
+    verification_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Revue manuelle (niveau 3) : approuve la vérification d'identité."""
+    verif = await db.get(IdentityVerification, verification_id)
+    if not verif:
+        raise HTTPException(status_code=404, detail="Vérification introuvable.")
+    await verification_service.admin_review(db, verif, approve=True)
+    await _audit(db, admin, "verification.approve", "verification",
+                 verification_id, _get_ip(request))
+    await db.commit()
+    await db.refresh(verif)
+    return verif
+
+
+@router.post("/verifications/{verification_id}/reject", response_model=VerificationAdminRead)
+async def reject_verification(
+    verification_id: uuid.UUID,
+    body: VerificationRejectRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Revue manuelle (niveau 3) : rejette la vérification avec motif."""
+    verif = await db.get(IdentityVerification, verification_id)
+    if not verif:
+        raise HTTPException(status_code=404, detail="Vérification introuvable.")
+    await verification_service.admin_review(db, verif, approve=False, reason=body.reason)
+    await _audit(db, admin, "verification.reject", "verification",
+                 verification_id, _get_ip(request), {"reason": body.reason})
+    await db.commit()
+    await db.refresh(verif)
+    return verif
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration dynamique de la plateforme
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/config", response_model=AppConfigRead)
+async def get_app_config(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    config = await config_service.get_config(db)
+    return AppConfigRead(
+        active_declarations_limit=int(config["active_declarations_limit"]),
+        min_score=config["min_score"],
+        geo_max_km=config["geo_max_km"],
+    )
+
+
+@router.patch("/config", response_model=AppConfigRead)
+async def update_app_config(
+    body: AppConfigUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    updates = {k: float(v) for k, v in body.model_dump(exclude_unset=True).items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucun paramètre à modifier.")
+    config = await config_service.set_config(db, updates)
+    await _audit(db, admin, "config.update", "config", None, _get_ip(request), updates)
+    await db.commit()
+    return AppConfigRead(
+        active_declarations_limit=int(config["active_declarations_limit"]),
+        min_score=config["min_score"],
+        geo_max_km=config["geo_max_km"],
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

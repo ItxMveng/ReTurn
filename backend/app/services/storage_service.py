@@ -14,11 +14,14 @@ _client: Minio | None = None
 def _get_client() -> Minio:
     global _client
     if _client is None:
+        # Compatible MinIO (local) et tout fournisseur S3 (Cloudflare R2,
+        # Backblaze B2, Wasabi…) : secure=HTTPS et region pilotés par la config.
         _client = Minio(
             settings.MINIO_ENDPOINT,
             access_key=settings.MINIO_ROOT_USER,
             secret_key=settings.MINIO_ROOT_PASSWORD,
-            secure=False,
+            secure=settings.MINIO_SECURE,
+            region=settings.MINIO_REGION or None,
         )
     return _client
 
@@ -74,6 +77,27 @@ async def upload_photo(
         ),
     )
     return f"{settings.minio_public_url}/{bucket}/{object_name}"
+
+
+async def get_object(bucket: str, object_name: str) -> tuple[bytes, str]:
+    """Récupère un objet MinIO (contenu + content-type) pour le proxy média.
+
+    Le proxy backend sert les images à l'app : celle-ci atteint toujours le
+    backend (IP auto-détectée), alors que l'URL publique MinIO peut pointer
+    vers un hôte injoignable depuis le téléphone.
+    """
+    loop = asyncio.get_event_loop()
+    client = _get_client()
+    response = await loop.run_in_executor(
+        None, partial(client.get_object, bucket, object_name)
+    )
+    try:
+        data = response.read()
+        content_type = response.headers.get("Content-Type", "application/octet-stream")
+    finally:
+        response.close()
+        response.release_conn()
+    return data, content_type
 
 
 async def delete_photo(url: str) -> None:

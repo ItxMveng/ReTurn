@@ -1,0 +1,72 @@
+# Blueprint Render — Infrastructure as Code.
+# Crée d'un coup : l'API (Docker), PostgreSQL et Redis.
+# Doc : https://render.com/docs/blueprint-spec
+#
+# Déploiement GATED : autoDeploy=false → Render ne déploie PAS à chaque push.
+# C'est le workflow GitHub Actions (.github/workflows/backend-deploy.yml) qui,
+# APRÈS des tests réussis, appelle le Deploy Hook. La prod ne casse jamais sur
+# un push qui échoue aux tests.
+
+databases:
+  - name: docretour-db
+    databaseName: docretour
+    user: docretour
+    plan: free
+
+services:
+  # ── Redis (cache + pub/sub WebSocket) ────────────────────────────────────
+  - type: keyvalue
+    name: docretour-redis
+    plan: free
+    ipAllowList: []          # accessible uniquement depuis les services Render
+    maxmemoryPolicy: noeviction
+
+  # ── API FastAPI ──────────────────────────────────────────────────────────
+  - type: web
+    name: docretour-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile.prod
+    dockerContext: ./backend
+    autoDeploy: false        # déploiement piloté par le CI (deploy hook)
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      # Connexions internes injectées automatiquement par Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: docretour-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: docretour-redis
+          property: connectionString
+      # Généré une fois par Render, stable ensuite
+      - key: SECRET_KEY
+        generateValue: true
+      # ── À renseigner dans le dashboard Render (Environment) ──────────────
+      # Secrets — laissés vides ici, saisis manuellement (jamais commités).
+      - key: MINIO_ENDPOINT          # ex. <account>.r2.cloudflarestorage.com
+        sync: false
+      - key: MINIO_ROOT_USER         # Access Key ID R2/B2
+        sync: false
+      - key: MINIO_ROOT_PASSWORD     # Secret Access Key R2/B2
+        sync: false
+      - key: MINIO_BUCKET_DOCUMENTS
+        value: docretour-documents
+      - key: MINIO_SECURE
+        value: "true"
+      - key: MINIO_REGION            # "auto" pour Cloudflare R2
+        value: auto
+      - key: MISTRAL_API_KEY         # OCR (serveur uniquement)
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64  # compte de service Firebase
+        sync: false
+      - key: FIREBASE_MOCK_MODE
+        value: "false"
+      - key: CORS_ORIGINS            # JSON — origines admin + landing
+        sync: false

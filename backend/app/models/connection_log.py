@@ -38,7 +38,7 @@ class ConnectionLog(Base):
     device_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     auth_method: Mapped[str] = mapped_column(String(20), default="otp", nullable=False)  # otp | firebase | refresh
     status: Mapped[ConnectionStatus] = mapped_column(
-        Enum(ConnectionStatus), nullable=False, default=ConnectionStatus.SUCCESS, index=True
+        Enum(ConnectionStatus, native_enum=False), nullable=False, default=ConnectionStatus.SUCCESS, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True

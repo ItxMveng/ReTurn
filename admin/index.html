@@ -177,8 +177,10 @@
       <button class="nav-item" data-page="restitutions"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Restitutions</button>
       <div class="nav-section">Modération</div>
       <button class="nav-item" data-page="reports"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Signalements</button>
+      <button class="nav-item" data-page="verifications"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><polyline points="9 12 11 14 15 10"/></svg>Vérifications</button>
       <button class="nav-item" data-page="zones"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg>Zones certifiées</button>
       <div class="nav-section">Système</div>
+      <button class="nav-item" data-page="config"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Paramètres</button>
       <button class="nav-item" data-page="audit"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6M5 8h14"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>Audit Logs</button>
     </nav>
     <div class="sidebar-footer">
@@ -237,22 +239,30 @@
         <select class="form-input" style="width:auto" id="filter-decl"><option value="all">Tous les types</option><option value="found">Trouvés</option><option value="lost">Perdus</option><option value="flagged">Signalés</option></select>
         <button class="btn btn-ghost btn-sm" id="export-decl-btn">⬇ Export CSV</button>
       </div>
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Type doc</th><th>Catégorie</th><th>Utilisateur</th><th>Créée le</th><th>Signalée</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="decl-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Document</th><th>Nom sur le document</th><th>Catégorie</th><th>Déclarant</th><th>Lieu</th><th>Créée le</th><th>Signalée</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="decl-table"></tbody></table></div></div>
     </section>
 
     <!-- Matchs -->
     <section class="page" id="page-matches">
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Score</th><th>Décl. trouvée</th><th>Décl. perdue</th><th>Propriétaire</th><th>Trouveur</th><th>Statut</th><th>Créé le</th></tr></thead><tbody id="matches-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Document</th><th>Nom sur le document</th><th>Score</th><th>Propriétaire</th><th>Trouveur</th><th>Statut</th><th>Créé le</th></tr></thead><tbody id="matches-table"></tbody></table></div></div>
     </section>
 
     <!-- Restitutions -->
     <section class="page" id="page-restitutions">
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Match</th><th>Statut</th><th>Lieu</th><th>Notes</th><th>Initiée le</th><th>Complétée le</th></tr></thead><tbody id="rest-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Document</th><th>Propriétaire</th><th>Trouveur</th><th>Statut</th><th>Lieu de remise</th><th>Notes</th><th>Initiée le</th><th>Complétée le</th></tr></thead><tbody id="rest-table"></tbody></table></div></div>
     </section>
 
     <!-- Signalements -->
     <section class="page" id="page-reports">
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>ID</th><th>Signalé par</th><th>Cible</th><th>Raison</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody id="reports-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Signalé par</th><th>Utilisateur signalé</th><th>Raison</th><th>Détails</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody id="reports-table"></tbody></table></div></div>
+    </section>
+
+    <!-- Vérifications d'identité (F-30) -->
+    <section class="page" id="page-verifications">
+      <div class="flex items-center gap-3 mb-4">
+        <select class="form-input" style="width:auto" id="filter-verif"><option value="pending">En attente</option><option value="approved">Approuvées</option><option value="rejected">Rejetées</option><option value="all">Toutes</option></select>
+      </div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Utilisateur</th><th>Document</th><th>Niveau</th><th>Questions</th><th>Selfie</th><th>Photo doc</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody id="verifications-table"></tbody></table></div></div>
     </section>
 
     <!-- Zones -->
@@ -261,6 +271,31 @@
         <button class="btn btn-primary btn-sm" id="add-zone-btn">+ Nouvelle zone</button>
       </div>
       <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Nom</th><th>Type</th><th>Adresse</th><th>Lat</th><th>Lon</th><th>Certifiée</th><th>Actions</th></tr></thead><tbody id="zones-table"></tbody></table></div></div>
+    </section>
+
+    <!-- Paramètres plateforme -->
+    <section class="page" id="page-config">
+      <div class="card" style="max-width:560px">
+        <div class="card-header"><span class="card-title">Paramètres de la plateforme</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Limite de déclarations actives par utilisateur</label>
+            <input class="form-input" id="cfg-limit" type="number" min="1" max="20" step="1" />
+            <small class="text-muted">Anti-fraude F-15. Défaut : 3.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Score minimum de matching (0–1)</label>
+            <input class="form-input" id="cfg-minscore" type="number" min="0.1" max="1" step="0.01" />
+            <small class="text-muted">Seuil sous lequel aucun match n'est créé. Défaut : 0.45.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rayon géographique max (km)</label>
+            <input class="form-input" id="cfg-geokm" type="number" min="1" max="500" step="1" />
+            <small class="text-muted">Distance au-delà de laquelle le score géo tombe à 0. Défaut : 50.</small>
+          </div>
+          <button class="btn btn-primary" id="save-config-btn">Enregistrer les paramètres</button>
+        </div>
+      </div>
     </section>
 
     <!-- Audit -->
@@ -307,6 +342,31 @@
     </div>
     <div class="modal-body" id="user-detail-body"></div>
     <div class="modal-footer" id="user-detail-footer"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL : Confirmation destructrice (texte à retaper) ══ -->
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <span class="modal-title" id="confirm-title">Confirmer l'action</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="font-size:13px;margin-bottom:12px"></p>
+      <div class="form-group">
+        <label class="form-label">Tapez <strong id="confirm-keyword" class="font-mono"></strong> pour confirmer :</label>
+        <input class="form-input" id="confirm-input" autocomplete="off" />
+      </div>
+      <div class="form-group" id="confirm-reason-group" style="display:none">
+        <label class="form-label">Motif</label>
+        <input class="form-input" id="confirm-reason" placeholder="Motif de l'action…" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Annuler</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" disabled>Confirmer</button>
+    </div>
   </div>
 </div>
 
@@ -439,6 +499,46 @@
   document.querySelectorAll('.modal-backdrop').forEach(bd=>{
     bd.addEventListener('click',e=>{ if(e.target===bd) bd.classList.remove('open'); });
   });
+
+  // ── Confirmation destructrice : l'admin doit retaper le mot-clé ──
+  // Retourne {confirmed:bool, reason:string}.
+  function confirmTyped({title, message, keyword, withReason=false}){
+    return new Promise(resolve=>{
+      const input = document.getElementById('confirm-input');
+      const okBtn = document.getElementById('confirm-ok-btn');
+      const reasonGroup = document.getElementById('confirm-reason-group');
+      const reasonInput = document.getElementById('confirm-reason');
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      document.getElementById('confirm-keyword').textContent = keyword;
+      reasonGroup.style.display = withReason ? 'block' : 'none';
+      input.value = '';
+      reasonInput.value = '';
+      okBtn.disabled = true;
+
+      const onInput = ()=>{ okBtn.disabled = input.value.trim().toUpperCase() !== keyword.toUpperCase(); };
+      const cleanup = (result)=>{
+        input.removeEventListener('input', onInput);
+        okBtn.removeEventListener('click', onOk);
+        closeModal('modal-confirm');
+        resolve(result);
+      };
+      const onOk = ()=>cleanup({confirmed:true, reason:reasonInput.value.trim()});
+      input.addEventListener('input', onInput);
+      okBtn.addEventListener('click', onOk);
+      // Fermeture (croix/backdrop/Annuler) = annulation.
+      const backdrop = document.getElementById('modal-confirm');
+      const observer = new MutationObserver(()=>{
+        if(!backdrop.classList.contains('open')){
+          observer.disconnect();
+          cleanup({confirmed:false, reason:''});
+        }
+      });
+      observer.observe(backdrop,{attributes:true,attributeFilter:['class']});
+      openModal('modal-confirm');
+      input.focus();
+    });
+  }
 
   async function parseResponse(response){
     if(response.status===204) return null;
@@ -575,7 +675,7 @@
   });
 
   // Navigation
-  const pages={dashboard:"Vue d'ensemble",users:'Utilisateurs',declarations:'Déclarations',matches:'Matchs',restitutions:'Restitutions',reports:'Signalements',zones:'Zones certifiées',audit:'Audit Logs'};
+  const pages={dashboard:"Vue d'ensemble",users:'Utilisateurs',declarations:'Déclarations',matches:'Matchs',restitutions:'Restitutions',reports:'Signalements',verifications:"Vérifications d'identité",zones:'Zones certifiées',config:'Paramètres',audit:'Audit Logs'};
   document.querySelectorAll('.nav-item[data-page]').forEach(btn=>btn.addEventListener('click',()=>loadPage(btn.dataset.page)));
   function loadPage(name){
     document.querySelectorAll('.nav-item[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
@@ -586,6 +686,15 @@
       task.catch(error=>showToast(error.message || 'Chargement impossible'));
     }
   }
+
+  // Libellés français des types de documents (alignés sur le backend)
+  const DOC_LABELS = {
+    cni:"Carte Nationale d'Identité", passport:'Passeport',
+    driving_license:'Permis de conduire', vehicle_registration:'Carte grise',
+    birth_certificate:'Acte de naissance', student_card:'Carte étudiante',
+    bank_card:'Carte bancaire', diploma:'Diplôme', other:'Autre document',
+  };
+  function docLabel(t){ return DOC_LABELS[t] || t || '—'; }
 
   // Badge helper
   function badgeStatus(s){
@@ -657,15 +766,15 @@
     const recentRows = [
       ...declarations.map(d=>({
         type:'Déclaration',
-        detail:`${d.document_type} — ${d.declaration_type}`,
-        user:shortId(d.user_id),
+        detail:`${docLabel(d.document_type)} — ${d.declaration_type==='found'?'trouvé':'perdu'}`,
+        user:d.user_name || shortId(d.user_id),
         date:d.created_at,
         status:d.is_flagged ? 'flagged' : d.status,
       })),
       ...matches.map(m=>({
         type:'Match',
-        detail:`Score ${(Number(m.score || 0) * 100).toFixed(0)}%`,
-        user:`${shortId(m.user_found_id)} / ${shortId(m.user_lost_id)}`,
+        detail:`${docLabel(m.document_type)} · Score ${(Number(m.score || 0) * 100).toFixed(0)}%`,
+        user:`${m.user_found_name || shortId(m.user_found_id)} / ${m.user_lost_name || shortId(m.user_lost_id)}`,
         date:m.created_at,
         status:m.status,
       })),
@@ -712,11 +821,17 @@
   }
 
   window.banUser=async(id)=>{
-    if(!confirm('Bannir cet utilisateur ?')) return;
+    const {confirmed, reason} = await confirmTyped({
+      title:'Bannir cet utilisateur',
+      message:'L\'utilisateur ne pourra plus se connecter ni utiliser l\'application.',
+      keyword:'BANNIR',
+      withReason:true,
+    });
+    if(!confirmed) return;
     try{
       await api(`/admin/users/${id}/ban`,{
         method:'PATCH',
-        body:JSON.stringify({reason:'Action manuelle depuis le backoffice'}),
+        body:JSON.stringify({reason: reason || 'Action manuelle depuis le backoffice'}),
       });
       showToast('Utilisateur banni');
       await render.users();
@@ -800,6 +915,9 @@
     const filtered=decls.filter(d=>{
       const match=!q
         || d.document_type?.toLowerCase().includes(q)
+        || docLabel(d.document_type).toLowerCase().includes(q)
+        || d.owner_name?.toLowerCase().includes(q)
+        || d.user_name?.toLowerCase().includes(q)
         || d.declaration_type?.toLowerCase().includes(q)
         || String(d.id).toLowerCase().includes(q)
         || String(d.user_id).toLowerCase().includes(q);
@@ -807,24 +925,42 @@
       return match&&type;
     });
     document.getElementById('decl-table').innerHTML=filtered.length ? filtered.map(d=>`<tr>
-      <td class="font-mono text-sm truncate">${escapeHtml(String(d.id))}</td>
-      <td><strong>${escapeHtml(d.document_type)}</strong></td>
+      <td><strong>${escapeHtml(docLabel(d.document_type))}</strong>${d.document_number?`<div class="text-muted text-sm font-mono">${escapeHtml(d.document_number)}</div>`:''}</td>
+      <td>${escapeHtml(d.owner_name || '—')}</td>
       <td>${d.declaration_type==='found'?'<span class="badge badge-green">Trouvé</span>':'<span class="badge badge-orange">Perdu</span>'}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(d.user_id))}</td>
+      <td>${escapeHtml(d.user_name || shortId(d.user_id))}</td>
+      <td class="text-muted">${escapeHtml(d.location_description || '—')}</td>
       <td class="text-muted">${formatDate(d.created_at)}</td>
       <td>${d.is_flagged?'<span class="badge badge-red">Oui</span>':'<span class="badge badge-gray">Non</span>'}</td>
       <td>${badgeStatus(d.status)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteDecl('${String(d.id)}')">Suppr.</button></td>
-    </tr>`).join('') : tableMessage(8, 'Aucune déclaration trouvée.');
+      <td><div class="flex gap-2">
+        ${!d.is_flagged?`<button class="btn btn-warning btn-sm" onclick="flagDecl('${String(d.id)}')">Suspecte</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteDecl('${String(d.id)}')">Suppr.</button>
+      </div></td>
+    </tr>`).join('') : tableMessage(9, 'Aucune déclaration trouvée.');
   }
   window.deleteDecl=async(id)=>{
-    if(!confirm('Supprimer cette déclaration ?')) return;
+    const {confirmed} = await confirmTyped({
+      title:'Supprimer cette déclaration',
+      message:'Suppression définitive (modération). Les matchs associés seront aussi supprimés.',
+      keyword:'SUPPRIMER',
+    });
+    if(!confirmed) return;
     try{
       await api(`/admin/declarations/${id}`,{method:'DELETE'});
       showToast('Déclaration supprimée');
       await render.declarations();
     }catch(error){
       showToast(error.message || 'Suppression impossible');
+    }
+  };
+  window.flagDecl=async(id)=>{
+    try{
+      await api(`/admin/declarations/${id}/flag`,{method:'PATCH'});
+      showToast('Déclaration marquée comme suspecte');
+      await render.declarations();
+    }catch(error){
+      showToast(error.message || 'Action impossible');
     }
   };
   document.getElementById('search-decl').addEventListener('input',()=>renderDecl(_allDeclarations));
@@ -854,42 +990,103 @@
   render.matches=async function(){
     _allMatches = await api('/admin/matches?per_page=100');
     document.getElementById('matches-table').innerHTML=_allMatches.length ? _allMatches.map(m=>`<tr>
-      <td class="font-mono text-sm truncate">${escapeHtml(String(m.id))}</td>
-      <td><strong style="color:${m.score>=.8?'var(--success)':m.score>=.5?'var(--warning)':'var(--danger)'}">${(Number(m.score || 0)*100).toFixed(0)}%</strong></td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(m.declaration_found_id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(m.declaration_lost_id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(m.user_lost_id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(m.user_found_id))}</td>
+      <td><strong>${escapeHtml(docLabel(m.document_type))}</strong></td>
+      <td>${escapeHtml(m.owner_name || '—')}</td>
+      <td><strong style="color:${m.score>=.7?'var(--success)':m.score>=.55?'var(--warning)':'var(--danger)'}">${(Number(m.score || 0)*100).toFixed(0)}%</strong></td>
+      <td>${escapeHtml(m.user_lost_name || shortId(m.user_lost_id))}</td>
+      <td>${escapeHtml(m.user_found_name || shortId(m.user_found_id))}</td>
       <td>${badgeStatus(m.status)}</td>
       <td class="text-muted">${formatDate(m.created_at)}</td>
-    </tr>`).join('') : tableMessage(8, 'Aucun match disponible.');
+    </tr>`).join('') : tableMessage(7, 'Aucun match disponible.');
   };
 
   // ── Restitutions ──
   render.restitutions=async function(){
     _allRestitutions = await api('/admin/restitutions?per_page=100');
     document.getElementById('rest-table').innerHTML=_allRestitutions.length ? _allRestitutions.map(r=>`<tr>
-      <td class="font-mono text-sm truncate">${escapeHtml(String(r.id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(r.match_id))}</td>
+      <td><strong>${escapeHtml(docLabel(r.document_type))}</strong>${r.owner_name?`<div class="text-muted text-sm">${escapeHtml(r.owner_name)}</div>`:''}</td>
+      <td>${escapeHtml(r.user_lost_name || '—')}</td>
+      <td>${escapeHtml(r.user_found_name || '—')}</td>
       <td>${badgeStatus(r.status)}</td>
       <td>${escapeHtml(r.meeting_location || '—')}</td>
-      <td>${r.rating_by_owner ?? '—'} / ${r.rating_by_finder ?? '—'}</td>
+      <td>${r.rating_by_owner ?? '—'} / ${r.rating_by_finder ?? '—'} ★</td>
       <td class="text-muted">${formatDate(r.created_at)}</td>
       <td class="text-muted">${formatDate(r.completed_at)}</td>
-    </tr>`).join('') : tableMessage(7, 'Aucune restitution disponible.');
+    </tr>`).join('') : tableMessage(8, 'Aucune restitution disponible.');
+  };
+
+  // ── Vérifications d'identité (F-30) — revue admin niveau 3 ──
+  render.verifications=async function(){
+    const filter = document.getElementById('filter-verif').value;
+    const query = filter==='all' ? '' : `&status=${filter}`;
+    const items = await api(`/admin/verifications?per_page=100${query}`);
+    const levelBadge = l => l>=3
+      ? '<span class="badge badge-red">3 — Renforcé</span>'
+      : l===2
+        ? '<span class="badge badge-orange">2 — Standard</span>'
+        : '<span class="badge badge-green">1 — Rapide</span>';
+    document.getElementById('verifications-table').innerHTML=items.length ? items.map(v=>`<tr>
+      <td><strong>${escapeHtml(v.user_name || shortId(v.user_id))}</strong></td>
+      <td>${escapeHtml(docLabel(v.document_type))}</td>
+      <td>${levelBadge(Number(v.verification_level || 1))}</td>
+      <td>${v.questions_passed ? '✓' : '—'}</td>
+      <td>${v.selfie_url ? `<a href="${escapeHtml(v.selfie_url)}" target="_blank" rel="noopener">Voir</a>` : '—'}</td>
+      <td>${v.doc_photo_url ? `<a href="${escapeHtml(v.doc_photo_url)}" target="_blank" rel="noopener">Voir</a>` : '—'}</td>
+      <td>${badgeStatus(v.status)}${v.rejection_reason ? `<div class="text-muted text-sm">${escapeHtml(v.rejection_reason)}</div>` : ''}</td>
+      <td class="text-muted">${formatDate(v.created_at)}</td>
+      <td>${v.status==='pending' ? `<div class="flex gap-2">
+        <button class="btn btn-primary btn-sm" onclick="approveVerif('${String(v.id)}')">Approuver</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectVerif('${String(v.id)}')">Rejeter</button>
+      </div>` : ''}</td>
+    </tr>`).join('') : tableMessage(9, "Aucune vérification d'identité.");
+  };
+  document.getElementById('filter-verif').addEventListener('change',()=>{
+    render.verifications().catch(e=>showToast(e.message || 'Chargement impossible'));
+  });
+  window.approveVerif=async(id)=>{
+    try{
+      await api(`/admin/verifications/${id}/approve`,{method:'POST'});
+      showToast('Vérification approuvée');
+      await render.verifications();
+    }catch(error){
+      showToast(error.message || 'Approbation impossible');
+    }
+  };
+  window.rejectVerif=async(id)=>{
+    const {confirmed, reason} = await confirmTyped({
+      title:'Rejeter cette vérification',
+      message:'L\'utilisateur devra recommencer sa vérification d\'identité.',
+      keyword:'REJETER',
+      withReason:true,
+    });
+    if(!confirmed) return;
+    try{
+      await api(`/admin/verifications/${id}/reject`,{
+        method:'POST',
+        body:JSON.stringify({reason: reason || 'Éléments non conformes'}),
+      });
+      showToast('Vérification rejetée');
+      await render.verifications();
+    }catch(error){
+      showToast(error.message || 'Rejet impossible');
+    }
   };
 
   // ── Signalements ──
   render.reports=async function(){
     _allReports = await api('/admin/reports?limit=100');
     document.getElementById('reports-table').innerHTML=_allReports.length ? _allReports.map(r=>`<tr>
-      <td class="font-mono text-sm">${escapeHtml(String(r.id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(r.reporter_id))}</td>
-      <td class="font-mono text-sm">${escapeHtml(shortId(r.reported_id))}</td>
+      <td>${escapeHtml(r.reporter_name || shortId(r.reporter_id))}</td>
+      <td><strong>${escapeHtml(r.reported_name || shortId(r.reported_id))}</strong></td>
       <td>${escapeHtml(String(r.reason || '—').replaceAll('_',' '))}</td>
+      <td class="text-muted">${escapeHtml(r.description || '—')}</td>
       <td>${badgeStatus(r.status)}</td>
       <td class="text-muted">${formatDate(r.created_at)}</td>
-      <td>${r.status==='pending' || r.status==='reviewed' ? `<button class="btn btn-primary btn-sm" onclick="resolveReport('${String(r.id)}')">Résoudre</button>` : ''}</td>
+      <td>${r.status==='pending' || r.status==='reviewed' ? `<div class="flex gap-2">
+        <button class="btn btn-primary btn-sm" onclick="resolveReport('${String(r.id)}')">Résoudre</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissReport('${String(r.id)}')">Ignorer</button>
+        <button class="btn btn-danger btn-sm" onclick="sanctionReport('${String(r.id)}','${String(r.reported_id)}')">Sanctionner</button>
+      </div>` : ''}</td>
     </tr>`).join('') : tableMessage(7, 'Aucun signalement disponible.');
   };
   window.resolveReport=async(id)=>{
@@ -902,6 +1099,41 @@
       await render.reports();
     }catch(error){
       showToast(error.message || 'Résolution impossible');
+    }
+  };
+  window.dismissReport=async(id)=>{
+    try{
+      await api(`/admin/reports/${id}`,{
+        method:'PATCH',
+        body:JSON.stringify({status:'rejected',admin_note:'Signalement non fondé'}),
+      });
+      showToast('Signalement ignoré');
+      await render.reports();
+    }catch(error){
+      showToast(error.message || 'Action impossible');
+    }
+  };
+  window.sanctionReport=async(id, reportedId)=>{
+    const {confirmed, reason} = await confirmTyped({
+      title:'Sanctionner l\'utilisateur signalé',
+      message:'L\'utilisateur signalé sera banni et le signalement marqué comme résolu.',
+      keyword:'SANCTIONNER',
+      withReason:true,
+    });
+    if(!confirmed) return;
+    try{
+      await api(`/admin/users/${reportedId}/ban`,{
+        method:'PATCH',
+        body:JSON.stringify({reason: reason || 'Sanction suite à signalement'}),
+      });
+      await api(`/admin/reports/${id}`,{
+        method:'PATCH',
+        body:JSON.stringify({status:'resolved',admin_note:`Utilisateur banni. ${reason || ''}`.trim()}),
+      });
+      showToast('Utilisateur sanctionné');
+      await render.reports();
+    }catch(error){
+      showToast(error.message || 'Sanction impossible');
     }
   };
 
@@ -919,7 +1151,12 @@
     </tr>`).join('') : tableMessage(7, 'Aucune zone certifiée.');
   };
   window.deleteZone=async(id)=>{
-    if(!confirm('Supprimer cette zone ?')) return;
+    const {confirmed} = await confirmTyped({
+      title:'Supprimer cette zone',
+      message:'La zone ne sera plus proposée comme lieu de remise.',
+      keyword:'SUPPRIMER',
+    });
+    if(!confirmed) return;
     try{
       await api(`/admin/zones/${id}`,{method:'DELETE'});
       showToast('Zone supprimée');
@@ -961,6 +1198,36 @@
     }
     closeModal('modal-zone');
     await render.zones();
+  });
+
+  // ── Paramètres plateforme (config dynamique) ──
+  render.config=async function(){
+    const cfg = await api('/admin/config');
+    document.getElementById('cfg-limit').value = cfg.active_declarations_limit;
+    document.getElementById('cfg-minscore').value = cfg.min_score;
+    document.getElementById('cfg-geokm').value = cfg.geo_max_km;
+  };
+  document.getElementById('save-config-btn').addEventListener('click',async()=>{
+    const limit = parseInt(document.getElementById('cfg-limit').value, 10);
+    const minScore = parseFloat(document.getElementById('cfg-minscore').value);
+    const geoKm = parseFloat(document.getElementById('cfg-geokm').value);
+    if(isNaN(limit) || isNaN(minScore) || isNaN(geoKm) || limit < 1 || minScore <= 0 || minScore > 1 || geoKm < 1){
+      showToast('Valeurs invalides — vérifiez les champs.');
+      return;
+    }
+    try{
+      await api('/admin/config',{
+        method:'PATCH',
+        body:JSON.stringify({
+          active_declarations_limit: limit,
+          min_score: minScore,
+          geo_max_km: geoKm,
+        }),
+      });
+      showToast('Paramètres enregistrés');
+    }catch(error){
+      showToast(error.message || 'Enregistrement impossible');
+    }
   });
 
   // ── Audit ──

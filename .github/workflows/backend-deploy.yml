@@ -1,0 +1,62 @@
+name: Backend · CI + Déploiement
+
+# Déploiement GATED : on ne déclenche Render qu'APRÈS des vérifications réussies.
+# Un push qui casse la compilation ne partira jamais en production.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-deploy.yml"
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    name: Vérifications backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Compilation (syntaxe)
+        run: python -m compileall -q app
+
+      - name: Vérifier le chargement de l'app + des routes
+        env:
+          # Valeurs factices : on ne fait que charger les modules, pas se connecter.
+          SECRET_KEY: ci-dummy-secret
+          DATABASE_URL: postgresql+asyncpg://u:p@localhost/db
+          MINIO_ENDPOINT: localhost:9000
+          MINIO_ROOT_USER: ci
+          MINIO_ROOT_PASSWORD: ci
+        run: |
+          python -c "from app.main import app; print('Routes OK:', len(app.routes))"
+
+  deploy:
+    name: Déclencher le déploiement Render
+    needs: test
+    runs-on: ubuntu-latest
+    # Ne déploie que sur main (pas sur les exécutions manuelles d'une autre branche)
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Appeler le Deploy Hook Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::Secret RENDER_DEPLOY_HOOK_URL manquant. Ajoutez-le dans Settings > Secrets."
+            exit 1
+          fi
+          echo "→ Déploiement Render déclenché…"
+          curl -fsSL -X POST "$HOOK"
+          echo "✓ Render va rebuild, migrer et redémarrer l'API."

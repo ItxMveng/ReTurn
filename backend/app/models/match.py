@@ -45,11 +45,11 @@ class Match(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False, index=True
     )
-    # Double confirmation (F-33): both parties must confirm to trigger restitution
-    confirmed_by_owner: Mapped[bool] = mapped_column(
+    # Double confirmation (F-33): both parties must accept to trigger restitution
+    accepted_by_owner: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-    confirmed_by_finder: Mapped[bool] = mapped_column(
+    accepted_by_finder: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(

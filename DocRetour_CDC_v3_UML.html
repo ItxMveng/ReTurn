@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ReTurn — CDC v3 | UML Complet + Fast Path</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --p:#01696F;--pd:#0c4e54;--pbg:#E6F2F2;
+  --dark:#1A1916;--dg:#4A4947;--mg:#6B6A67;
+  --light:#F7F6F2;--border:#E0DDD8;
+  --red:#C0392B;--redbg:#FBEAE8;
+  --orange:#D4860B;--orangebg:#FEF7E8;
+  --green:#2D7A3A;--greenbg:#EAF5EC;
+  --blue:#1A5276;--bluebg:#D6EAF8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;font-size:14px;color:var(--dark);background:#fff;line-height:1.6;}
+
+/* ── sidebar ── */
+.sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;overflow-y:auto;background:var(--light);border-right:1px solid var(--border);padding:16px 12px;z-index:100;}
+.sidebar h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mg);margin-bottom:10px;}
+.sidebar a{display:block;font-size:11.5px;color:var(--dg);padding:3px 0 3px 8px;border-left:2px solid transparent;text-decoration:none;transition:.15s;}
+.sidebar a:hover,.sidebar a.active{color:var(--p);border-color:var(--p);}
+.sidebar a.sub{padding-left:18px;font-size:11px;color:var(--mg);}
+.main{margin-left:240px;max-width:940px;padding:0 44px 80px;}
+
+/* ── typography ── */
+h1{font-size:24px;font-weight:800;color:var(--p);margin:44px 0 14px;padding-bottom:8px;border-bottom:3px solid var(--pbg);}
+h2{font-size:17px;font-weight:700;color:var(--dark);margin:28px 0 10px;}
+h3{font-size:13px;font-weight:700;color:var(--dg);margin:18px 0 7px;}
+p{margin-bottom:10px;}
+ul,ol{padding-left:22px;margin-bottom:10px;}
+li{margin-bottom:4px;}
+code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--light);padding:1px 5px;border-radius:3px;color:var(--pd);}
+
+/* ── cover ── */
+.cover{background:linear-gradient(135deg,#0A1F16,#01696F);color:#fff;padding:60px 40px 50px;text-align:center;}
+.cover .logo{font-size:42px;font-weight:800;letter-spacing:-2px;margin-bottom:6px;}
+.cover .logo span{color:#4fcfd6;}
+.cover p{opacity:.7;font-size:14px;margin-bottom:40px;}
+.cover-grid{display:inline-grid;grid-template-columns:auto auto;gap:0;text-align:left;border:1px solid rgba(255,255,255,.2);border-radius:10px;overflow:hidden;}
+.cover-grid dt{background:rgba(0,0,0,.2);padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;opacity:.7;}
+.cover-grid dd{background:rgba(255,255,255,.07);padding:8px 14px;font-size:12px;}
+
+/* ── callout boxes ── */
+.box{border-radius:8px;padding:14px 18px;margin:12px 0;border-left:4px solid;}
+.box b{font-size:12px;font-weight:700;display:block;margin-bottom:6px;}
+.box ul{margin:0;padding-left:18px;}
+.box li{font-size:12.5px;margin-bottom:3px;}
+.danger{background:var(--redbg);border-color:var(--red);}
+.danger b{color:var(--red);}
+.warning{background:var(--orangebg);border-color:var(--orange);}
+.warning b{color:var(--orange);}
+.success{background:var(--greenbg);border-color:var(--green);}
+.success b{color:var(--green);}
+.info{background:var(--bluebg);border-color:var(--blue);}
+.info b{color:var(--blue);}
+.primary{background:var(--pbg);border-color:var(--p);}
+.primary b{color:var(--p);}
+
+/* ── tables ── */
+table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:12.5px;}
+thead th{background:var(--p);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:11.5px;}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+tbody tr:nth-child(even) td{background:#fafafa;}
+
+/* ── diagrams ── */
+.diagram-wrap{background:var(--light);border:1px solid var(--border);border-radius:10px;padding:16px;margin:14px 0;overflow-x:auto;}
+.diagram-wrap h3{margin-top:0;color:var(--p);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:12px;}
+svg text{font-family:'Inter',sans-serif;}
+
+/* ── fast path ── */
+.fp-steps{display:flex;gap:0;margin:16px 0;align-items:stretch;}
+.fp-step{flex:1;background:#fff;border:2px solid var(--border);border-right:0;padding:16px 12px;text-align:center;position:relative;}
+.fp-step:last-child{border-right:2px solid var(--border);border-radius:0 8px 8px 0;}
+.fp-step:first-child{border-radius:8px 0 0 8px;}
+.fp-step .num{display:inline-block;background:var(--p);color:#fff;width:28px;height:28px;border-radius:50%;line-height:28px;font-weight:800;font-size:14px;margin-bottom:8px;}
+.fp-step .title{font-weight:700;font-size:13px;color:var(--dark);margin-bottom:4px;}
+.fp-step .sub{font-size:11px;color:var(--mg);}
+.fp-step.highlight{background:var(--pbg);border-color:var(--p);}
+.fp-arrow{display:flex;align-items:center;color:var(--mg);font-size:20px;padding:0 4px;}
+
+/* ── badge ── */
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;}
+.b-red{background:var(--redbg);color:var(--red);}
+.b-orange{background:var(--orangebg);color:var(--orange);}
+.b-green{background:var(--greenbg);color:var(--green);}
+.b-blue{background:var(--bluebg);color:var(--blue);}
+.b-gray{background:var(--light);color:var(--dg);}
+
+@media print{
+  .sidebar{display:none;}
+  .main{margin-left:0;padding:0 24px 40px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h3>DocRetour CDC v3</h3>
+  <a href="#fastpath">⚡ Fast Path</a>
+  <a href="#uc" class="sub">Cas d'Utilisation</a>
+  <a href="#cd" class="sub">Classes</a>
+  <a href="#sm" class="sub">États UML</a>
+  <a href="#seq" class="sub">Séquences</a>
+  <a href="#modules">Modules</a>
+  <a href="#bugs">Bugs & Fixes</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+
+<div class="main">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="logo">Re<span>Turn</span></div>
+  <p>CDC Professionnel v3 · Juillet 2026 · UML Complet + Fast Path Optimisé</p>
+  <dl class="cover-grid">
+    <dt>Auteur</dt><dd>Francis Itoua Mveng</dd>
+    <dt>Version</dt><dd>3.0 — UML + Fast Path</dd>
+    <dt>Stack</dt><dd>Flutter · FastAPI · PostgreSQL · Firebase</dd>
+    <dt>Statut</dt><dd>🟢 En développement actif</dd>
+  </dl>
+</div>
+
+<!-- ═══════════════════════════════════════ FAST PATH ═══ -->
+<h1 id="fastpath">⚡ FAST PATH — Flux Optimisé Sans Friction</h1>
+
+<div class="box primary">
+  <b>Principe fondamental</b>
+  Un utilisateur qui galère abandonne. Chaque étape supplémentaire coûte ~20% d'utilisateurs.
+  Le Fast Path impose : <strong>déclaration en &lt; 60 secondes, restitution en 3 actions</strong>.
+  La sécurité s'adapte au score de confiance, pas l'inverse.
+</div>
+
+<h2>Déclaration Rapide — 3 étapes max</h2>
+<div class="fp-steps">
+  <div class="fp-step highlight">
+    <div class="num">1</div>
+    <div class="title">Type de document</div>
+    <div class="sub">Tap sur une icône<br/>CNI · Passeport · Permis…</div>
+  </div>
+  <div class="fp-arrow">›</div>
+  <div class="fp-step highlight">
+    <div class="num">2</div>
+    <div class="title">Nom du propriétaire</div>
+    <div class="sub">Saisie texte<br/>ou OCR scan auto</div>
+  </div>
+  <div class="fp-arrow">›</div>
+  <div class="fp-step highlight">
+    <div class="num">3</div>
+    <div class="title">Soumettre</div>
+    <div class="sub">Matching démarre<br/>immédiatement</div>
+  </div>
+</div>
+<p style="font-size:12px;color:var(--mg)">Champs enrichissants (facultatifs, encouragés post-soumission) : numéro doc, GPS, date, photos. Augmentent le score de match.</p>
+
+<h2>Vérification Adaptative — basée sur le score</h2>
+<table>
+  <thead><tr><th>Score du match</th><th>Niveau de vérification</th><th>Étapes</th><th>Temps estimé</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge b-green">≥ 0.75</span> Confiance haute</td><td><strong>Niveau 1 — Rapide</strong></td><td>Nom + Date de naissance</td><td>~ 30 sec</td></tr>
+    <tr><td><span class="badge b-orange">0.50 – 0.74</span> Confiance moyenne</td><td><strong>Niveau 2 — Standard</strong></td><td>Nom + Date naissance + Selfie</td><td>~ 90 sec</td></tr>
+    <tr><td><span class="badge b-red">0.45 – 0.49</span> Confiance basse</td><td><strong>Niveau 3 — Renforcé</strong></td><td>Nom + Date + Numéro doc + Selfie + Photo doc</td><td>~ 3 min</td></tr>
+    <tr><td><span class="badge b-gray">Signalement actif</span></td><td><strong>Niveau 4 — Revue Admin</strong></td><td>Tout niveau 3 + approbation manuelle admin</td><td>Jusqu'à 24h</td></tr>
+  </tbody>
+</table>
+
+<h2>Restitution Rapide — 3 actions</h2>
+<div class="fp-steps">
+  <div class="fp-step">
+    <div class="num">1</div>
+    <div class="title">Confirmer le RDV</div>
+    <div class="sub">Lieu + heure via chat<br/>ou suggestion géo auto</div>
+  </div>
+  <div class="fp-arrow">›</div>
+  <div class="fp-step">
+    <div class="num">2</div>
+    <div class="title">Photo de preuve</div>
+    <div class="sub">Selfie commun ou<br/>photo du document remis</div>
+  </div>
+  <div class="fp-arrow">›</div>
+  <div class="fp-step">
+    <div class="num">3</div>
+    <div class="title">Évaluer ⭐</div>
+    <div class="sub">Note 1-5 étoiles<br/>→ score réputation mis à jour</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ USE CASE ═══ -->
+<h1 id="uc">DIAGRAMME DE CAS D'UTILISATION</h1>
+<div class="diagram-wrap">
+  <h3>Acteurs et cas d'utilisation — Système ReTurn</h3>
+  <svg viewBox="0 0 960 680" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#888"/>
+      </marker>
+      <marker id="arrd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#01696F"/>
+      </marker>
+    </defs>
+
+    <!-- System boundary -->
+    <rect x="170" y="20" width="625" height="640" rx="8" fill="#f9f9f7" stroke="#01696F" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="480" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#01696F">«system» ReTurn</text>
+
+    <!-- ── Propriétaire (left) ── -->
+    <!-- stick figure -->
+    <circle cx="65" cy="140" r="16" fill="none" stroke="#01696F" stroke-width="2"/>
+    <line x1="65" y1="156" x2="65" y2="200" stroke="#01696F" stroke-width="2"/>
+    <line x1="40" y1="172" x2="90" y2="172" stroke="#01696F" stroke-width="2"/>
+    <line x1="65" y1="200" x2="45" y2="228" stroke="#01696F" stroke-width="2"/>
+    <line x1="65" y1="200" x2="85" y2="228" stroke="#01696F" stroke-width="2"/>
+    <text x="65" y="246" text-anchor="middle" font-size="11" font-weight="700" fill="#01696F">Propriétaire</text>
+    <text x="65" y="258" text-anchor="middle" font-size="10" fill="#6B6A67">(perdant)</text>
+
+    <!-- Retrouveur (left below) -->
+    <circle cx="65" cy="430" r="16" fill="none" stroke="#2D7A3A" stroke-width="2"/>
+    <line x1="65" y1="446" x2="65" y2="490" stroke="#2D7A3A" stroke-width="2"/>
+    <line x1="40" y1="462" x2="90" y2="462" stroke="#2D7A3A" stroke-width="2"/>
+    <line x1="65" y1="490" x2="45" y2="518" stroke="#2D7A3A" stroke-width="2"/>
+    <line x1="65" y1="490" x2="85" y2="518" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="65" y="536" text-anchor="middle" font-size="11" font-weight="700" fill="#2D7A3A">Retrouveur</text>
+
+    <!-- Admin (right) -->
+    <circle cx="895" cy="280" r="16" fill="none" stroke="#C0392B" stroke-width="2"/>
+    <line x1="895" y1="296" x2="895" y2="340" stroke="#C0392B" stroke-width="2"/>
+    <line x1="870" y1="312" x2="920" y2="312" stroke="#C0392B" stroke-width="2"/>
+    <line x1="895" y1="340" x2="875" y2="368" stroke="#C0392B" stroke-width="2"/>
+    <line x1="895" y1="340" x2="915" y2="368" stroke="#C0392B" stroke-width="2"/>
+    <text x="895" y="386" text-anchor="middle" font-size="11" font-weight="700" fill="#C0392B">Admin</text>
+
+    <!-- ── USE CASES ── -->
+    <!-- Helper: ellipse + text -->
+    <!-- Col A (shared): x=290 -->
+    <!-- Col B (prop): x=420 -->
+    <!-- Col C (retro): x=550 -->
+    <!-- Col D (admin): x=700 -->
+
+    <!-- UC1: S'authentifier (shared) -->
+    <ellipse cx="300" cy="80" rx="110" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="300" y="85" text-anchor="middle" font-size="11" fill="#1A1916">S'authentifier (OTP/Google)</text>
+    <line x1="81" y1="156" x2="188" y2="84" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="450" x2="188" y2="90" stroke="#888" stroke-width="1"/>
+
+    <!-- UC2: Déclarer document perdu -->
+    <ellipse cx="310" cy="150" rx="115" ry="20" fill="#fff" stroke="#01696F" stroke-width="1.5"/>
+    <text x="310" y="155" text-anchor="middle" font-size="11" fill="#1A1916">Déclarer document <tspan font-weight="600">perdu</tspan></text>
+    <line x1="81" y1="170" x2="193" y2="152" stroke="#01696F" stroke-width="1.5"/>
+
+    <!-- UC3: Déclarer document trouvé -->
+    <ellipse cx="310" cy="225" rx="115" ry="20" fill="#fff" stroke="#2D7A3A" stroke-width="1.5"/>
+    <text x="310" y="230" text-anchor="middle" font-size="11" fill="#1A1916">Déclarer document <tspan font-weight="600">trouvé</tspan></text>
+    <line x1="81" y1="460" x2="193" y2="228" stroke="#2D7A3A" stroke-width="1.5"/>
+
+    <!-- UC4: Scanner OCR -->
+    <ellipse cx="490" cy="195" rx="95" ry="20" fill="#fff" stroke="#1A5276" stroke-width="1.5"/>
+    <text x="490" y="200" text-anchor="middle" font-size="11" fill="#1A1916">Scanner OCR</text>
+    <!-- include from UC3 -->
+    <line x1="393" y1="222" x2="394" y2="202" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="440" y="213" font-size="9" fill="#888">«include»</text>
+    <!-- include from UC2 -->
+    <line x1="420" y1="158" x2="394" y2="192" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+
+    <!-- UC5: Consulter ses matchs -->
+    <ellipse cx="490" cy="130" rx="95" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="490" y="135" text-anchor="middle" font-size="11" fill="#1A1916">Consulter ses matchs</text>
+    <line x1="81" y1="162" x2="393" y2="132" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="458" x2="393" y2="137" stroke="#888" stroke-width="1"/>
+
+    <!-- UC6: Confirmer un match -->
+    <ellipse cx="490" cy="70" rx="95" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="490" y="75" text-anchor="middle" font-size="11" fill="#1A1916">Confirmer / Rejeter match</text>
+    <line x1="81" y1="155" x2="393" y2="72" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="455" x2="393" y2="74" stroke="#888" stroke-width="1"/>
+
+    <!-- UC7: Envoyer message -->
+    <ellipse cx="490" cy="270" rx="95" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="490" y="275" text-anchor="middle" font-size="11" fill="#1A1916">Envoyer un message</text>
+    <line x1="81" y1="175" x2="393" y2="268" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="465" x2="393" y2="272" stroke="#888" stroke-width="1"/>
+
+    <!-- UC8: Vérifier identité -->
+    <ellipse cx="360" cy="345" rx="115" ry="20" fill="#fff" stroke="#01696F" stroke-width="2"/>
+    <text x="360" y="350" text-anchor="middle" font-size="11" fill="#1A1916" font-weight="600">Vérifier son identité</text>
+    <line x1="81" y1="186" x2="243" y2="342" stroke="#01696F" stroke-width="1.5"/>
+
+    <!-- UC8b: extend → selfie (optional high score) -->
+    <ellipse cx="560" cy="345" rx="110" ry="20" fill="#fff" stroke="#888" stroke-width="1" stroke-dasharray="5,2"/>
+    <text x="560" y="350" text-anchor="middle" font-size="10" fill="#6B6A67">«extend» Selfie si score &lt; 0.75</text>
+    <line x1="470" y1="345" x2="476" y2="345" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="472" y="340" font-size="9" fill="#888">«extend»</text>
+
+    <!-- UC9: Organiser restitution -->
+    <ellipse cx="360" cy="415" rx="115" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="360" y="420" text-anchor="middle" font-size="11" fill="#1A1916">Organiser la restitution</text>
+    <line x1="81" y1="195" x2="243" y2="413" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="470" x2="243" y2="418" stroke="#888" stroke-width="1"/>
+
+    <!-- UC10: Confirmer restitution -->
+    <ellipse cx="360" cy="485" rx="115" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="360" y="490" text-anchor="middle" font-size="11" fill="#1A1916">Confirmer la remise</text>
+    <line x1="81" y1="200" x2="243" y2="483" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="475" x2="243" y2="488" stroke="#888" stroke-width="1"/>
+
+    <!-- UC11: Évaluer -->
+    <ellipse cx="360" cy="555" rx="115" ry="20" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="360" y="560" text-anchor="middle" font-size="11" fill="#1A1916">Évaluer l'autre partie</text>
+    <line x1="81" y1="208" x2="243" y2="553" stroke="#888" stroke-width="1"/>
+    <line x1="81" y1="480" x2="243" y2="558" stroke="#888" stroke-width="1"/>
+
+    <!-- UC12: Gérer utilisateurs (admin) -->
+    <ellipse cx="710" cy="100" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="105" text-anchor="middle" font-size="11" fill="#1A1916">Gérer les utilisateurs</text>
+    <line x1="879" y1="278" x2="821" y2="108" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- UC13: Approuver vérifications -->
+    <ellipse cx="710" cy="170" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="175" text-anchor="middle" font-size="11" fill="#1A1916">Approuver vérifications</text>
+    <line x1="879" y1="283" x2="821" y2="172" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- UC14: Modérer signalements -->
+    <ellipse cx="710" cy="240" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="245" text-anchor="middle" font-size="11" fill="#1A1916">Modérer signalements</text>
+    <line x1="879" y1="290" x2="821" y2="242" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- UC15: Configurer zones -->
+    <ellipse cx="710" cy="310" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="315" text-anchor="middle" font-size="11" fill="#1A1916">Configurer les zones</text>
+    <line x1="879" y1="295" x2="821" y2="312" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- UC16: Tableau de bord -->
+    <ellipse cx="710" cy="380" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="385" text-anchor="middle" font-size="11" fill="#1A1916">Consulter statistiques</text>
+    <line x1="879" y1="305" x2="821" y2="382" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- UC17: Configurer paramètres -->
+    <ellipse cx="710" cy="450" rx="110" ry="20" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="710" y="455" text-anchor="middle" font-size="11" fill="#1A1916">Configurer paramètres</text>
+    <line x1="879" y1="320" x2="821" y2="452" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- Légende -->
+    <rect x="184" y="595" width="10" height="2" fill="#01696F"/>
+    <text x="200" y="605" font-size="10" fill="#6B6A67">— Association acteur-UC</text>
+    <line x1="320" y1="600" x2="340" y2="600" stroke="#888" stroke-dasharray="4,2"/>
+    <text x="348" y="605" font-size="10" fill="#6B6A67">— «include» / «extend»</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════ CLASS DIAGRAM ═══ -->
+<h1 id="cd">DIAGRAMME DE CLASSES</h1>
+<div class="diagram-wrap">
+  <h3>Modèle de Données — Entités principales et relations</h3>
+  <svg viewBox="0 0 980 700" width="100%" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Helper: class box with 3 sections -->
+    <!-- User: x=10, y=20, w=190, h=180 -->
+    <rect x="10" y="20" width="195" height="195" rx="4" fill="#fff" stroke="#01696F" stroke-width="2"/>
+    <rect x="10" y="20" width="195" height="28" rx="4" fill="#01696F"/>
+    <rect x="10" y="44" width="195" height="4" fill="#01696F"/>
+    <text x="107" y="40" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">User</text>
+    <text x="20" y="64" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="20" y="77" font-size="10" fill="#4A4947">+ firebase_uid : String</text>
+    <text x="20" y="90" font-size="10" fill="#4A4947">+ phone_number : String?</text>
+    <text x="20" y="103" font-size="10" fill="#4A4947">+ email : String?</text>
+    <text x="20" y="116" font-size="10" fill="#4A4947">+ full_name : String?</text>
+    <text x="20" y="129" font-size="10" fill="#4A4947">+ date_of_birth : Date?</text>
+    <text x="20" y="142" font-size="10" fill="#4A4947">+ gender : String?</text>
+    <text x="20" y="155" font-size="10" fill="#4A4947">+ city : String?</text>
+    <text x="20" y="168" font-size="10" fill="#4A4947">+ score_reputation : Float</text>
+    <text x="20" y="181" font-size="10" fill="#4A4947">+ is_admin : Boolean</text>
+    <line x1="10" y1="188" x2="205" y2="188" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="202" font-size="10" fill="#01696F">+ is_profile_complete() : bool</text>
+
+    <!-- Declaration: x=240, y=20, w=200, h=195 -->
+    <rect x="240" y="20" width="200" height="200" rx="4" fill="#fff" stroke="#01696F" stroke-width="2"/>
+    <rect x="240" y="20" width="200" height="28" rx="4" fill="#01696F"/>
+    <rect x="240" y="44" width="200" height="4" fill="#01696F"/>
+    <text x="340" y="40" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Declaration</text>
+    <text x="250" y="64" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="250" y="77" font-size="10" fill="#4A4947">+ user_id : UUID «FK»</text>
+    <text x="250" y="90" font-size="10" fill="#4A4947">+ declaration_type : Enum</text>
+    <text x="250" y="103" font-size="10" fill="#4A4947">  (lost | found)</text>
+    <text x="250" y="116" font-size="10" fill="#4A4947">+ document_type : String</text>
+    <text x="250" y="129" font-size="10" fill="#4A4947">+ document_number : String?</text>
+    <text x="250" y="142" font-size="10" fill="#4A4947">+ owner_name : String?</text>
+    <text x="250" y="155" font-size="10" fill="#4A4947">+ lat, lon : Float?</text>
+    <text x="250" y="168" font-size="10" fill="#4A4947">+ event_date : Date?</text>
+    <text x="250" y="181" font-size="10" fill="#4A4947">+ status : Enum</text>
+    <line x1="240" y1="188" x2="440" y2="188" stroke="#ddd" stroke-width="1"/>
+    <text x="250" y="208" font-size="10" fill="#4A4947">  (active | matched | closed)</text>
+
+    <!-- Match: x=490, y=20, w=200, h=190 -->
+    <rect x="490" y="20" width="200" height="195" rx="4" fill="#fff" stroke="#01696F" stroke-width="2"/>
+    <rect x="490" y="20" width="200" height="28" rx="4" fill="#01696F"/>
+    <text x="590" y="40" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Match</text>
+    <text x="500" y="64" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="500" y="77" font-size="10" fill="#4A4947">+ declaration_found_id : UUID</text>
+    <text x="500" y="90" font-size="10" fill="#4A4947">+ declaration_lost_id : UUID</text>
+    <text x="500" y="103" font-size="10" fill="#4A4947">+ user_found_id : UUID</text>
+    <text x="500" y="116" font-size="10" fill="#4A4947">+ user_lost_id : UUID</text>
+    <text x="500" y="129" font-size="10" fill="#4A4947">+ score : Float (0.0–1.0)</text>
+    <text x="500" y="142" font-size="10" fill="#4A4947">+ status : Enum</text>
+    <text x="500" y="155" font-size="10" fill="#4A4947">  (pending|confirmed|ignored|closed)</text>
+    <text x="500" y="168" font-size="10" fill="#4A4947">+ accepted_by_owner : Boolean</text>
+    <text x="500" y="181" font-size="10" fill="#4A4947">+ accepted_by_finder : Boolean</text>
+    <line x1="490" y1="188" x2="690" y2="188" stroke="#ddd" stroke-width="1"/>
+    <text x="500" y="204" font-size="10" fill="#01696F">+ get_confidence_level() : int</text>
+
+    <!-- Zone: x=760, y=20, w=195, h=140 -->
+    <rect x="760" y="20" width="195" height="145" rx="4" fill="#fff" stroke="#6B6A67" stroke-width="1.5"/>
+    <rect x="760" y="20" width="195" height="28" rx="4" fill="#6B6A67"/>
+    <text x="857" y="40" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Zone</text>
+    <text x="770" y="64" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="770" y="77" font-size="10" fill="#4A4947">+ name : String</text>
+    <text x="770" y="90" font-size="10" fill="#4A4947">+ latitude, longitude : Float</text>
+    <text x="770" y="103" font-size="10" fill="#4A4947">+ radius_km : Float</text>
+    <text x="770" y="116" font-size="10" fill="#4A4947">+ is_active : Boolean</text>
+    <text x="770" y="129" font-size="10" fill="#4A4947">+ created_by : UUID «FK»</text>
+    <line x1="760" y1="135" x2="955" y2="135" stroke="#ddd" stroke-width="1"/>
+    <text x="770" y="152" font-size="10" fill="#6B6A67">+ get_declarations() : List</text>
+
+    <!-- IdentityVerification: x=10, y=280, w=200, h=165 -->
+    <rect x="10" y="280" width="200" height="165" rx="4" fill="#fff" stroke="#D4860B" stroke-width="2"/>
+    <rect x="10" y="280" width="200" height="28" rx="4" fill="#D4860B"/>
+    <text x="110" y="300" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">IdentityVerification</text>
+    <text x="20" y="324" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="20" y="337" font-size="10" fill="#4A4947">+ match_id : UUID «FK»</text>
+    <text x="20" y="350" font-size="10" fill="#4A4947">+ user_id : UUID «FK»</text>
+    <text x="20" y="363" font-size="10" fill="#4A4947">+ status : Enum</text>
+    <text x="20" y="376" font-size="10" fill="#4A4947">  (pending|approved|rejected)</text>
+    <text x="20" y="389" font-size="10" fill="#4A4947">+ questions_passed : Boolean</text>
+    <text x="20" y="402" font-size="10" fill="#4A4947">+ selfie_url : String?</text>
+    <text x="20" y="415" font-size="10" fill="#4A4947">+ verification_level : Int (1–4)</text>
+    <line x1="10" y1="420" x2="210" y2="420" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="436" font-size="10" fill="#D4860B">+ auto_approve() : Boolean</text>
+
+    <!-- Restitution: x=255, y=280, w=200, h=175 -->
+    <rect x="255" y="280" width="200" height="180" rx="4" fill="#fff" stroke="#2D7A3A" stroke-width="2"/>
+    <rect x="255" y="280" width="200" height="28" rx="4" fill="#2D7A3A"/>
+    <text x="355" y="300" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Restitution</text>
+    <text x="265" y="324" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="265" y="337" font-size="10" fill="#4A4947">+ match_id : UUID «FK, unique»</text>
+    <text x="265" y="350" font-size="10" fill="#4A4947">+ meeting_location : String?</text>
+    <text x="265" y="363" font-size="10" fill="#4A4947">+ meeting_lat, lon : Float?</text>
+    <text x="265" y="376" font-size="10" fill="#4A4947">+ proof_photos : JSON[]</text>
+    <text x="265" y="389" font-size="10" fill="#4A4947">+ handoff_confirmed_owner : bool</text>
+    <text x="265" y="402" font-size="10" fill="#4A4947">+ handoff_confirmed_finder : bool</text>
+    <text x="265" y="415" font-size="10" fill="#4A4947">+ rating_by_owner : Int?</text>
+    <text x="265" y="428" font-size="10" fill="#4A4947">+ rating_by_finder : Int?</text>
+    <text x="265" y="441" font-size="10" fill="#4A4947">+ status : Enum</text>
+    <line x1="255" y1="447" x2="455" y2="447" stroke="#ddd" stroke-width="1"/>
+    <text x="265" y="460" font-size="10" fill="#2D7A3A">+ update_reputation()</text>
+
+    <!-- Message: x=500, y=280, w=185, h=145 -->
+    <rect x="500" y="280" width="185" height="145" rx="4" fill="#fff" stroke="#1A5276" stroke-width="1.5"/>
+    <rect x="500" y="280" width="185" height="28" rx="4" fill="#1A5276"/>
+    <text x="592" y="300" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Message</text>
+    <text x="510" y="324" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="510" y="337" font-size="10" fill="#4A4947">+ match_id : UUID «room»</text>
+    <text x="510" y="350" font-size="10" fill="#4A4947">+ sender_id : UUID «FK»</text>
+    <text x="510" y="363" font-size="10" fill="#4A4947">+ content : String</text>
+    <text x="510" y="376" font-size="10" fill="#4A4947">+ sent_at : DateTime</text>
+    <text x="510" y="389" font-size="10" fill="#4A4947">+ read_at : DateTime?</text>
+    <line x1="500" y1="396" x2="685" y2="396" stroke="#ddd" stroke-width="1"/>
+    <text x="510" y="412" font-size="10" fill="#1A5276">+ mark_as_read()</text>
+
+    <!-- Report: x=730, y=280, w=195, h=145 -->
+    <rect x="730" y="280" width="195" height="145" rx="4" fill="#fff" stroke="#C0392B" stroke-width="1.5"/>
+    <rect x="730" y="280" width="195" height="28" rx="4" fill="#C0392B"/>
+    <text x="827" y="300" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Report</text>
+    <text x="740" y="324" font-size="10" fill="#4A4947">+ id : UUID</text>
+    <text x="740" y="337" font-size="10" fill="#4A4947">+ reporter_id : UUID «FK»</text>
+    <text x="740" y="350" font-size="10" fill="#4A4947">+ target_type : Enum(user|decl)</text>
+    <text x="740" y="363" font-size="10" fill="#4A4947">+ target_id : UUID</text>
+    <text x="740" y="376" font-size="10" fill="#4A4947">+ reason : String</text>
+    <text x="740" y="389" font-size="10" fill="#4A4947">+ status : Enum</text>
+    <text x="740" y="402" font-size="10" fill="#4A4947">  (open|resolved|dismissed)</text>
+    <line x1="730" y1="408" x2="925" y2="408" stroke="#ddd" stroke-width="1"/>
+    <text x="740" y="424" font-size="10" fill="#C0392B">+ resolve(decision)</text>
+
+    <!-- ── RELATIONS ── -->
+    <!-- User 1→N Declaration -->
+    <line x1="205" y1="110" x2="240" y2="110" stroke="#555" stroke-width="1.5"/>
+    <text x="208" y="107" font-size="9" fill="#555">1</text>
+    <text x="228" y="107" font-size="9" fill="#555">N</text>
+
+    <!-- Declaration N→N Match (found) -->
+    <line x1="440" y1="90" x2="490" y2="90" stroke="#555" stroke-width="1.5"/>
+    <text x="443" y="87" font-size="9" fill="#555">N</text>
+    <text x="476" y="87" font-size="9" fill="#555">N</text>
+    <text x="452" y="80" font-size="8" fill="#888">found/lost</text>
+
+    <!-- User 1→N Report -->
+    <line x1="107" y1="215" x2="107" y2="240" stroke="#C0392B" stroke-width="1" stroke-dasharray="4,2"/>
+    <line x1="107" y1="240" x2="827" y2="240" stroke="#C0392B" stroke-width="1" stroke-dasharray="4,2"/>
+    <line x1="827" y1="240" x2="827" y2="280" stroke="#C0392B" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="820" y="237" font-size="8" fill="#C0392B">1</text>
+    <text x="820" y="277" font-size="8" fill="#C0392B">N</text>
+
+    <!-- Match 1→N IdentityVerification -->
+    <line x1="530" y1="215" x2="530" y2="260" stroke="#D4860B" stroke-width="1.5"/>
+    <line x1="530" y1="260" x2="110" y2="260" stroke="#D4860B" stroke-width="1.5"/>
+    <line x1="110" y1="260" x2="110" y2="280" stroke="#D4860B" stroke-width="1.5"/>
+    <text x="113" y="278" font-size="8" fill="#D4860B">N</text>
+    <text x="518" y="257" font-size="8" fill="#D4860B">1</text>
+
+    <!-- Match 1→1 Restitution -->
+    <line x1="590" y1="215" x2="590" y2="255" stroke="#2D7A3A" stroke-width="1.5"/>
+    <line x1="590" y1="255" x2="355" y2="255" stroke="#2D7A3A" stroke-width="1.5"/>
+    <line x1="355" y1="255" x2="355" y2="280" stroke="#2D7A3A" stroke-width="1.5"/>
+    <text x="358" y="278" font-size="8" fill="#2D7A3A">0..1</text>
+    <text x="582" y="252" font-size="8" fill="#2D7A3A">1</text>
+
+    <!-- Match 1→N Message -->
+    <line x1="590" y1="215" x2="592" y2="280" stroke="#1A5276" stroke-width="1.5"/>
+    <text x="594" y="278" font-size="8" fill="#1A5276">N</text>
+    <text x="584" y="232" font-size="8" fill="#1A5276">1</text>
+
+    <!-- User N↔N Zone -->
+    <line x1="205" y1="50" x2="760" y2="50" stroke="#6B6A67" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="208" y="47" font-size="8" fill="#6B6A67">N</text>
+    <text x="752" y="47" font-size="8" fill="#6B6A67">N</text>
+    <text x="430" y="44" font-size="8" fill="#6B6A67">«abonnements»</text>
+
+    <!-- Legend -->
+    <line x1="10" y1="640" x2="40" y2="640" stroke="#555" stroke-width="1.5"/>
+    <text x="46" y="644" font-size="10" fill="#6B6A67">Association</text>
+    <line x1="120" y1="640" x2="150" y2="640" stroke="#888" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="156" y="644" font-size="10" fill="#6B6A67">Dépendance</text>
+    <text x="240" y="644" font-size="10" fill="#6B6A67">1, N, 0..1 = cardinalités</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════ STATE MACHINES ═══ -->
+<h1 id="sm">DIAGRAMMES D'ÉTAT UML</h1>
+
+<!-- Auth State -->
+<div class="diagram-wrap">
+  <h3>AuthState — Session Utilisateur</h3>
+  <svg viewBox="0 0 700 130" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <!-- initial -->
+    <circle cx="30" cy="65" r="10" fill="#1A1916"/>
+    <!-- arrow init→initial -->
+    <line x1="40" y1="65" x2="75" y2="65" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <!-- states -->
+    <rect x="80" y="45" width="90" height="36" rx="18" fill="#E6F2F2" stroke="#01696F" stroke-width="2"/>
+    <text x="125" y="68" text-anchor="middle" font-size="11" font-weight="600" fill="#01696F">initial</text>
+    <line x1="170" y1="63" x2="200" y2="63" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="185" y="58" font-size="9" fill="#888">microtask</text>
+
+    <rect x="205" y="45" width="95" height="36" rx="18" fill="#FEF7E8" stroke="#D4860B" stroke-width="2"/>
+    <text x="252" y="68" text-anchor="middle" font-size="11" font-weight="600" fill="#D4860B">checking</text>
+    <!-- checking → authenticated -->
+    <line x1="300" y1="55" x2="340" y2="40" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="310" y="42" font-size="9" fill="#888">token OK</text>
+    <!-- checking → unauthenticated -->
+    <line x1="300" y1="75" x2="340" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="308" y="95" font-size="9" fill="#888">pas de token</text>
+
+    <rect x="345" y="20" width="130" height="36" rx="18" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="410" y="43" text-anchor="middle" font-size="11" font-weight="600" fill="#2D7A3A">authenticated</text>
+    <text x="410" y="56" text-anchor="middle" font-size="9" fill="#2D7A3A">(user)</text>
+
+    <rect x="345" y="75" width="130" height="36" rx="18" fill="#FBEAE8" stroke="#C0392B" stroke-width="2"/>
+    <text x="410" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="#C0392B">unauthenticated</text>
+
+    <!-- auth → checking (refresh) -->
+    <path d="M475 38 Q540 20 540 65 Q540 110 475 98" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="545" y="68" font-size="9" fill="#888">logout /</text>
+    <text x="545" y="78" font-size="9" fill="#888">token exp.</text>
+
+    <!-- unauth → loading -->
+    <rect x="530" y="45" width="90" height="36" rx="18" fill="#D6EAF8" stroke="#1A5276" stroke-width="2"/>
+    <text x="575" y="68" text-anchor="middle" font-size="11" font-weight="600" fill="#1A5276">loading</text>
+    <line x1="475" y1="93" x2="528" y2="70" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="488" y="75" font-size="9" fill="#888">signIn()</text>
+    <line x1="528" y1="58" x2="477" y2="40" stroke="#2D7A3A" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="490" y="45" font-size="9" fill="#2D7A3A">OK</text>
+
+    <!-- loading → error -->
+    <rect x="640" y="45" width="55" height="36" rx="18" fill="#FBEAE8" stroke="#C0392B" stroke-width="1.5"/>
+    <text x="667" y="68" text-anchor="middle" font-size="11" font-weight="600" fill="#C0392B">error</text>
+    <line x1="620" y1="63" x2="638" y2="63" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="623" y="58" font-size="9" fill="#C0392B">fail</text>
+  </svg>
+</div>
+
+<!-- Declaration State -->
+<div class="diagram-wrap">
+  <h3>Declaration — Cycle de vie</h3>
+  <svg viewBox="0 0 720 160" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="25" cy="80" r="10" fill="#1A1916"/>
+    <line x1="35" y1="80" x2="65" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- draft -->
+    <rect x="70" y="60" width="95" height="40" rx="20" fill="#E6F2F2" stroke="#01696F" stroke-width="2"/>
+    <text x="117" y="85" text-anchor="middle" font-size="11" font-weight="600" fill="#01696F">draft</text>
+    <line x1="165" y1="80" x2="200" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="172" y="74" font-size="9" fill="#888">submit()</text>
+
+    <!-- active -->
+    <rect x="205" y="60" width="95" height="40" rx="20" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="252" y="85" text-anchor="middle" font-size="11" font-weight="600" fill="#2D7A3A">active</text>
+
+    <!-- active→matched -->
+    <line x1="300" y1="72" x2="360" y2="72" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="308" y="67" font-size="9" fill="#888">score≥0.45</text>
+
+    <!-- active→closed (manual) -->
+    <path d="M252 100 Q252 130 450 130 Q595 130 595 100" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="395" y="143" font-size="9" fill="#888">close() manuelle</text>
+
+    <!-- matched -->
+    <rect x="365" y="60" width="105" height="40" rx="20" fill="#D6EAF8" stroke="#1A5276" stroke-width="2"/>
+    <text x="417" y="85" text-anchor="middle" font-size="11" font-weight="600" fill="#1A5276">matched</text>
+    <line x1="470" y1="80" x2="510" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="475" y="74" font-size="9" fill="#888">restitution OK</text>
+
+    <!-- closed -->
+    <rect x="515" y="60" width="95" height="40" rx="20" fill="#F7F6F2" stroke="#6B6A67" stroke-width="2"/>
+    <text x="562" y="85" text-anchor="middle" font-size="11" font-weight="600" fill="#6B6A67">closed</text>
+    <!-- final -->
+    <line x1="610" y1="80" x2="640" y2="80" stroke="#555" stroke-width="1.5"/>
+    <circle cx="652" cy="80" r="10" fill="none" stroke="#1A1916" stroke-width="2"/>
+    <circle cx="652" cy="80" r="6" fill="#1A1916"/>
+
+    <!-- guard note -->
+    <rect x="365" y="20" width="105" height="24" rx="4" fill="#FEF7E8" stroke="#D4860B" stroke-width="1"/>
+    <text x="417" y="36" text-anchor="middle" font-size="9" fill="#D4860B">⚠ BUG: statut non mis à jour</text>
+    <line x1="417" y1="44" x2="417" y2="60" stroke="#D4860B" stroke-width="1" stroke-dasharray="3,2"/>
+  </svg>
+</div>
+
+<!-- Match State -->
+<div class="diagram-wrap">
+  <h3>Match — États et transitions</h3>
+  <svg viewBox="0 0 760 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="25" cy="80" r="10" fill="#1A1916"/>
+    <line x1="35" y1="80" x2="65" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- pending -->
+    <rect x="70" y="58" width="110" height="44" rx="22" fill="#FEF7E8" stroke="#D4860B" stroke-width="2"/>
+    <text x="125" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="#D4860B">pending</text>
+    <text x="125" y="96" text-anchor="middle" font-size="9" fill="#D4860B">[0 confirmations]</text>
+
+    <!-- pending → confirmed -->
+    <line x1="180" y1="70" x2="260" y2="50" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="192" y="55" font-size="9" fill="#888">owner+finder</text>
+    <text x="192" y="65" font-size="9" fill="#888">acceptent</text>
+
+    <!-- pending → ignored -->
+    <line x1="180" y1="95" x2="260" y2="130" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="190" y="128" font-size="9" fill="#888">l'un rejette</text>
+
+    <!-- confirmed -->
+    <rect x="265" y="28" width="120" height="44" rx="22" fill="#D6EAF8" stroke="#1A5276" stroke-width="2"/>
+    <text x="325" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#1A5276">confirmed</text>
+    <text x="325" y="66" text-anchor="middle" font-size="9" fill="#1A5276">[2 confirmations]</text>
+
+    <!-- confirmed → closed (restitution) -->
+    <line x1="385" y1="50" x2="450" y2="50" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="392" y="44" font-size="9" fill="#888">vérif. OK</text>
+
+    <!-- confirmed → closed (annulation) -->
+    <path d="M385 62 Q420 90 450 90" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="400" y="86" font-size="9" fill="#888">annulation</text>
+
+    <!-- ignored -->
+    <rect x="265" y="115" width="110" height="40" rx="20" fill="#F7F6F2" stroke="#6B6A67" stroke-width="2"/>
+    <text x="320" y="140" text-anchor="middle" font-size="11" font-weight="600" fill="#6B6A67">ignored</text>
+    <line x1="375" y1="135" x2="450" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="385" y="130" font-size="9" fill="#888">archivage</text>
+
+    <!-- closed -->
+    <rect x="455" y="55" width="95" height="40" rx="20" fill="#F7F6F2" stroke="#6B6A67" stroke-width="2"/>
+    <text x="502" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="#6B6A67">closed</text>
+    <!-- final -->
+    <line x1="550" y1="75" x2="585" y2="75" stroke="#555" stroke-width="1.5"/>
+    <circle cx="597" cy="75" r="10" fill="none" stroke="#1A1916" stroke-width="2"/>
+    <circle cx="597" cy="75" r="6" fill="#1A1916"/>
+
+    <!-- timeout note -->
+    <rect x="455" y="140" width="155" height="40" rx="6" fill="#FBEAE8" stroke="#C0392B" stroke-width="1"/>
+    <text x="532" y="156" text-anchor="middle" font-size="9" fill="#C0392B">Timeout 72h sans confirmation</text>
+    <text x="532" y="168" text-anchor="middle" font-size="9" fill="#C0392B">→ auto-close (tâche cron)</text>
+    <line x1="502" y1="95" x2="532" y2="140" stroke="#C0392B" stroke-width="1" stroke-dasharray="3,2"/>
+  </svg>
+</div>
+
+<!-- Verification State -->
+<div class="diagram-wrap">
+  <h3>IdentityVerification — États adaptatifs (Fast Path)</h3>
+  <svg viewBox="0 0 800 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="80" r="10" fill="#1A1916"/>
+    <line x1="30" y1="80" x2="65" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- pending -->
+    <rect x="70" y="58" width="105" height="44" rx="22" fill="#FEF7E8" stroke="#D4860B" stroke-width="2"/>
+    <text x="122" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="#D4860B">pending</text>
+    <text x="122" y="96" text-anchor="middle" font-size="9" fill="#D4860B">score évalué</text>
+
+    <!-- branch by score -->
+    <!-- score≥0.75: direct to questions_ok -->
+    <line x1="175" y1="68" x2="230" y2="35" stroke="#2D7A3A" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="180" y="40" font-size="9" fill="#2D7A3A">score≥0.75</text>
+    <text x="180" y="50" font-size="9" fill="#2D7A3A">(niveau 1)</text>
+
+    <!-- score 0.45-0.75: questions_step -->
+    <line x1="175" y1="80" x2="230" y2="80" stroke="#1A5276" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="183" y="74" font-size="9" fill="#1A5276">score 0.45–0.74</text>
+
+    <!-- Niveau 1 box -->
+    <rect x="235" y="15" width="130" height="40" rx="8" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="300" y="34" text-anchor="middle" font-size="10" font-weight="700" fill="#2D7A3A">Niv.1 — Nom</text>
+    <text x="300" y="47" text-anchor="middle" font-size="9" fill="#2D7A3A">+ Date de naissance</text>
+
+    <!-- Niveau 2 box -->
+    <rect x="235" y="58" width="130" height="44" rx="8" fill="#D6EAF8" stroke="#1A5276" stroke-width="2"/>
+    <text x="300" y="77" text-anchor="middle" font-size="10" font-weight="700" fill="#1A5276">Niv.2 — Nom</text>
+    <text x="300" y="90" text-anchor="middle" font-size="9" fill="#1A5276">+ Date + Selfie</text>
+
+    <!-- Niveau 3 box -->
+    <rect x="235" y="120" width="130" height="44" rx="8" fill="#FBEAE8" stroke="#C0392B" stroke-width="2"/>
+    <text x="300" y="139" text-anchor="middle" font-size="10" font-weight="700" fill="#C0392B">Niv.3 — Nom</text>
+    <text x="300" y="152" text-anchor="middle" font-size="9" fill="#C0392B">+Date+Selfie+Photo doc</text>
+
+    <!-- score <0.50 to niv3 -->
+    <line x1="175" y1="95" x2="200" y2="142" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="178" y="125" font-size="9" fill="#C0392B">score&lt;0.50</text>
+    <line x1="200" y1="142" x2="235" y2="142" stroke="#C0392B" stroke-width="1.5"/>
+
+    <!-- all levels → approved -->
+    <line x1="365" y1="35" x2="440" y2="60" stroke="#2D7A3A" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="365" y1="80" x2="440" y2="75" stroke="#1A5276" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="365" y1="142" x2="440" y2="90" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- approved -->
+    <rect x="445" y="55" width="105" height="40" rx="20" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="497" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="#2D7A3A">approved</text>
+    <!-- approved → final -->
+    <line x1="550" y1="75" x2="590" y2="75" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="554" y="69" font-size="9" fill="#888">→ restitution</text>
+    <circle cx="602" cy="75" r="10" fill="none" stroke="#1A1916" stroke-width="2"/>
+    <circle cx="602" cy="75" r="6" fill="#1A1916"/>
+
+    <!-- rejected -->
+    <rect x="445" y="130" width="105" height="40" rx="20" fill="#FBEAE8" stroke="#C0392B" stroke-width="2"/>
+    <text x="497" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#C0392B">rejected</text>
+    <!-- niv3 → rejected (admin) -->
+    <line x1="497" y1="164" x2="520" y2="185" stroke="#C0392B" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="458" y="185" font-size="9" fill="#C0392B">admin refuse</text>
+
+    <!-- approved→rejected (signalement) -->
+    <path d="M497 95 Q530 112 497 130" fill="none" stroke="#C0392B" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+    <text x="540" y="118" font-size="9" fill="#C0392B">signalement</text>
+  </svg>
+</div>
+
+<!-- Restitution State -->
+<div class="diagram-wrap">
+  <h3>Restitution — Orchestration de la remise physique</h3>
+  <svg viewBox="0 0 760 140" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="70" r="10" fill="#1A1916"/>
+    <line x1="30" y1="70" x2="65" y2="70" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <rect x="70" y="50" width="105" height="40" rx="20" fill="#FEF7E8" stroke="#D4860B" stroke-width="2"/>
+    <text x="122" y="75" text-anchor="middle" font-size="11" font-weight="600" fill="#D4860B">pending</text>
+
+    <line x1="175" y1="70" x2="210" y2="70" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="180" y="64" font-size="9" fill="#888">RDV défini</text>
+
+    <rect x="215" y="50" width="110" height="40" rx="20" fill="#D6EAF8" stroke="#1A5276" stroke-width="2"/>
+    <text x="270" y="75" text-anchor="middle" font-size="11" font-weight="600" fill="#1A5276">in_progress</text>
+
+    <line x1="325" y1="65" x2="365" y2="50" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="330" y="54" font-size="9" fill="#888">2 confirmations</text>
+
+    <line x1="325" y1="80" x2="365" y2="98" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="328" y="100" font-size="9" fill="#C0392B">annulation</text>
+
+    <rect x="370" y="30" width="105" height="40" rx="20" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="2"/>
+    <text x="422" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#2D7A3A">completed</text>
+    <text x="422" y="68" text-anchor="middle" font-size="9" fill="#2D7A3A">→ notation ⭐</text>
+
+    <rect x="370" y="90" width="105" height="40" rx="20" fill="#FBEAE8" stroke="#C0392B" stroke-width="2"/>
+    <text x="422" y="115" text-anchor="middle" font-size="11" font-weight="600" fill="#C0392B">cancelled</text>
+
+    <!-- completed → final -->
+    <line x1="475" y1="50" x2="510" y2="50" stroke="#555" stroke-width="1.5"/>
+    <circle cx="522" cy="50" r="10" fill="none" stroke="#1A1916" stroke-width="2"/>
+    <circle cx="522" cy="50" r="6" fill="#1A1916"/>
+
+    <!-- cancelled → final -->
+    <line x1="475" y1="110" x2="510" y2="110" stroke="#555" stroke-width="1.5"/>
+    <circle cx="522" cy="110" r="10" fill="none" stroke="#1A1916" stroke-width="2"/>
+    <circle cx="522" cy="110" r="6" fill="#1A1916"/>
+
+    <!-- reputation update note -->
+    <rect x="560" y="35" width="185" height="32" rx="6" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="1"/>
+    <text x="652" y="49" text-anchor="middle" font-size="9" fill="#2D7A3A">Après completed :</text>
+    <text x="652" y="61" text-anchor="middle" font-size="9" fill="#2D7A3A">score_reputation recalculé</text>
+    <line x1="533" y1="50" x2="560" y2="51" stroke="#2D7A3A" stroke-width="1" stroke-dasharray="3,2"/>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════ SEQUENCE ═══ -->
+<h1 id="seq">DIAGRAMMES DE SÉQUENCE</h1>
+
+<h2>Flux complet — De la déclaration à la restitution</h2>
+<div class="diagram-wrap">
+  <svg viewBox="0 0 920 560" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <!-- Lifelines -->
+    <defs>
+      <marker id="sarr" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+        <path d="M0,0 L0,5 L7,2.5 z" fill="#555"/>
+      </marker>
+      <marker id="garr" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+        <path d="M0,0 L0,5 L7,2.5 z" fill="#2D7A3A"/>
+      </marker>
+      <marker id="rarr" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+        <path d="M0,0 L0,5 L7,2.5 z" fill="#C0392B"/>
+      </marker>
+    </defs>
+
+    <!-- Actor boxes -->
+    <rect x="10" y="10" width="100" height="32" rx="4" fill="#01696F"/>
+    <text x="60" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Propriétaire</text>
+
+    <rect x="170" y="10" width="100" height="32" rx="4" fill="#2D7A3A"/>
+    <text x="220" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Retrouveur</text>
+
+    <rect x="340" y="10" width="100" height="32" rx="4" fill="#1A5276"/>
+    <text x="390" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Flutter App</text>
+
+    <rect x="510" y="10" width="100" height="32" rx="4" fill="#4A4947"/>
+    <text x="560" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">FastAPI</text>
+
+    <rect x="670" y="10" width="100" height="32" rx="4" fill="#6C3483"/>
+    <text x="720" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Firebase/FCM</text>
+
+    <rect x="820" y="10" width="90" height="32" rx="4" fill="#117A65"/>
+    <text x="865" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">PostgreSQL</text>
+
+    <!-- Lifeline dashes -->
+    <line x1="60" y1="42" x2="60" y2="550" stroke="#01696F" stroke-width="1" stroke-dasharray="5,3"/>
+    <line x1="220" y1="42" x2="220" y2="550" stroke="#2D7A3A" stroke-width="1" stroke-dasharray="5,3"/>
+    <line x1="390" y1="42" x2="390" y2="550" stroke="#1A5276" stroke-width="1" stroke-dasharray="5,3"/>
+    <line x1="560" y1="42" x2="560" y2="550" stroke="#4A4947" stroke-width="1" stroke-dasharray="5,3"/>
+    <line x1="720" y1="42" x2="720" y2="550" stroke="#6C3483" stroke-width="1" stroke-dasharray="5,3"/>
+    <line x1="865" y1="42" x2="865" y2="550" stroke="#117A65" stroke-width="1" stroke-dasharray="5,3"/>
+
+    <!-- ── SCENARIO ── -->
+    <!-- 1. Propriétaire déclare -->
+    <rect x="30" y="56" width="60" height="14" rx="2" fill="#01696F"/>
+    <!-- Phase label -->
+    <rect x="0" y="52" width="920" height="18" rx="0" fill="#E6F2F2" opacity=".4"/>
+    <text x="460" y="65" text-anchor="middle" font-size="10" font-weight="700" fill="#01696F">① DÉCLARATION RAPIDE (document perdu)</text>
+
+    <line x1="60" y1="80" x2="388" y2="80" stroke="#01696F" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="215" y="76" text-anchor="middle" font-size="9" fill="#01696F">saisit type doc + nom propriétaire</text>
+
+    <line x1="390" y1="90" x2="558" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="86" text-anchor="middle" font-size="9" fill="#555">POST /declarations/ {type, owner_name, ...}</text>
+
+    <line x1="560" y1="100" x2="863" y2="100" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="96" text-anchor="middle" font-size="9" fill="#555">INSERT declaration (status=active)</text>
+
+    <line x1="863" y1="112" x2="562" y2="112" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#sarr)"/>
+    <text x="710" y="109" text-anchor="middle" font-size="9" fill="#888">declaration_id</text>
+
+    <!-- 2. Matching automatique -->
+    <rect x="0" y="122" width="920" height="18" rx="0" fill="#E6F2F2" opacity=".4"/>
+    <text x="460" y="135" text-anchor="middle" font-size="10" font-weight="700" fill="#01696F">② MATCHING AUTOMATIQUE</text>
+
+    <line x1="560" y1="150" x2="863" y2="150" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="146" text-anchor="middle" font-size="9" fill="#555">run_matching() → compute_score(found, lost)</text>
+
+    <line x1="863" y1="162" x2="562" y2="162" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#sarr)"/>
+    <text x="710" y="159" text-anchor="middle" font-size="9" fill="#888">score = 0.72 ≥ 0.45 → INSERT Match</text>
+
+    <line x1="560" y1="174" x2="718" y2="174" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="638" y="170" text-anchor="middle" font-size="9" fill="#555">push_match_notification(fcm_tokens)</text>
+
+    <line x1="718" y1="184" x2="388" y2="184" stroke="#6C3483" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="553" y="180" text-anchor="middle" font-size="9" fill="#6C3483">FCM push → "Un match trouvé !"</text>
+
+    <!-- 3. Retrouveur déclare aussi (parallèle) -->
+    <rect x="0" y="198" width="920" height="18" rx="0" fill="#EAF5EC" opacity=".4"/>
+    <text x="460" y="211" text-anchor="middle" font-size="10" font-weight="700" fill="#2D7A3A">③ CONFIRMATION DES DEUX PARTIES</text>
+
+    <line x1="60" y1="225" x2="388" y2="225" stroke="#01696F" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="220" y="221" text-anchor="middle" font-size="9" fill="#01696F">ouvre le match → [Confirmer]</text>
+
+    <line x1="390" y1="235" x2="558" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="231" text-anchor="middle" font-size="9" fill="#555">POST /matches/{id}/confirm (owner)</text>
+
+    <line x1="220" y1="248" x2="388" y2="248" stroke="#2D7A3A" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="300" y="244" text-anchor="middle" font-size="9" fill="#2D7A3A">ouvre le match → [Confirmer]</text>
+
+    <line x1="390" y1="258" x2="558" y2="258" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="254" text-anchor="middle" font-size="9" fill="#555">POST /matches/{id}/confirm (finder)</text>
+
+    <line x1="560" y1="268" x2="863" y2="268" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="264" text-anchor="middle" font-size="9" fill="#555">UPDATE match SET status=confirmed</text>
+
+    <!-- 4. Verification -->
+    <rect x="0" y="282" width="920" height="18" rx="0" fill="#FEF7E8" opacity=".4"/>
+    <text x="460" y="295" text-anchor="middle" font-size="10" font-weight="700" fill="#D4860B">④ VÉRIFICATION IDENTITÉ (Niv.1 — score≥0.75)</text>
+
+    <line x1="60" y1="310" x2="388" y2="310" stroke="#01696F" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="220" y="306" text-anchor="middle" font-size="9" fill="#01696F">saisit nom + date naissance</text>
+
+    <line x1="390" y1="320" x2="558" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="316" text-anchor="middle" font-size="9" fill="#555">POST /verify/{matchId}/answers</text>
+
+    <line x1="560" y1="330" x2="863" y2="330" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="326" text-anchor="middle" font-size="9" fill="#555">compare réponses + UPDATE status=approved</text>
+
+    <line x1="863" y1="342" x2="392" y2="342" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#sarr)"/>
+    <text x="625" y="339" text-anchor="middle" font-size="9" fill="#2D7A3A">✓ Identité approuvée → Niv.1 rapide</text>
+
+    <!-- 5. Chat + Restitution -->
+    <rect x="0" y="356" width="920" height="18" rx="0" fill="#D6EAF8" opacity=".4"/>
+    <text x="460" y="369" text-anchor="middle" font-size="10" font-weight="700" fill="#1A5276">⑤ CHAT → RESTITUTION → ÉVALUATION</text>
+
+    <line x1="60" y1="384" x2="218" y2="384" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="135" y="380" text-anchor="middle" font-size="9" fill="#555">WS /chat/{matchId} → message RDV</text>
+
+    <line x1="60" y1="400" x2="388" y2="400" stroke="#01696F" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="220" y="396" text-anchor="middle" font-size="9" fill="#01696F">REMISE PHYSIQUE + photo preuve</text>
+
+    <line x1="390" y1="412" x2="558" y2="412" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="408" text-anchor="middle" font-size="9" fill="#555">POST /restitutions/{id}/confirm ×2</text>
+
+    <line x1="560" y1="422" x2="863" y2="422" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="418" text-anchor="middle" font-size="9" fill="#555">UPDATE restitution status=completed</text>
+
+    <line x1="60" y1="440" x2="388" y2="440" stroke="#01696F" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="220" y="436" text-anchor="middle" font-size="9" fill="#01696F">évalue 5⭐ le retrouveur</text>
+
+    <line x1="220" y1="452" x2="388" y2="452" stroke="#2D7A3A" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="300" y="448" text-anchor="middle" font-size="9" fill="#2D7A3A">évalue 5⭐ le propriétaire</text>
+
+    <line x1="390" y1="462" x2="558" y2="462" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="474" y="458" text-anchor="middle" font-size="9" fill="#555">POST /restitutions/{id}/rate ×2</text>
+
+    <line x1="560" y1="472" x2="863" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#sarr)"/>
+    <text x="710" y="468" text-anchor="middle" font-size="9" fill="#555">UPDATE score_reputation (both users)</text>
+
+    <!-- final note -->
+    <rect x="10" y="490" width="900" height="50" rx="6" fill="#EAF5EC" stroke="#2D7A3A" stroke-width="1"/>
+    <text x="460" y="510" text-anchor="middle" font-size="11" font-weight="700" fill="#2D7A3A">✅ Durée totale Fast Path (score≥0.75) : ~ 5 minutes</text>
+    <text x="460" y="528" text-anchor="middle" font-size="10" fill="#2D7A3A">Déclaration 60s + Matching auto + Confirmation 30s + Vérif Niv.1 30s + Restitution 3 min</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════ MODULES SUMMARY ═══ -->
+<h1 id="modules">SYNTHÈSE DES MODULES</h1>
+<table>
+  <thead><tr><th>Module</th><th>Entrée</th><th>Sortie / Effet</th><th>État cible</th></tr></thead>
+  <tbody>
+    <tr><td><strong>AUTH</strong></td><td>Numéro téléphone ou compte Google</td><td>JWT access+refresh, User créé/retrouvé</td><td>authenticated(user)</td></tr>
+    <tr><td><strong>PROFILE</strong></td><td>full_name, date_of_birth, gender, city</td><td>is_profile_complete = true, accès complet</td><td>Profile complet</td></tr>
+    <tr><td><strong>OCR</strong></td><td>Photo du document trouvé</td><td>document_type, document_number, owner_name pré-remplis</td><td>Formulaire prérempli</td></tr>
+    <tr><td><strong>DECLARATIONS</strong></td><td>type + nom (minimum)</td><td>Declaration créée (active), matching déclenché</td><td>Declaration active</td></tr>
+    <tr><td><strong>MATCHING</strong></td><td>Declaration created event</td><td>Match créé si score≥0.45, notifications FCM</td><td>Match pending</td></tr>
+    <tr><td><strong>MATCHES</strong></td><td>Confirmation des 2 parties</td><td>Match confirmed, vérification débloquée</td><td>Match confirmed</td></tr>
+    <tr><td><strong>VERIFICATION</strong></td><td>Réponses (niveau adaptatif)</td><td>status=approved (niveau 1 ou 2 auto, niveau 3 admin)</td><td>Verification approved</td></tr>
+    <tr><td><strong>MESSAGING</strong></td><td>Messages WebSocket</td><td>Coordination RDV en temps réel</td><td>RDV planifié</td></tr>
+    <tr><td><strong>RESTITUTION</strong></td><td>Photo preuve + 2 confirmations</td><td>Restitution completed, score_reputation mis à jour</td><td>Closed</td></tr>
+    <tr><td><strong>ZONES</strong></td><td>Périmètre GPS (admin)</td><td>Alertes ciblées aux abonnés de la zone</td><td>Notification zone</td></tr>
+    <tr><td><strong>ADMIN</strong></td><td>Identifiants admin</td><td>Gestion utilisateurs, vérifications, modération</td><td>Système sain</td></tr>
+    <tr><td><strong>NOTIFICATIONS</strong></td><td>Événements internes</td><td>Push FCM ciblé, Redis queue async</td><td>Utilisateur informé</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════ BUGS ═══ -->
+<h1 id="bugs">BUGS CRITIQUES ET CORRECTIONS</h1>
+
+<div class="box danger">
+  <b>🔴 BUG P0 — Déclaration non passée à status="matched" (matching_service.py)</b>
+  <ul>
+    <li>Après <code>db.flush()</code> sur le match créé, les deux déclarations restent à <code>status="active"</code>.</li>
+    <li>Conséquence : nouveaux matchs redondants créés, état incohérent.</li>
+    <li><strong>Fix :</strong> ajouter <code>decl_found.status = "matched"; decl_lost.status = "matched"</code> après le flush.</li>
+  </ul>
+</div>
+
+<div class="box danger">
+  <b>🔴 BUG P0 — Profil impossible à compléter (profile_page.dart)</b>
+  <ul>
+    <li><code>is_profile_complete</code> requiert <code>date_of_birth</code> + <code>gender</code> mais le formulaire ne les affiche pas.</li>
+    <li>Le badge "Incomplet" ne disparaît jamais → frustration utilisateur.</li>
+    <li><strong>Fix :</strong> ajouter DatePicker pour <code>date_of_birth</code> et Dropdown pour <code>gender</code> dans <code>_EditProfileSheet</code>.</li>
+  </ul>
+</div>
+
+<div class="box danger">
+  <b>🔴 BUG P0 — Vérification auto-approuvée sans contrôle (verification_page.dart)</b>
+  <ul>
+    <li>Upload du selfie → <code>status = "approved"</code> immédiatement, sans comparaison ni revue.</li>
+    <li>N'importe qui connaissant le nom peut se faire passer pour le propriétaire.</li>
+    <li><strong>Fix :</strong> implémenter la vérification adaptative par niveau (voir section Fast Path).</li>
+  </ul>
+</div>
+
+<div class="box warning">
+  <b>⚠ BUG P1 — Refresh token non implémenté (auth_notifier.dart)</b>
+  <ul>
+    <li>Expiration de l'access_token → déconnexion brutale sans tentative de renouvellement.</li>
+    <li><strong>Fix :</strong> intercepteur Dio : si 401 → <code>POST /auth/refresh</code> → rejouer la requête originale.</li>
+  </ul>
+</div>
+
+<div class="box warning">
+  <b>⚠ BUG P1 — Nommage ambigu confirmed_by_* (match.py vs restitution.py)</b>
+  <ul>
+    <li>Les deux modèles ont des champs <code>confirmed_by_owner</code> et <code>confirmed_by_finder</code> avec des sémantiques différentes.</li>
+    <li><strong>Fix :</strong> Match → <code>accepted_by_owner/finder</code> · Restitution → <code>handoff_confirmed_by_owner/finder</code>.</li>
+  </ul>
+</div>
+
+<div class="box warning">
+  <b>⚠ BUG P1 — serverClientId hardcodé (auth_notifier.dart ligne 138)</b>
+  <ul>
+    <li><code>'774092129161-ed0d2cs235cccvbsu506ikdiehktpko7.apps.googleusercontent.com'</code> en clair dans le code.</li>
+    <li><strong>Fix :</strong> déplacer dans <code>flutter_dotenv</code> ou <code>AppConfig</code> chargé depuis un fichier d'env non commité.</li>
+  </ul>
+</div>
+
+<div class="box info">
+  <b>💡 AMÉLIORATION P2 — Compteur déclarations actives visible</b>
+  <ul>
+    <li>La limite ACTIVE_DECLARATIONS_LIMIT = 3 est appliquée silencieusement (HTTP 429).</li>
+    <li><strong>Amélioration :</strong> afficher <code>"2/3 déclarations actives"</code> dans l'UI avant soumission + rendre la limite configurable côté admin.</li>
+  </ul>
+</div>
+
+<div class="box info">
+  <b>💡 AMÉLIORATION P2 — Admin panel avec données réelles</b>
+  <ul>
+    <li>L'admin HTML actuel affiche des données mockées, pas de vraies API calls.</li>
+    <li>Fonctionnalités manquantes : file vérifications, modération signalements, gestion zones, audit log.</li>
+    <li><strong>Plan :</strong> connecter les vrais endpoints <code>/api/v1/admin/*</code>, ajouter les sections manquantes.</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════ ROADMAP ═══ -->
+<h1 id="roadmap">ROADMAP PRIORISÉE</h1>
+<table>
+  <thead><tr><th>Priorité</th><th>Tâche</th><th>Module</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge b-red">P0 🔴</span></td><td>Fix : status="matched" après création Match</td><td>MATCHING</td><td>1 jour</td></tr>
+    <tr><td><span class="badge b-red">P0 🔴</span></td><td>Fix : ajouter date_of_birth + gender dans formulaire profil</td><td>PROFILE</td><td>1 jour</td></tr>
+    <tr><td><span class="badge b-red">P0 🔴</span></td><td>Fix : vérification adaptative par niveau (Fast Path)</td><td>VERIFICATION</td><td>3 jours</td></tr>
+    <tr><td><span class="badge b-orange">P1 ⚠</span></td><td>Refresh token automatique (intercepteur Dio 401)</td><td>AUTH</td><td>2 jours</td></tr>
+    <tr><td><span class="badge b-orange">P1 ⚠</span></td><td>Renommer confirmed_by_* (migration DB + code)</td><td>BACKEND</td><td>1 jour</td></tr>
+    <tr><td><span class="badge b-orange">P1 ⚠</span></td><td>Admin avec vraies APIs + file de vérifications</td><td>ADMIN</td><td>2 semaines</td></tr>
+    <tr><td><span class="badge b-orange">P1 ⚠</span></td><td>Compteur déclarations actives visible (X/3)</td><td>DECLARATIONS</td><td>0.5 jour</td></tr>
+    <tr><td><span class="badge b-blue">P2</span></td><td>Externaliser serverClientId dans .env</td><td>AUTH</td><td>0.5 jour</td></tr>
+    <tr><td><span class="badge b-blue">P2</span></td><td>Score matching configurable (MIN_SCORE admin)</td><td>MATCHING</td><td>2 jours</td></tr>
+    <tr><td><span class="badge b-blue">P2</span></td><td>Indicateurs lecture dans le chat (lu/reçu)</td><td>MESSAGING</td><td>2 jours</td></tr>
+    <tr><td><span class="badge b-blue">P2</span></td><td>Barre progression profil + CTA champ manquant</td><td>PROFILE</td><td>1 jour</td></tr>
+    <tr><td><span class="badge b-gray">P3</span></td><td>Écran consentement RGPD/CPDP à l'inscription</td><td>AUTH</td><td>1 jour</td></tr>
+    <tr><td><span class="badge b-gray">P3</span></td><td>Zones : carte interactive + CRUD admin</td><td>ZONES/ADMIN</td><td>3 jours</td></tr>
+    <tr><td><span class="badge b-gray">P3</span></td><td>Admin 2FA (TOTP) pour les comptes admin</td><td>ADMIN</td><td>3 jours</td></tr>
+    <tr><td><span class="badge b-gray">P3</span></td><td>Rate limiting global (slowapi/nginx)</td><td>INFRA</td><td>2 jours</td></tr>
+  </tbody>
+</table>
+
+<div style="text-align:center;border-top:2px solid var(--pbg);padding-top:20px;margin-top:40px;">
+  <p style="color:var(--mg);font-size:12px;">© 2026 ReTurn / DocRetour — Francis Itoua Mveng — CDC v3.0 UML Complet</p>
+</div>
+
+</div><!-- .main -->
+</body>
+</html>

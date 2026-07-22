@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 
 from app.api.v1.router import router as v1_router
 from app.core.config import settings
-from app.core.database import create_tables
+from app.core.database import create_tables, reconcile_schema
 from app.core.firebase_admin import init_firebase
 from app.core.redis_client import close_redis
 from app.core.ws_manager import redis_subscriber
@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
     init_firebase()
     logger.info("Firebase Admin SDK ready.")
     await create_tables()
+    await reconcile_schema()
     logger.info("Database tables verified.")
     _subscriber_task = asyncio.create_task(
         redis_subscriber(settings.REDIS_URL)

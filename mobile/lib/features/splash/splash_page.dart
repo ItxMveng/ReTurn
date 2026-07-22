@@ -38,9 +38,17 @@ class _SplashPageState extends ConsumerState<SplashPage>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 2200));
     if (!mounted) return;
-    final loggedIn = await ref.read(authStorageProvider).isLoggedIn;
+    // En cas d'échec de lecture du stockage sécurisé (keystore, 1er lancement…),
+    // on considère l'utilisateur comme non connecté plutôt que de rester figé.
+    var loggedIn = false;
+    try {
+      loggedIn = await ref.read(authStorageProvider).isLoggedIn;
+    } catch (e) {
+      debugPrint('SplashPage: isLoggedIn failed -> $e');
+    }
     if (!mounted) return;
-    context.go(loggedIn ? '/declarations' : '/auth/phone');
+    // Non connecté → onboarding (3 volets, avec « Passer ») puis connexion.
+    context.go(loggedIn ? '/declarations' : '/onboarding');
   }
 
   @override
@@ -88,11 +96,11 @@ class _SplashPageState extends ConsumerState<SplashPage>
                             width: 110,
                             height: 110,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E).withOpacity(0.15),
+                              color: const Color(0xFF01696F).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(28),
                             ),
                             child: const Icon(Icons.find_in_page_rounded,
-                                size: 60, color: Color(0xFF22C55E)),
+                                size: 60, color: Color(0xFF01696F)),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -168,7 +176,7 @@ class _Dot extends StatelessWidget {
           height: 6,
           decoration: BoxDecoration(
             color: active
-                ? const Color(0xFF22C55E)
+                ? const Color(0xFF01696F)
                 : Colors.white.withOpacity(0.3),
             borderRadius: BorderRadius.circular(3),
           ),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 /// Couleurs publiques utilisées directement dans les widgets
-const kGreen = Color(0xFF437A22);
-const kGreenDark = Color(0xFF2E4D14);
+/// Charte ReTurn : primary #01696F, accent #4FCFD6.
+const kGreen = Color(0xFF01696F);
+const kGreenDark = Color(0xFF01565B);
 
-const _green = Color(0xFF01696F);
-const _greenDark = Color(0xFF4F98A3);
+const _green = kGreen;                  // Teal de la charte (0xFF01696F)
+const _greenDark = Color(0xFF4FCFD6);   // Accent clair pour le mode sombre
 const _bgLight = Color(0xFFF7F6F2);
 const _bgDark = Color(0xFF171614);
 const _surfaceLight = Color(0xFFF9F8F5);
@@ -58,42 +59,68 @@ class AppTheme {
           color: onSurface,
         ),
       ),
+      // Boutons pleins : radius 24, hauteur min 52 (charte UX).
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: seed,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(24)),
           textStyle: const TextStyle(
               fontFamily: 'Satoshi',
               fontWeight: FontWeight.w700,
               fontSize: 16),
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24)),
+          textStyle: const TextStyle(
+              fontFamily: 'Satoshi',
+              fontWeight: FontWeight.w700,
+              fontSize: 16),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24)),
+          textStyle: const TextStyle(
+              fontFamily: 'Satoshi',
+              fontWeight: FontWeight.w700,
+              fontSize: 15),
+        ),
+      ),
+      // Inputs : radius 8 (charte UX).
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: onSurface.withValues(alpha: 0.12)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: onSurface.withValues(alpha: 0.12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: seed, width: 2),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
+      // Cards : radius 12, flat, séparation par bordure (charte UX).
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: onSurface.withValues(alpha: 0.08)),
         ),
         margin: EdgeInsets.zero,

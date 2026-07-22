@@ -76,10 +76,12 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      final refreshed = await _tryRefresh();
+    final isRefreshCall = err.requestOptions.path.contains('/auth/refresh');
+    if (err.response?.statusCode == 401 && !isRefreshCall) {
+      // Refresh mutualisé (mutex partagé entre toutes les couches réseau).
+      final refreshed =
+          await TokenRefresher.refresh(_storage, _dio.options.baseUrl);
       if (refreshed) {
-        // Rejouer la requête originale avec le nouveau token
         final opts = err.requestOptions;
         final newToken = await _storage.getAccessToken();
         opts.headers['Authorization'] = 'Bearer $newToken';
@@ -87,31 +89,9 @@ class _AuthInterceptor extends Interceptor {
           final response = await _dio.fetch(opts);
           handler.resolve(response);
           return;
-        } catch (_) {}
+        } catch (_) {/* la requête rejouée a échoué : on propage l'erreur */}
       }
-      // Refresh échoué → déconnexion propre
-      await _storage.clearAll();
     }
     handler.next(err);
-  }
-
-  Future<bool> _tryRefresh() async {
-    final refreshToken = await _storage.getRefreshToken();
-    if (refreshToken == null) return false;
-    try {
-      final dio = Dio(BaseOptions(baseUrl: _dio.options.baseUrl));
-      final response = await dio.post(
-        '/auth/refresh',
-        data: {'refresh_token': refreshToken},
-      );
-      final data = response.data as Map<String, dynamic>;
-      await _storage.saveTokens(
-        accessToken: data['access_token'] as String,
-        refreshToken: data['refresh_token'] as String,
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }

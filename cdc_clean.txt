@@ -1,0 +1,676 @@
+DOCRETOUR
+Application mobile de restitution documentaire sécurisée
+Cahier des Charges Fonctionnel
++
+Cahier des Charges Technique
+Version 1.0  —  Confidentiel
+Marché cible : Cameroun  |  Plateforme : Android & iOS
+CAHIER DES CHARGES FONCTIONNEL
+1. Présentation générale du projet
+1.1 Contexte et problématique
+En Afrique subsaharienne, et particulièrement au Cameroun, la perte d'un document officiel (carte nationale d'identité, permis de conduire, acte de naissance, diplôme) constitue un problème quotidien dont les conséquences sont souvent graves : impossibilité d'accéder à des services administratifs, risque d'usurpation d'identité, perte de temps et d'argent pour reconstituer le document.
+Aujourd'hui, les circuits de retour de documents trouvés sont fragmentés et inefficaces :
+Publication sur des groupes WhatsApp locaux
+Posts sur des pages Facebook communautaires
+Affichages physiques dans les marchés ou commissariats
+Dépôts chez des tiers sans moyen de contacter le propriétaire
+Conservation passive du document par le découvreur
+Il n'existe aucune infrastructure centralisée, sécurisée et accessible permettant de relier un document trouvé à son propriétaire légitime. DocRetour comble ce vide.
+1.2 Vision produit
+VISION
+DocRetour est une plateforme mobile de rapprochement sécurisé entre les personnes ayant perdu un document officiel et celles l'ayant retrouvé, facilitant sa restitution rapide, sûre et traçable.
+Ce n'est pas une galerie publique de documents. C'est un moteur de matching intelligent avec une couche de sécurité et de vérification d'identité robuste.
+1.3 Objectifs SMART
+Horizon
+Objectif
+MVP (M0–M4)
+Atteindre 5 000 utilisateurs actifs sur Douala et Yaoundé avec un taux de restitution réussie ≥ 60 %
+Court terme (M6)
+20 000 utilisateurs. Intégration de 10 institutions partenaires (universités, mairies).
+Moyen terme (M12)
+100 000 utilisateurs sur 3 villes camerounaises. Lancement du module B2B institutionnel.
+Long terme (M18+)
+Expansion régionale (Côte d'Ivoire, Sénégal). Breakeven opérationnel.
+1.4 Positionnement marché
+DocRetour se positionne sur trois axes de valeur différenciants :
+Centralisation : un seul point d'entrée pour tout document trouvé au Cameroun
+Sécurité : aucune donnée personnelle exposée publiquement — matching privé
+Confiance : score de réputation, vérification d'identité, zones de récupération certifiées
+2. Utilisateurs et personas
+2.1 Cartographie des utilisateurs
+Profil
+Comportement typique
+Besoins clés
+Thomas, 34 ans, fonctionnaire
+Perd sa CNI, cherche activement via WhatsApp et commissariat
+Notification rapide, contact sécurisé, simplicité
+Marie, 22 ans, étudiante
+Trouve un diplôme dans la rue, veut aider mais ne sait pas quoi faire
+Processus guidé, anonymat partiel, récompense optionnelle
+Université de Yaoundé I
+Gère des dizaines de documents perdus par an sur son campus
+Dashboard de gestion, traitement en volume, analytics
+Commissariat de Bonanjo
+Point de dépôt officiel pour documents trouvés
+Interface simple, validation officielle, traçabilité
+2.2 Parcours utilisateur principal
+Scénario A — Document trouvé
+L'utilisateur ouvre DocRetour et sélectionne "J'ai trouvé un document"
+Il photographie ou scanne le document avec l'appareil photo
+L'OCR extrait et masque automatiquement les données sensibles
+Il renseigne le lieu et la date approximative de découverte
+Le système lance une recherche dans la base de déclarations de perte
+Si match : notification privée et sécurisée envoyée au propriétaire présumé
+Échange via la messagerie interne de l'app jusqu'à restitution confirmée
+Scénario B — Document perdu
+L'utilisateur déclare la perte : type de document, ville, date approximative
+Le système compare avec les documents déclarés trouvés
+Si match immédiat : alerte instantanée avec instructions de contact
+Si pas de match : alerte en attente — l'utilisateur est notifié dès qu'un match apparaît
+Vérification d'identité pour confirmer la propriété du document
+Coordination de la restitution via messagerie et zones de récupération
+3. Fonctionnalités détaillées (Backlog produit)
+3.1 Module Authentification & Profil
+ID
+Fonctionnalité
+Priorité
+Détail
+F-01
+Inscription par numéro de téléphone (OTP SMS)
+CRITIQUE
+Vérification via Infobip ou Twilio Lite
+F-02
+Profil utilisateur avec photo
+HAUTE
+Nom, ville, score de réputation visible
+F-03
+Connexion biométrique (fingerprint/FaceID)
+MOYENNE
+Via Flutter local_auth plugin
+F-04
+Suppression de compte et données (RGPD/CPDP)
+CRITIQUE
+Conforme loi camerounaise 2022
+F-05
+Score de réputation utilisateur
+HAUTE
+Calcul basé sur restitutions réussies, signalements reçus
+3.2 Module Déclaration & OCR
+ID
+Fonctionnalité
+Priorité
+Détail
+F-10
+Déclaration de document trouvé avec photo
+CRITIQUE
+Prise de photo in-app, upload sécurisé
+F-11
+OCR automatique des données clés
+CRITIQUE
+Extraction : nom, prénom, numéro partiel, type doc
+F-12
+Masquage automatique des données sensibles
+CRITIQUE
+Affichage : F*** I**** — ID ***6789
+F-13
+Déclaration de perte manuelle
+CRITIQUE
+Type, nom, date, ville/quartier
+F-14
+Géolocalisation du lieu de découverte
+HAUTE
+Précision volontairement réduite à la commune
+F-15
+Support offline pour déclaration en cache
+HAUTE
+Sync automatique lors du retour réseau
+F-16
+Types de documents supportés
+CRITIQUE
+CNI, permis, passeport, diplôme, acte de naissance, carte professionnelle
+3.3 Module Matching & Notifications
+ID
+Fonctionnalité
+Priorité
+Détail
+F-20
+Algorithme de matching nom + type + zone
+CRITIQUE
+Score de confiance du match affiché (ex: 87%)
+F-21
+Notification push instantanée (match)
+CRITIQUE
+Via FCM (Firebase) ou ntfy.sh self-hosted
+F-22
+Alertes de proximité géographique
+HAUTE
+Notif si document trouvé dans un rayon de Xkm
+F-23
+File d'attente de matching asynchrone
+HAUTE
+Les nouvelles déclarations testent les anciennes
+F-24
+Tableau de bord des alertes actives
+MOYENNE
+Statut : En attente / Match trouvé / Restitué
+3.4 Module Vérification & Restitution
+ID
+Fonctionnalité
+Priorité
+Détail
+F-30
+Vérification d'identité du demandeur
+CRITIQUE
+Selfie + questions de contrôle sur données masquées
+F-31
+Messagerie interne chiffrée
+CRITIQUE
+Pas d'échange de numéros avant validation
+F-32
+Répertoire des zones de récupération certifiées
+HAUTE
+Commissariats, mairies, campus partenaires
+F-33
+Confirmation de restitution (double validation)
+CRITIQUE
+Les deux parties confirment dans l'app
+F-34
+Récompense optionnelle
+FAIBLE
+Le propriétaire peut proposer une somme via l'app
+F-35
+Historique des restitutions
+MOYENNE
+Archive consultable par l'utilisateur
+3.5 Module Institutionnel (B2B)
+ID
+Fonctionnalité
+Priorité
+Détail
+F-40
+Dashboard administrateur institution
+HAUTE
+Gestion des documents déposés sur le campus/mairie
+F-41
+Publication groupée de documents trouvés
+HAUTE
+Import CSV ou saisie manuelle en lot
+F-42
+Analytics et reporting
+HAUTE
+Taux de restitution, volume mensuel, délai moyen
+F-43
+Badge "Point de dépôt certifié" sur la carte
+HAUTE
+Renforce la confiance utilisateur
+F-44
+API d'intégration pour les SI institutionnels
+MOYENNE
+REST API documentée pour intégration externe
+4. Modèle économique
+4.1 Phases de monétisation
+PHASE 0–6 mois
+Application 100 % gratuite. Objectif unique : acquisition utilisateurs. Toutes les fonctionnalités core disponibles sans restriction.
+PHASE 6–18 mois
+Introduction du modèle Freemium. Les fonctionnalités avancées passent en Premium individuel. Le B2B institutionnel devient le levier principal de revenus.
+4.2 Matrice Freemium
+Fonctionnalité
+Gratuit
+Premium
+Déclaration de perte
+✓ Illimité
+✓ Illimité
+Déclaration de trouvaille
+✓ Illimité
+✓ Illimité
+Matching automatique
+✓ Basique
+✓ Avancé (score de confiance)
+Notifications push
+✓ Standard
+✓ Prioritaire + SMS
+Messagerie interne
+✓ 10 messages/mois
+✓ Illimitée
+Historique des restitutions
+3 dernières
+✓ Illimité
+Signalement d'urgence
+✗
+✓ Traitement 24h
+Récompense intégrée
+✗
+✓
+Dashboard institutionnel
+✗
+✓ (abonnement B2B)
+4.3 Grille tarifaire cible
+Offre
+Prix
+Cible
+Gratuit
+0 FCFA
+Grand public
+Premium individuel
+2 000 FCFA/an (~3€)
+Particuliers fréquents
+B2B Starter (≤50 docs/mois)
+15 000 FCFA/mois
+Petites institutions
+B2B Pro (illimité + API)
+50 000 FCFA/mois
+Universités, mairies, entreprises
+5. Contraintes légales et conformité
+5.1 Cadre juridique camerounais
+La loi n° 2010/012 du 21 décembre 2010 relative à la cybersécurité et à la cybercriminalité, et la loi n° 2022/015 du 22 décembre 2022 portant Code du Numérique du Cameroun encadrent le traitement des données personnelles. La Commission sur la Protection des Données Personnelles (CPDP) est l'autorité de contrôle.
+5.2 Obligations applicables à DocRetour
+Déclaration de traitement de données personnelles auprès de la CPDP avant lancement
+Collecte minimale : seules les données strictement nécessaires au matching sont conservées
+Consentement explicite de l'utilisateur lors de l'inscription (photo de document)
+Durée de conservation limitée : données d'un document trouvé supprimées 90 jours après clôture du dossier
+Droit à l'effacement : l'utilisateur peut supprimer son compte et toutes ses données
+Chiffrement en transit (TLS 1.3) et au repos (AES-256) obligatoire
+Aucune revente ni partage de données personnelles avec des tiers commerciaux
+5.3 Mesures anti-fraude
+Vérification d'identité obligatoire avant toute restitution (selfie + questions)
+Limitation du nombre de déclarations de perte par utilisateur (3 actives simultanément)
+Signalement automatique des comptes avec comportements suspects
+Audit log de toutes les actions sensibles (accès, modification, restitution)
+6. Roadmap produit
+6.1 Planning par sprints
+Phase
+Durée
+Livrables clés
+KPI cible
+Sprint 0
+2 semaines
+Architecture, environnements dev/prod, CI/CD
+Infrastructure opérationnelle
+Sprint 1
+3 semaines
+Auth (OTP), profil utilisateur, onboarding
+Inscription fonctionnelle
+Sprint 2
+3 semaines
+Déclaration de perte + trouvaille, OCR basique
+Déclaration end-to-end
+Sprint 3
+3 semaines
+Moteur de matching, notifications push
+Premier match automatique
+Sprint 4
+3 semaines
+Vérification identité, messagerie, zones récup.
+MVP complet — beta test
+Sprint 5–6
+4 semaines
+Corrections bugs, perf, onboarding communautaire
+500 utilisateurs beta
+Sprint 7–8
+4 semaines
+Dashboard B2B, API institutionnelle, analytics
+3 institutions partenaires
+Sprint 9–10
+4 semaines
+Module freemium, paiement Mobile Money
+Premiers revenus
+CAHIER DES CHARGES TECHNIQUE
+7. Contraintes techniques et choix budgétaires
+NOTE BUDGÉTAIRE
+La stack retenue ici priorise les outils open-source, auto-hébergeables et gratuits ou quasi-gratuits. Chaque outil coûteux (AWS, Firebase, Twilio) est remplacé par un équivalent viable et moins onéreux.
+8. Architecture générale
+8.1 Vue d'ensemble
+L'application repose sur une architecture client–serveur découplée. Le frontend mobile communique avec un backend REST exposé via une API sécurisée. Toutes les données sensibles sont stockées côté serveur uniquement — jamais dans l'app mobile.
+8.2 Diagramme de flux simplifié
+Couche
+Composant
+Rôle
+Frontend
+Flutter (iOS + Android)
+Interface utilisateur, OCR on-device, offline cache
+API Gateway
+Nginx (reverse proxy)
+Rate limiting, TLS termination, routing
+Backend
+FastAPI (Python)
+Business logic, matching engine, REST endpoints
+Base de données
+PostgreSQL + PostGIS
+Données relationnelles + requêtes géospatiales
+Cache
+Redis (self-hosted)
+Sessions, rate limiting, file de matching async
+Stockage fichiers
+MinIO (self-hosted S3)
+Photos de documents chiffrées
+Notifications push
+ntfy.sh (self-hosted) ou FCM gratuit
+Push notifications iOS/Android
+OTP / SMS
+Infobip Free Tier (200 SMS/j) ou Orange API
+Vérification téléphone
+Messagerie interne
+WebSocket via FastAPI + Redis pub/sub
+Chat temps réel entre utilisateurs
+Déploiement
+VPS Contabo ou Hetzner (5–8€/mois)
+Hébergement économique et performant
+9. Stack technologique détaillée
+9.1 Frontend Mobile — Flutter
+Flutter est retenu pour sa capacité à produire une application Android et iOS à partir d'une seule base de code, réduisant ainsi les coûts de développement de 40 à 60 % par rapport à deux apps natives séparées.
+Package Flutter
+Version cible
+Usage
+google_mlkit_text_recognition
+^0.11.0
+OCR on-device — 100 % gratuit, fonctionne offline
+flutter_riverpod
+^2.5.0
+State management — léger, testable
+dio
+^5.4.0
+Client HTTP avec intercepteurs et retry automatique
+hive_flutter
+^1.1.0
+Stockage local offline — plus rapide que SQLite
+flutter_local_notifications
+^17.0.0
+Notifications locales (offline)
+local_auth
+^2.1.8
+Biométrie (fingerprint, FaceID)
+geolocator
+^11.0.0
+Géolocalisation avec permissions granulaires
+image_picker + image_cropper
+latest
+Capture et recadrage de la photo du document
+flutter_secure_storage
+^9.0.0
+Stockage du token JWT dans le keychain sécurisé
+web_socket_channel
+^2.4.0
+Messagerie temps réel
+9.2 Backend — FastAPI (Python)
+FastAPI est choisi pour sa performance (async natif), sa génération automatique de documentation OpenAPI, et son écosystème Python riche pour le traitement NLP/matching. Alternative à NestJS (Node.js), plus lourd pour ce cas d'usage.
+Module
+Responsabilité
+auth/
+JWT, OTP, gestion sessions Redis
+documents/
+CRUD déclarations, upload fichiers MinIO, masquage OCR
+matching/
+Algorithme de rapprochement, score de confiance, file async
+notifications/
+Déclenchement push via ntfy/FCM, gestion préférences
+messaging/
+WebSocket handler, historique messages, chiffrement
+users/
+Profil, réputation, vérification identité, suppression RGPD
+institutions/
+Dashboard B2B, API clés, analytics, gestion lots
+admin/
+Backoffice modération, audit logs, stats globales
+9.3 Base de données — PostgreSQL + PostGIS
+PostgreSQL avec l'extension PostGIS permet d'exécuter des requêtes géospatiales natives ("trouver tous les documents dans un rayon de 5 km") sans service externe payant. C'est une base robuste, open-source et gratuite.
+Schéma de tables clés
+Table
+Champ clé
+Description
+users
+id, phone, score_reputation, verified_at
+Compte utilisateur — jamais de données de document ici
+documents_trouves
+id, type, nom_masque, hash_ocr, location (POINT), user_id
+Document trouvé — données masquées, image chiffrée
+declarations_perte
+id, type, nom_partiel, ville, date_perte, user_id, statut
+Déclaration de perte — aucune image stockée
+matches
+id, doc_trouve_id, declaration_id, score, statut, created_at
+Rapprochements générés — audit complet
+messages
+id, match_id, sender_id, contenu_chiffre, created_at
+Messagerie — contenu chiffré AES-256
+restitutions
+id, match_id, confirmed_by_owner, confirmed_by_finder, zone_id
+Confirmation double — traçabilité complète
+zones_recuperation
+id, nom, type, location (POINT), institution_id
+Points de dépôt certifiés avec coordonnées
+10. Algorithme de matching
+10.1 Logique de score
+Le matching est un calcul de score pondéré entre une déclaration de perte et un document trouvé. Aucun ML complexe au MVP — un algorithme déterministe suffit et est plus explicable et auditables.
+Critère
+Poids
+Méthode
+Type de document identique
+30 %
+Correspondance exacte
+Similitude du nom (OCR vs déclaré)
+35 %
+Jaro-Winkler distance — robuste aux fautes d'OCR
+Proximité géographique
+20 %
+PostGIS ST_Distance — score décroissant avec la distance
+Cohérence temporelle
+10 %
+Date de perte ≤ date de découverte
+Numéro partiel identique
+5 % (bonus)
+Si disponible après masquage
+SEUILS
+Score ≥ 80 % → Notification automatique immédiate. Score 60–79 % → Notification avec mention "Correspondance probable". Score < 60 % → Pas de notification (évite les faux positifs).
+10.2 File de matching asynchrone
+Toute nouvelle déclaration (perte ou trouvaille) est ajoutée à une file Redis. Un worker Python tourne en arrière-plan et traite les jobs de matching. Cela évite de bloquer l'API principale et permet de passer à l'échelle facilement.
+11. Sécurité et protection des données
+11.1 Flux de sécurité bout en bout
+Couche
+Mesure de sécurité
+Transport
+TLS 1.3 obligatoire sur toutes les connexions. HSTS activé.
+Authentification
+JWT (access 15min + refresh 7j). Rotation automatique. Révocation via Redis.
+Données au repos
+Photos de documents chiffrées AES-256 dans MinIO. Clés gérées côté serveur.
+Données en base
+Colonnes sensibles chiffrées avec pgcrypto. Hachage BCrypt pour mots de passe.
+Messagerie
+Chiffrement de bout en bout des messages avec libsodium (XSalsa20-Poly1305).
+OCR
+Traitement on-device (sur le téléphone). Seul le résultat masqué est envoyé au serveur.
+Anti-fraude
+Rate limiting Nginx (100 req/min/IP). CAPTCHA invisible sur inscription.
+Audit
+Tous les accès aux données sensibles sont loggés avec timestamp, IP, user_id.
+11.2 Masquage OCR — règles de mise en oeuvre
+Le masquage est appliqué avant tout envoi au serveur. Les règles de masquage sont codées dans le client Flutter :
+Nom : conservation de la première lettre uniquement → "Francis" → "F*******"
+Prénom : même règle → "Itoua" → "I****"
+Numéro de document : conservation des 4 derniers chiffres → "123456789" → "***456789" [NB : uniquement pour le matching, jamais affiché]
+Date de naissance : uniquement l'année est conservée
+Photo : jamais affichée publiquement — accessible uniquement après vérification d'identité validée
+12. Infrastructure et déploiement
+12.1 Configuration VPS minimale recommandée
+BUDGET INFRA
+Objectif : moins de 15€/mois pour l'environnement de production initial (jusqu'à 10 000 utilisateurs actifs). Hetzner CX21 ou Contabo VPS S sont les options recommandées.
+Ressource
+Spec minimale MVP
+Spec cible 20k users
+CPU
+2 vCPU
+4 vCPU
+RAM
+4 GB
+8 GB
+Stockage
+80 GB SSD
+200 GB SSD
+Bande passante
+20 TB/mois
+40 TB/mois
+Coût estimé
+5–8 €/mois (Hetzner)
+12–18 €/mois
+12.2 Stack DevOps — zéro coût
+Outil
+Alternative payante évitée
+Coût
+GitHub Actions (CI/CD)
+CircleCI / Jenkins
+Gratuit (2000 min/mois)
+Docker + Docker Compose
+Kubernetes (trop complexe au MVP)
+Gratuit
+MinIO (stockage objets)
+AWS S3 (~50€/mois)
+Gratuit (self-hosted)
+ntfy.sh self-hosted
+Firebase Cloud Messaging
+Gratuit (self-hosted)
+Let's Encrypt (SSL)
+Certificats payants
+Gratuit
+Grafana + Prometheus
+Datadog (~100€/mois)
+Gratuit (self-hosted)
+Sentry CE (self-hosted)
+Sentry Cloud (26€/mois)
+Gratuit
+Plausible (self-hosted)
+Mixpanel / Amplitude
+Gratuit (self-hosted)
+12.3 Configuration Docker Compose (services principaux)
+Service
+Image Docker
+API Backend
+python:3.12-slim + FastAPI (image custom)
+Base de données
+postgis/postgis:16-3.4
+Cache
+redis:7-alpine
+Stockage objets
+minio/minio:latest
+Reverse proxy
+nginx:1.25-alpine
+Monitoring
+grafana/grafana + prom/prometheus
+Worker matching
+Même image FastAPI, commande Celery worker
+13. Contraintes spécifiques au marché camerounais
+13.1 Offline-first obligatoire
+CRITIQUE
+La couverture réseau au Cameroun est inégale. Une app qui ne fonctionne pas sans connexion 4G perd immédiatement sa pertinence dans les zones périurbaines et rurales.
+Stratégie offline avec Hive (Flutter) :
+Déclaration de perte/trouvaille : sauvegarde locale + sync automatique au retour réseau
+Consultation des zones de récupération : cache local mis à jour quotidiennement
+Messagerie : messages mis en file locale, envoyés à la reconnexion
+OCR : 100 % on-device via Google ML Kit — aucune connexion requise pour l'extraction
+13.2 Contraintes de performance réseau
+Taille maximale d'une photo de document : 800 KB après compression WebP
+Compression automatique côté client avant upload (flutter_image_compress)
+Lazy loading de toutes les listes et du répertoire des zones
+Pagination cursor-based sur l'API (pas d'offset — plus stable sur connexions lentes)
+13.3 Langues et accessibilité
+Langue principale : Français
+Langue secondaire MVP : Anglais (régions anglophones)
+Interface conçue pour les utilisateurs peu alphabétisés numériquement : icônes explicites, messages d'erreur clairs, flux guidé étape par étape
+Taille de police minimale : 14sp pour le texte courant
+13.4 Paiement mobile
+Pour la monétisation (Premium), intégration de MTN Mobile Money et Orange Money via leurs APIs officielles disponibles au Cameroun. Pas de carte bancaire — le mobile money est le mode de paiement dominant.
+MTN MoMo API (sandbox gratuit, production sur demande)
+Orange Money API (documentation publique disponible)
+14. Tests et qualité
+14.1 Plan de test
+Type de test
+Outil
+Couverture cible
+Tests unitaires backend
+pytest + pytest-asyncio
+≥ 80 % des fonctions de matching et auth
+Tests d'intégration API
+httpx + pytest
+Tous les endpoints critiques (auth, déclaration, match)
+Tests Flutter widget
+flutter_test
+Tous les formulaires et flux de navigation
+Tests OCR
+Dataset de 50 documents types camerounais
+Précision ≥ 85 % sur nom/prénom
+Tests de charge
+Locust (Python)
+500 utilisateurs simultanés, p95 < 500ms
+Tests de sécurité
+OWASP ZAP (gratuit)
+Scan automatique des endpoints API
+Tests offline
+Simulation réseau Flutter DevTools
+Tous les scénarios offline-sync
+14.2 Définition of Done (DoD)
+Un ticket est considéré terminé uniquement si :
+Code revu par un pair (pull request approuvée)
+Tests unitaires écrits et passants (couverture ≥ 80 % sur le module)
+Documentation de l'endpoint mise à jour (OpenAPI auto-générée)
+Testé manuellement sur Android 10+ et iOS 15+
+Aucun avertissement de sécurité dans le scan OWASP ZAP
+15. Synthèse et points de vigilance
+15.1 Récapitulatif des décisions clés
+Décision
+Choix retenu
+Raison principale
+Framework mobile
+Flutter
+Une codebase pour iOS+Android — réduction des coûts
+Backend
+FastAPI (Python)
+Async, rapide, OpenAPI auto, rich NLP ecosystem
+OCR
+Google ML Kit (on-device)
+Gratuit, offline, précis sur documents latins
+Stockage photos
+MinIO self-hosted
+Équivalent S3, zéro coût, maîtrise des données
+Matching
+Jaro-Winkler + PostGIS
+Précis, explicable, pas besoin de ML au MVP
+Push notifications
+ntfy.sh self-hosted + FCM fallback
+Coût nul, fiable
+Paiement
+MTN MoMo + Orange Money
+Réalité du marché camerounais
+Hébergement
+Hetzner/Contabo VPS
+5–8€/mois vs 50–100€/mois AWS
+15.2 Risques et mitigations
+Risque
+Description
+Probabilité
+Mitigation
+Fraude
+Fausse réclamation d'un document
+HAUTE
+Vérification selfie + questions, audit log
+Adoption faible
+Masse critique non atteinte
+MOYENNE
+Partenariats institutions dès M0
+OCR inexact
+Noms avec accents/dialectes
+MOYENNE
+Seuil de confiance + validation manuelle
+Non-conformité CPDP
+Manque déclaration autorité
+FAIBLE
+Déclaration préalable au lancement
+Connexion instable
+App inutilisable en zone rurale
+HAUTE
+Offline-first dès le Sprint 1
+Surcharge serveur
+Pic de trafic non anticipé
+FAIBLE
+Redis queue + Docker Compose scale-up
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document préparé par : Consultant Logiciel
+Studeria.ai — DocRetour v1.0 — Confidentiel

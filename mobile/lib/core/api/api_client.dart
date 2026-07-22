@@ -1,32 +1,34 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-const _baseUrl = String.fromEnvironment('API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api/v1');
+import '../config/app_config.dart';
+import '../storage/secure_storage.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
-    baseUrl: _baseUrl,
+    baseUrl: AppConfig.apiBaseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
     headers: {'Content-Type': 'application/json'},
   ));
-  dio.interceptors.add(AuthInterceptor(dio));
+  // IMPORTANT : on réutilise le MÊME SecureStorageService que l'auth.
+  // Un FlutterSecureStorage() avec des options par défaut utiliserait un
+  // backend Android différent (sans encryptedSharedPreferences) et ne pourrait
+  // PAS relire le token écrit par l'auth → 401 sur toutes les requêtes.
+  dio.interceptors.add(AuthInterceptor(dio, ref.read(secureStorageProvider)));
   return dio;
 });
 
 class AuthInterceptor extends Interceptor {
   final Dio _dio;
-  static const _storage = FlutterSecureStorage();
+  final SecureStorageService _storage;
 
-  AuthInterceptor(this._dio);
+  AuthInterceptor(this._dio, this._storage);
 
   @override
   Future<void> onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storage.read(key: 'access_token');
-    if (token != null) {
+    final token = await _storage.getAccessToken();
+    if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
     return handler.next(options);
@@ -35,21 +37,18 @@ class AuthInterceptor extends Interceptor {
   @override
   Future<void> onError(
       DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      try {
-        final refreshToken = await _storage.read(key: 'refresh_token');
-        if (refreshToken == null) return handler.next(err);
-        final response = await _dio.post('/auth/refresh',
-            data: {'refresh_token': refreshToken});
-        final newAccess = response.data['access_token'] as String;
-        final newRefresh = response.data['refresh_token'] as String;
-        await _storage.write(key: 'access_token', value: newAccess);
-        await _storage.write(key: 'refresh_token', value: newRefresh);
-        err.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
-        final retryResp = await _dio.fetch(err.requestOptions);
-        return handler.resolve(retryResp);
-      } catch (_) {
-        await _storage.deleteAll();
+    final isRefreshCall = err.requestOptions.path.contains('/auth/refresh');
+    if (err.response?.statusCode == 401 && !isRefreshCall) {
+      // Refresh mutualisé (un seul en vol pour toute l'app).
+      final refreshed =
+          await TokenRefresher.refresh(_storage, _dio.options.baseUrl);
+      if (refreshed) {
+        try {
+          final newAccess = await _storage.getAccessToken();
+          err.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
+          final retryResp = await _dio.fetch(err.requestOptions);
+          return handler.resolve(retryResp);
+        } catch (_) {/* la requête rejouée a échoué : on propage l'erreur */}
       }
     }
     return handler.next(err);

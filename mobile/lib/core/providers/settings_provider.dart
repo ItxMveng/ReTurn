@@ -11,7 +11,7 @@ const _biometricEnabledKey = 'biometric_enabled';
 const _pinCodeKey = 'pin_code';
 const _biometricTimeoutKey = 'biometric_timeout';
 
-enum AppThemeMode { light, dark, nightBlue }
+enum AppThemeMode { light, dark }
 
 class SettingsState {
   final AppThemeMode themeMode;
@@ -95,7 +95,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   AppThemeMode _parseTheme(String s) => switch (s) {
         'dark' => AppThemeMode.dark,
-        'nightBlue' => AppThemeMode.nightBlue,
         _ => AppThemeMode.light,
       };
 

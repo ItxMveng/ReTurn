@@ -21,6 +21,9 @@ class AppConstants {
   static const String refreshTokenKey = 'refresh_token';
   static const String userIdKey = 'user_id';
 
+  // OCR/IA : la clé Mistral n'est plus embarquée dans l'app.
+  // L'extraction passe par le backend (POST /ocr/extract) qui détient la clé.
+
   // OTP
   static const int otpResendDelaySeconds = 60;
   static const int otpCodeLength = 6;

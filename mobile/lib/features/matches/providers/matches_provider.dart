@@ -12,3 +12,14 @@ final matchDetailProvider =
   final repo = ref.watch(matchesRepositoryProvider);
   return repo.fetchMatch(id);
 });
+
+/// Notifications en attente (cloche de l'accueil + page dédiée).
+final notificationsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(matchesRepositoryProvider);
+  try {
+    return await repo.notifications();
+  } catch (_) {
+    return const [];
+  }
+});

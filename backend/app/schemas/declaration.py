@@ -10,6 +10,8 @@ DOCUMENT_TYPES = [
     "driving_license",
     "vehicle_registration",
     "birth_certificate",
+    "student_card",
+    "bank_card",
     "diploma",
     "other",
 ]
@@ -60,6 +62,7 @@ class DeclarationRead(BaseModel):
     event_date: date | None
     photo_urls: list[str]
     status: str
+    group_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

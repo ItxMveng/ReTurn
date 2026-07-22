@@ -40,6 +40,12 @@ class Declaration(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="active", nullable=False, index=True
     )
+    # Dossier multi-documents : plusieurs déclarations créées en une fois
+    # (ex. portefeuille avec CNI + permis) partagent le même group_id.
+    # Un dossier compte pour UNE seule déclaration dans la limite F-15.
+    group_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
     # Date of the event (loss date for "lost", find date for "found")
     # Used for temporal coherence in matching: found_date >= lost_date
     event_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)

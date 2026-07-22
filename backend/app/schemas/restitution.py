@@ -15,8 +15,12 @@ class RestitutionRead(BaseModel):
     meeting_longitude: float | None
     proof_photos: list[str]
     status: str
+    handoff_confirmed_by_owner: bool = False
+    handoff_confirmed_by_finder: bool = False
     rating_by_owner: int | None
     rating_by_finder: int | None
+    comment_by_owner: str | None = None
+    comment_by_finder: str | None = None
     completed_at: datetime | None
     created_at: datetime
 
@@ -31,5 +35,6 @@ class RestitutionUpdate(BaseModel):
 
 
 class RestitutionRating(BaseModel):
-    """Submit a post-restitution rating (1-5 stars)."""
+    """Submit a post-restitution rating (1-5 stars) + optional comment."""
     rating: int = Field(..., ge=1, le=5)
+    comment: str | None = Field(None, max_length=140)

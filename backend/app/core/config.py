@@ -42,14 +42,26 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # MinIO
+    # Stockage objet — compatible S3 (MinIO en local, Cloudflare R2 / Backblaze
+    # B2 / Wasabi en production). En prod : MINIO_SECURE=true + MINIO_REGION.
     MINIO_ENDPOINT: str
     MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: str
     MINIO_BUCKET_DOCUMENTS: str = "docretour-documents"
     MINIO_PUBLIC_URL: str = ""
+    MINIO_SECURE: bool = False          # true derrière R2/B2 (HTTPS)
+    MINIO_REGION: str = ""              # "auto" pour R2, ex. "us-east-005" pour B2
     # Resolved at startup — use this in code
     minio_public_url: str = ""
+
+    @field_validator("MINIO_SECURE", mode="before")
+    @classmethod
+    def _parse_minio_secure(cls, value: Any) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return bool(value)
 
     @model_validator(mode="after")
     def _resolve_minio_public_url(self) -> "Settings":
@@ -59,6 +71,10 @@ class Settings(BaseSettings):
         raw = (raw or "").strip().rstrip("/")
         self.minio_public_url = raw if raw else f"http://{self.MINIO_ENDPOINT}"
         return self
+
+    # Mistral AI (OCR / extraction de champs) — clé gardée côté serveur,
+    # jamais embarquée dans l'APK mobile. L'app appelle /api/v1/ocr/extract.
+    MISTRAL_API_KEY: str = ""
 
     # Firebase Admin SDK
     FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: str = ""

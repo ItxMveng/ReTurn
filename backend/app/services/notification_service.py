@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from datetime import datetime, timezone
 
 import firebase_admin
 from firebase_admin import messaging as fcm_messaging
@@ -86,6 +87,7 @@ async def push_match_notification(
             "match_id": str(match_id),
             "score": round(match_score, 2),
             "document_type": document_type,
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
     )
     key = f"{NOTIFICATION_KEY_PREFIX}{user_id}"

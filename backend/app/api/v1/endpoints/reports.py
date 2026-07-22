@@ -42,8 +42,27 @@ async def admin_list_reports(
     db: AsyncSession = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    """[Admin] Liste paginée des signalements."""
-    return await report_service.list_reports(db, status=status, limit=limit, offset=offset)
+    """[Admin] Liste paginée des signalements, avec noms lisibles."""
+    from sqlalchemy import select
+
+    reports = await report_service.list_reports(
+        db, status=status, limit=limit, offset=offset
+    )
+    # Libellés lisibles pour le backoffice (nom ou téléphone).
+    user_ids = {r.reporter_id for r in reports} | {r.reported_id for r in reports}
+    labels: dict = {}
+    if user_ids:
+        rows = (
+            await db.execute(select(User).where(User.id.in_(user_ids)))
+        ).scalars().all()
+        labels = {
+            u.id: (u.full_name or "").strip() or u.phone_number or u.email or "—"
+            for u in rows
+        }
+    for r in reports:
+        r.reporter_name = labels.get(r.reporter_id)
+        r.reported_name = labels.get(r.reported_id)
+    return reports
 
 
 @router.patch("/admin/reports/{report_id}", response_model=ReportRead)

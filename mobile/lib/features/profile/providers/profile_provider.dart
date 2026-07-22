@@ -18,6 +18,7 @@ class UserProfile {
   final String? region;
   final String? address;
   final String? avatarUrl;
+  final double scoreReputation;
   final bool isProfileComplete;
 
   const UserProfile({
@@ -32,6 +33,7 @@ class UserProfile {
     this.region,
     this.address,
     this.avatarUrl,
+    this.scoreReputation = 5.0,
     required this.isProfileComplete,
   });
 
@@ -47,6 +49,8 @@ class UserProfile {
         region: json['region'] as String?,
         address: json['address'] as String?,
         avatarUrl: json['avatar_url'] as String?,
+        scoreReputation:
+            (json['score_reputation'] as num?)?.toDouble() ?? 5.0,
         isProfileComplete: (json['is_profile_complete'] as bool?) ?? false,
       );
 }
@@ -58,19 +62,15 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   Future<UserProfile?> build() => _fetch();
 
   Future<UserProfile?> _fetch() async {
-    try {
-      final token = await getAccessToken();
-      if (token == null) return null;
-      final res = await _dio.get(
-        '/api/v1/profile/',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      final profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
-      _registerFcmToken(token);
-      return profile;
-    } catch (_) {
-      return null;
-    }
+    final token = await getAccessToken();
+    if (token == null) return null;
+    final res = await _dio.get(
+      '/profile/',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    final profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
+    _registerFcmToken(token);
+    return profile;
   }
 
   Future<void> _registerFcmToken(String accessToken) async {
@@ -78,7 +78,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       final fcmToken = await NotificationService.getToken();
       if (fcmToken == null) return;
       await _dio.patch(
-        '/api/v1/profile/',
+        '/profile/',
         data: {'fcm_token': fcmToken},
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
@@ -90,20 +90,30 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     state = await AsyncValue.guard(_fetch);
   }
 
-  Future<bool> updateProfile(Map<String, dynamic> data) async {
+  /// Retourne `null` si succès, sinon un message d'erreur lisible.
+  Future<String?> updateProfile(Map<String, dynamic> data) async {
     try {
       final token = await getAccessToken();
-      if (token == null) return false;
+      if (token == null) return 'Session expirée, reconnectez-vous.';
       final res = await _dio.patch(
-        '/api/v1/profile/',
+        '/profile/',
         data: data,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       final updated = UserProfile.fromJson(res.data as Map<String, dynamic>);
       state = AsyncData(updated);
-      return true;
+      return null;
+    } on DioException catch (e) {
+      // Remonte le détail du backend (409 déjà utilisé, 422 invalide…).
+      final body = e.response?.data;
+      final detail = body is Map ? body['detail'] : null;
+      if (detail is String) return detail;
+      if (e.response?.statusCode == 409) {
+        return 'Cet email ou numéro est déjà utilisé par un autre compte.';
+      }
+      return 'Mise à jour impossible. Réessayez.';
     } catch (_) {
-      return false;
+      return 'Mise à jour impossible. Réessayez.';
     }
   }
 
@@ -119,7 +129,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
         ),
       });
       final res = await _dio.patch(
-        '/api/v1/profile/avatar',
+        '/profile/avatar',
         data: formData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -144,13 +154,28 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     }
   }
 
+  /// Suppression définitive du compte et des données (RGPD — F-04).
+  Future<bool> deleteAccount() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return false;
+      await _dio.delete(
+        '/profile/',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Vérifie si un email est disponible (non utilisé par un autre compte)
   Future<bool> checkEmailAvailable(String email) async {
     try {
       final token = await getAccessToken();
       if (token == null) return false;
       final res = await _dio.get(
-        '/api/v1/profile/check-email',
+        '/profile/check-email',
         queryParameters: {'email': email},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

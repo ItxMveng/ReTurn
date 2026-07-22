@@ -44,6 +44,57 @@ async def create_restitution(
     return restitution
 
 
+async def list_user_restitutions(
+    db: AsyncSession, user_id: uuid.UUID
+) -> list[Restitution]:
+    """Historique des restitutions de l'utilisateur (F-35)."""
+    result = await db.execute(
+        select(Restitution)
+        .join(Match, Match.id == Restitution.match_id)
+        .where(or_(Match.user_found_id == user_id, Match.user_lost_id == user_id))
+        .order_by(Restitution.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_restitution_by_match(
+    db: AsyncSession, match_id: uuid.UUID, user_id: uuid.UUID
+) -> Restitution | None:
+    result = await db.execute(
+        select(Restitution)
+        .join(Match, Match.id == Restitution.match_id)
+        .where(
+            Restitution.match_id == match_id,
+            or_(Match.user_found_id == user_id, Match.user_lost_id == user_id),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def confirm_restitution(
+    db: AsyncSession, restitution: Restitution, user_id: uuid.UUID
+) -> Restitution:
+    """Double validation (F-33) : chaque partie confirme la remise.
+    Quand les deux ont confirmé → statut completed."""
+    match = (
+        await db.execute(select(Match).where(Match.id == restitution.match_id))
+    ).scalar_one_or_none()
+    if match is not None:
+        if match.user_lost_id == user_id:
+            restitution.handoff_confirmed_by_owner = True
+        elif match.user_found_id == user_id:
+            restitution.handoff_confirmed_by_finder = True
+    if restitution.handoff_confirmed_by_owner and restitution.handoff_confirmed_by_finder:
+        restitution.status = "completed"
+        if not restitution.completed_at:
+            restitution.completed_at = datetime.now(timezone.utc)
+    elif restitution.status == "pending":
+        restitution.status = "in_progress"
+    db.add(restitution)
+    await db.flush()
+    return restitution
+
+
 async def get_restitution(
     db: AsyncSession,
     restitution_id: uuid.UUID,
@@ -94,6 +145,7 @@ async def submit_rating(
     restitution: Restitution,
     rater_id: uuid.UUID,
     rating: int,
+    comment: str | None = None,
 ) -> Restitution:
     """
     Submit a rating and update the OTHER party’s reputation score.
@@ -113,10 +165,12 @@ async def submit_rating(
 
     if is_owner and restitution.rating_by_owner is None:
         restitution.rating_by_owner = rating
+        restitution.comment_by_owner = (comment or "").strip()[:140] or None
         # Owner rates the finder
         rated_user_id = match.user_found_id
     elif is_finder and restitution.rating_by_finder is None:
         restitution.rating_by_finder = rating
+        restitution.comment_by_finder = (comment or "").strip()[:140] or None
         # Finder rates the owner
         rated_user_id = match.user_lost_id
     else:

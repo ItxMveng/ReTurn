@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:return_mobile/l10n/app_localizations.dart';
 
-// Couleur principale de l'app (teal)
+// Couleur principale de l'app (vert ReTurn / splashscreen)
 const _kPrimary = Color(0xFF01696F);
 
 class OnboardingScreen extends StatefulWidget {
@@ -199,15 +199,16 @@ class _OnboardingPage extends StatelessWidget {
   final _PageData data;
   const _OnboardingPage({required this.data});
 
+  // Palette charte DocRetour : vert primaire, orange secondaire, vert foncé.
   static const _iconColors = [
-    Color(0xFF22C55E),
-    Color(0xFF3B82F6),
-    Color(0xFFF59E0B),
+    Color(0xFF01696F),
+    Color(0xFFDA7101),
+    Color(0xFF01565B),
   ];
   static const _iconBgs = [
     Color(0xFFDCFCE7),
-    Color(0xFFDBEAFE),
-    Color(0xFFFEF3C7),
+    Color(0xFFFFDCC1),
+    Color(0xFFDCFCE7),
   ];
 
   @override

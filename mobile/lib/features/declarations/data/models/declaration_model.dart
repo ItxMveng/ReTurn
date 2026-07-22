@@ -47,14 +47,18 @@ class DeclarationModel with _$DeclarationModel {
   DeclarationType get type =>
       isFound ? DeclarationType.found : DeclarationType.lost;
 
-  /// Label lisible du type de document (CNI, Passeport, Permis…)
+  /// Label lisible du type de document — aligné sur DOCUMENT_TYPES backend.
   String get documentLabel {
     const labels = {
       'cni': 'CNI',
       'passport': 'Passeport',
-      'permis': 'Permis',
-      'carte_scolaire': 'Carte scolaire',
-      'carte_consulaire': 'Carte consulaire',
+      'driving_license': 'Permis de conduire',
+      'vehicle_registration': 'Carte grise',
+      'birth_certificate': 'Acte de naissance',
+      'student_card': 'Carte étudiante',
+      'bank_card': 'Carte bancaire',
+      'diploma': 'Diplôme',
+      'other': 'Autre document',
     };
     return labels[documentType.toLowerCase()] ?? documentType;
   }

@@ -194,11 +194,11 @@ class _TourSheet extends StatelessWidget {
                   // Green accent bar at top
                   Container(
                     height: 4,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF01696F), Color(0xFF01565B)],
                       ),
-                      borderRadius: const BorderRadius.vertical(
+                      borderRadius: BorderRadius.vertical(
                           top: Radius.circular(28)),
                     ),
                   ),
@@ -248,7 +248,7 @@ class _TourSheet extends StatelessWidget {
                           height: 76,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                              colors: [Color(0xFF01696F), Color(0xFF01565B)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
