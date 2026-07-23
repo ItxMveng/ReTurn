@@ -123,7 +123,7 @@ class AppLocalizations {
       'otpResendIn': 'Renvoyer dans',
       'otpResend': 'Renvoyer le code',
       'otpVerify': 'Vérifier',
-      'splashTagline': 'Réunissez documents & propriétaires',
+      'splashTagline': 'Retrouver. Restituer. Confiance.',
       'matchesTitle': 'Mes matches',
       'matchesEmpty': "Aucun match pour l'instant",
       'matchesEmptyDesc': "Les matches apparaissent automatiquement lorsqu'un document trouvé correspond à un document perdu.",
@@ -189,8 +189,6 @@ class AppLocalizations {
       'profileCompleteBanner': 'Complétez votre profil',
       'profileCompleteBannerSub': 'Nom, photo et adresse — nécessaires pour la restitution.',
       'retry': 'Réessayer',
-      // Splash
-      'splashTagline': 'Retrouver. Restituer. Confiance.',
       // Notifications
       'notifTitle': 'Notifications',
       'notifClearAll': 'Tout effacer',
@@ -299,7 +297,7 @@ class AppLocalizations {
       'otpResendIn': 'Resend in',
       'otpResend': 'Resend code',
       'otpVerify': 'Verify',
-      'splashTagline': 'Connecting documents & owners',
+      'splashTagline': 'Find. Return. Trust.',
       'matchesTitle': 'My matches',
       'matchesEmpty': 'No matches yet',
       'matchesEmptyDesc': 'Matches appear automatically when a found document matches a lost document.',
@@ -365,8 +363,6 @@ class AppLocalizations {
       'profileCompleteBanner': 'Complete your profile',
       'profileCompleteBannerSub': 'Name, photo and address — needed for the handover.',
       'retry': 'Retry',
-      // Splash
-      'splashTagline': 'Find. Return. Trust.',
       // Notifications
       'notifTitle': 'Notifications',
       'notifClearAll': 'Clear all',
@@ -414,7 +410,6 @@ class AppLocalizations {
   String get profileCompleteBanner => _t('profileCompleteBanner');
   String get profileCompleteBannerSub => _t('profileCompleteBannerSub');
   String get retry => _t('retry');
-  String get splashTagline => _t('splashTagline');
   String get notifTitle => _t('notifTitle');
   String get notifClearAll => _t('notifClearAll');
   String get notifLoadError => _t('notifLoadError');
