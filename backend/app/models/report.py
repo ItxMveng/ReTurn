@@ -41,13 +41,21 @@ class Report(Base):
     reported_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("docretour.users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    # native_enum=False → colonne VARCHAR (comme la migration 004), comparaisons
+    # SQL sur des chaînes (pas de cast ::reportstatus qui échoue sur du VARCHAR).
+    # values_callable → stocke/compare par la VALEUR de l'enum ("pending", "fraud"),
+    # cohérent avec le server_default="pending" de la migration.
     reason: Mapped[ReportReason] = mapped_column(
-        Enum(ReportReason), nullable=False
+        Enum(ReportReason, native_enum=False, length=50,
+             values_callable=lambda e: [m.value for m in e]),
+        nullable=False,
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     screenshot_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status: Mapped[ReportStatus] = mapped_column(
-        Enum(ReportStatus), default=ReportStatus.PENDING, nullable=False, index=True
+        Enum(ReportStatus, native_enum=False, length=20,
+             values_callable=lambda e: [m.value for m in e]),
+        default=ReportStatus.PENDING, nullable=False, index=True,
     )
     admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
