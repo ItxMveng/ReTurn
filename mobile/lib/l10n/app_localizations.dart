@@ -462,6 +462,75 @@ class AppLocalizations {
       'restSendRating': 'Envoyer mon évaluation',
       'restConfettiTitle': 'Document récupéré !',
       'restReputation': 'Réputation : {value}/10',
+      // Profil
+      'profTitle': 'Profil',
+      'profLoading': 'Chargement du profil…',
+      'profErrorTitle': 'Impossible de charger le profil',
+      'profLogout': 'Se déconnecter',
+      'profFieldName': 'Nom complet',
+      'profFieldContact': 'Téléphone ou email',
+      'profFieldDob': 'Date de naissance',
+      'profFieldGender': 'Genre',
+      'profFieldCity': 'Ville',
+      'profFieldIdNum': 'Numéro CNI / Passeport',
+      'profCompleteTitle': 'Complétez votre profil en 1 minute',
+      'profCompleteBody': 'Ces informations servent à vérifier votre identité '
+          'lors de la récupération d\'un document.',
+      'profCompleteNow': 'Compléter maintenant',
+      'profDeleteTitle': 'Supprimer mon compte',
+      'profDeleteBody': 'Cette action est définitive et irréversible. Votre '
+          'compte, vos déclarations, vos matchs et vos messages seront '
+          'supprimés conformément à votre droit à l\'effacement (RGPD/CPDP).'
+          '\n\nVoulez-vous vraiment continuer ?',
+      'profDeleteConfirm': 'Supprimer définitivement',
+      'profDeleteFailed': 'Suppression impossible, réessayez.',
+      'profSectionMyProfile': 'Mon profil',
+      'profSectionAppearance': 'Apparence',
+      'profSectionLanguage': 'Langue',
+      'profSectionSecurity': 'Sécurité',
+      'profSectionHelp': 'Aide & support',
+      'profSectionAbout': 'À propos',
+      'profSectionDanger': 'Zone de danger',
+      'profEditProfile': 'Modifier / compléter mon profil',
+      'profMyReturns': 'Mes restitutions',
+      'profZones': 'Zones de récupération',
+      'profThemeLight': 'Clair',
+      'profThemeDark': 'Sombre',
+      'profLangSystem': 'Langue du système',
+      'profHelpFaq': 'Aide & FAQ',
+      'profContactSupport': 'Contacter le support',
+      'profPrivacy': 'Confidentialité',
+      'profVersion': 'Version',
+      'profDeleteAccount': 'Supprimer mon compte (RGPD)',
+      'profFieldsFilled': '{filled}/{total} champs renseignés',
+      'profEditSubtitle': 'Complétez vos informations. La photo se change '
+          'depuis l\'avatar.',
+      'profNameInputLabel': 'Nom complet (nom et prénom)',
+      'profNameInputHelper': 'Non modifiable une fois enregistré.',
+      'profPhoneLabel': 'Numéro de téléphone',
+      'profAddPhoneLabel': 'Ajouter un numéro (+237…)',
+      'profAddPhoneHelper': 'Pour vous connecter aussi par SMS.',
+      'profEmailLabel': 'Email',
+      'profAddEmailLabel': 'Ajouter un email',
+      'profAddEmailHelper': 'Pour vous connecter aussi via Google.',
+      'profDobHelper': 'Utilisée pour vérifier votre identité.',
+      'profGenderMale': 'Homme',
+      'profGenderFemale': 'Femme',
+      'profGenderOther': 'Autre',
+      'profAddressLabel': 'Adresse actuelle',
+      'profIdHelper': 'Optionnel — accélère la vérification.',
+      'profUpdated': 'Profil mis à jour',
+      'profSavePartialError': 'Vos informations ont été enregistrées ✓ — '
+          'mais : {err} Effacez ce champ ou utilisez une autre coordonnée.',
+      'profReadOnlyHelper': 'Vérification requise pour modifier.',
+      'profAvatarUpdated': 'Photo mise à jour',
+      'profAvatarCancelled': 'Annulé',
+      'profBadgeComplete': 'Complet',
+      'profBadgeIncomplete': 'Incomplet',
+      'profBiometricTitle': 'Déverrouillage biométrique',
+      'profBiometricSub': 'Empreinte ou visage à l\'ouverture',
+      'profBiometricNone': 'Aucune biométrie configurée sur cet appareil.',
+      'profBiometricReason': 'Activez le verrouillage biométrique',
     },
     'en': {
       'appName': 'ReTurn',
@@ -894,6 +963,75 @@ class AppLocalizations {
       'restSendRating': 'Send my review',
       'restConfettiTitle': 'Document recovered!',
       'restReputation': 'Reputation: {value}/10',
+      // Profile
+      'profTitle': 'Profile',
+      'profLoading': 'Loading profile…',
+      'profErrorTitle': 'Could not load the profile',
+      'profLogout': 'Log out',
+      'profFieldName': 'Full name',
+      'profFieldContact': 'Phone or email',
+      'profFieldDob': 'Date of birth',
+      'profFieldGender': 'Gender',
+      'profFieldCity': 'City',
+      'profFieldIdNum': 'ID / Passport number',
+      'profCompleteTitle': 'Complete your profile in 1 minute',
+      'profCompleteBody': 'This information is used to verify your identity '
+          'when recovering a document.',
+      'profCompleteNow': 'Complete now',
+      'profDeleteTitle': 'Delete my account',
+      'profDeleteBody': 'This action is permanent and irreversible. Your '
+          'account, declarations, matches and messages will be deleted in '
+          'accordance with your right to erasure (GDPR/CPDP).'
+          '\n\nDo you really want to continue?',
+      'profDeleteConfirm': 'Delete permanently',
+      'profDeleteFailed': 'Deletion failed, please try again.',
+      'profSectionMyProfile': 'My profile',
+      'profSectionAppearance': 'Appearance',
+      'profSectionLanguage': 'Language',
+      'profSectionSecurity': 'Security',
+      'profSectionHelp': 'Help & support',
+      'profSectionAbout': 'About',
+      'profSectionDanger': 'Danger zone',
+      'profEditProfile': 'Edit / complete my profile',
+      'profMyReturns': 'My returns',
+      'profZones': 'Pickup zones',
+      'profThemeLight': 'Light',
+      'profThemeDark': 'Dark',
+      'profLangSystem': 'System language',
+      'profHelpFaq': 'Help & FAQ',
+      'profContactSupport': 'Contact support',
+      'profPrivacy': 'Privacy',
+      'profVersion': 'Version',
+      'profDeleteAccount': 'Delete my account (GDPR)',
+      'profFieldsFilled': '{filled}/{total} fields filled in',
+      'profEditSubtitle': 'Fill in your details. The photo is changed from '
+          'the avatar.',
+      'profNameInputLabel': 'Full name (first and last)',
+      'profNameInputHelper': 'Cannot be changed once saved.',
+      'profPhoneLabel': 'Phone number',
+      'profAddPhoneLabel': 'Add a number (+237…)',
+      'profAddPhoneHelper': 'To also sign in via SMS.',
+      'profEmailLabel': 'Email',
+      'profAddEmailLabel': 'Add an email',
+      'profAddEmailHelper': 'To also sign in via Google.',
+      'profDobHelper': 'Used to verify your identity.',
+      'profGenderMale': 'Male',
+      'profGenderFemale': 'Female',
+      'profGenderOther': 'Other',
+      'profAddressLabel': 'Current address',
+      'profIdHelper': 'Optional — speeds up verification.',
+      'profUpdated': 'Profile updated',
+      'profSavePartialError': 'Your information was saved ✓ — but: {err} '
+          'Clear this field or use another contact detail.',
+      'profReadOnlyHelper': 'Verification required to edit.',
+      'profAvatarUpdated': 'Photo updated',
+      'profAvatarCancelled': 'Cancelled',
+      'profBadgeComplete': 'Complete',
+      'profBadgeIncomplete': 'Incomplete',
+      'profBiometricTitle': 'Biometric unlock',
+      'profBiometricSub': 'Fingerprint or face on open',
+      'profBiometricNone': 'No biometrics set up on this device.',
+      'profBiometricReason': 'Enable biometric lock',
     },
   };
 
@@ -1193,6 +1331,86 @@ class AppLocalizations {
   String get restConfettiTitle => _t('restConfettiTitle');
   String restReputation(String value) =>
       _t('restReputation').replaceAll('{value}', value);
+  // Profil
+  String get profTitle => _t('profTitle');
+  String get profLoading => _t('profLoading');
+  String get profErrorTitle => _t('profErrorTitle');
+  String get profLogout => _t('profLogout');
+  String get profFieldName => _t('profFieldName');
+  String get profFieldContact => _t('profFieldContact');
+  String get profFieldDob => _t('profFieldDob');
+  String get profFieldGender => _t('profFieldGender');
+  String get profFieldCity => _t('profFieldCity');
+  String get profFieldIdNum => _t('profFieldIdNum');
+  String get profCompleteTitle => _t('profCompleteTitle');
+  String get profCompleteBody => _t('profCompleteBody');
+  String get profCompleteNow => _t('profCompleteNow');
+  String get profDeleteTitle => _t('profDeleteTitle');
+  String get profDeleteBody => _t('profDeleteBody');
+  String get profDeleteConfirm => _t('profDeleteConfirm');
+  String get profDeleteFailed => _t('profDeleteFailed');
+  String get profSectionMyProfile => _t('profSectionMyProfile');
+  String get profSectionAppearance => _t('profSectionAppearance');
+  String get profSectionLanguage => _t('profSectionLanguage');
+  String get profSectionSecurity => _t('profSectionSecurity');
+  String get profSectionHelp => _t('profSectionHelp');
+  String get profSectionAbout => _t('profSectionAbout');
+  String get profSectionDanger => _t('profSectionDanger');
+  String get profEditProfile => _t('profEditProfile');
+  String get profMyReturns => _t('profMyReturns');
+  String get profZones => _t('profZones');
+  String get profThemeLight => _t('profThemeLight');
+  String get profThemeDark => _t('profThemeDark');
+  String get profLangSystem => _t('profLangSystem');
+  String get profHelpFaq => _t('profHelpFaq');
+  String get profContactSupport => _t('profContactSupport');
+  String get profPrivacy => _t('profPrivacy');
+  String get profVersion => _t('profVersion');
+  String get profDeleteAccount => _t('profDeleteAccount');
+  String profFieldsFilled(int filled, int total) => _t('profFieldsFilled')
+      .replaceAll('{filled}', '$filled')
+      .replaceAll('{total}', '$total');
+  String get profEditSubtitle => _t('profEditSubtitle');
+  String get profNameInputLabel => _t('profNameInputLabel');
+  String get profNameInputHelper => _t('profNameInputHelper');
+  String get profPhoneLabel => _t('profPhoneLabel');
+  String get profAddPhoneLabel => _t('profAddPhoneLabel');
+  String get profAddPhoneHelper => _t('profAddPhoneHelper');
+  String get profEmailLabel => _t('profEmailLabel');
+  String get profAddEmailLabel => _t('profAddEmailLabel');
+  String get profAddEmailHelper => _t('profAddEmailHelper');
+  String get profDobHelper => _t('profDobHelper');
+  String get profGenderMale => _t('profGenderMale');
+  String get profGenderFemale => _t('profGenderFemale');
+  String get profGenderOther => _t('profGenderOther');
+  String get profAddressLabel => _t('profAddressLabel');
+  String get profIdHelper => _t('profIdHelper');
+  String get profUpdated => _t('profUpdated');
+  String profSavePartialError(String err) =>
+      _t('profSavePartialError').replaceAll('{err}', err);
+  String get profReadOnlyHelper => _t('profReadOnlyHelper');
+  String get profAvatarUpdated => _t('profAvatarUpdated');
+  String get profAvatarCancelled => _t('profAvatarCancelled');
+  String get profBadgeComplete => _t('profBadgeComplete');
+  String get profBadgeIncomplete => _t('profBadgeIncomplete');
+  String get profBiometricTitle => _t('profBiometricTitle');
+  String get profBiometricSub => _t('profBiometricSub');
+  String get profBiometricNone => _t('profBiometricNone');
+  String get profBiometricReason => _t('profBiometricReason');
+
+  /// Libellé d'affichage d'un genre (la valeur stockée reste en français).
+  String genderLabel(String value) {
+    switch (value) {
+      case 'Homme':
+        return profGenderMale;
+      case 'Femme':
+        return profGenderFemale;
+      case 'Autre':
+        return profGenderOther;
+      default:
+        return value;
+    }
+  }
 
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');

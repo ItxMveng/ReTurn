@@ -8,27 +8,30 @@ import '../../../core/services/biometric_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../core/widgets/app_loader.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../auth/application/auth_notifier.dart';
 import '../providers/profile_provider.dart';
 
 /// Champs suivis par la barre de progression du profil (6 au total).
 /// Les 5 premiers conditionnent le badge « Complet » côté backend ;
 /// le numéro CNI est optionnel mais compté dans la progression.
-List<({String label, bool filled})> _profileFields(UserProfile p) => [
-      (label: 'Nom complet', filled: p.fullName.trim().isNotEmpty),
+List<({String label, bool filled})> _profileFields(
+        UserProfile p, AppLocalizations l) =>
+    [
+      (label: l.profFieldName, filled: p.fullName.trim().isNotEmpty),
       (
-        label: 'Téléphone ou email',
+        label: l.profFieldContact,
         filled: p.phoneNumber.trim().isNotEmpty ||
             (p.email ?? '').trim().isNotEmpty
       ),
       (
-        label: 'Date de naissance',
+        label: l.profFieldDob,
         filled: (p.dateOfBirth ?? '').trim().isNotEmpty
       ),
-      (label: 'Genre', filled: (p.gender ?? '').trim().isNotEmpty),
-      (label: 'Ville', filled: (p.city ?? '').trim().isNotEmpty),
+      (label: l.profFieldGender, filled: (p.gender ?? '').trim().isNotEmpty),
+      (label: l.profFieldCity, filled: (p.city ?? '').trim().isNotEmpty),
       (
-        label: 'Numéro CNI / Passeport',
+        label: l.profFieldIdNum,
         filled: (p.nationalIdNumber ?? '').trim().isNotEmpty
       ),
     ];
@@ -63,8 +66,9 @@ class _CompleteProfilePrompt extends ConsumerWidget {
       });
       return const SizedBox.shrink();
     }
+    final l = AppLocalizations.of(context);
     final missing =
-        _profileFields(profile).where((f) => !f.filled).take(4).toList();
+        _profileFields(profile, l).where((f) => !f.filled).take(4).toList();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -90,16 +94,16 @@ class _CompleteProfilePrompt extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Center(
-            child: Text('Complétez votre profil en 1 minute',
+          Center(
+            child: Text(l.profCompleteTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'Ces informations servent à vérifier votre identité lors de '
-              'la récupération d\'un document.',
+              l.profCompleteBody,
               textAlign: TextAlign.center,
               style:
                   TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
@@ -134,7 +138,7 @@ class _CompleteProfilePrompt extends ConsumerWidget {
                   builder: (ctx) => _EditProfileSheet(profile: profile),
                 );
               },
-              child: const Text('Compléter maintenant'),
+              child: Text(l.profCompleteNow),
             ),
           ),
         ],
@@ -155,7 +159,8 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: profileAsync.when(
-        loading: () => const AppLoader(message: 'Chargement du profil…'),
+        loading: () =>
+            AppLoader(message: AppLocalizations.of(context).profLoading),
         error: (error, _) => _ErrorView(
           error: error.toString(),
           onRetry: () => ref.invalidate(profileProvider),
@@ -181,25 +186,21 @@ class ProfilePage extends ConsumerWidget {
   /// RGPD (F-04) — suppression définitive du compte et des données.
   static Future<void> _deleteAccount(
       BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer mon compte'),
-        content: const Text(
-          'Cette action est définitive et irréversible. Votre compte, vos '
-          'déclarations, vos matchs et vos messages seront supprimés '
-          'conformément à votre droit à l\'effacement (RGPD/CPDP).\n\n'
-          'Voulez-vous vraiment continuer ?',
-        ),
+        title: Text(l.profDeleteTitle),
+        content: Text(l.profDeleteBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annuler')),
+              child: Text(l.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(ctx).colorScheme.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer définitivement'),
+            child: Text(l.profDeleteConfirm),
           ),
         ],
       ),
@@ -210,7 +211,7 @@ class ProfilePage extends ConsumerWidget {
     if (!ok) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Suppression impossible, réessayez.')),
+          SnackBar(content: Text(l.profDeleteFailed)),
         );
       }
       return;
@@ -227,6 +228,7 @@ class _ProfileBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final l = AppLocalizations.of(context);
 
     return CustomScrollView(
       slivers: [
@@ -245,58 +247,58 @@ class _ProfileBody extends ConsumerWidget {
               ],
 
               // ── Mon profil ───────────────────────────────────────────
-              const _SectionLabel('Mon profil'),
+              _SectionLabel(l.profSectionMyProfile),
               const SizedBox(height: 10),
               _Card(children: [
                 _Tile(
                   icon: Icons.manage_accounts_outlined,
-                  label: 'Modifier / compléter mon profil',
+                  label: l.profEditProfile,
                   onTap: () => _showEditSheet(context, ref, profile),
                 ),
                 const _Sep(),
                 _Tile(
                   icon: Icons.history,
-                  label: 'Mes restitutions',
+                  label: l.profMyReturns,
                   onTap: () => context.push('/restitutions'),
                 ),
                 const _Sep(),
                 _Tile(
                   icon: Icons.place_outlined,
-                  label: 'Zones de récupération',
+                  label: l.profZones,
                   onTap: () => context.push('/zones'),
                 ),
               ]),
               const SizedBox(height: 28),
 
               // ── Apparence ────────────────────────────────────────────
-              const _SectionLabel('Apparence'),
+              _SectionLabel(l.profSectionAppearance),
               const SizedBox(height: 10),
               _Card(children: [
                 _ThemeOption(
                   mode: AppThemeMode.light,
                   current: settings.themeMode,
                   icon: Icons.wb_sunny_outlined,
-                  label: 'Clair',
+                  label: l.profThemeLight,
                 ),
                 const _Sep(),
                 _ThemeOption(
                   mode: AppThemeMode.dark,
                   current: settings.themeMode,
                   icon: Icons.nights_stay_outlined,
-                  label: 'Sombre',
+                  label: l.profThemeDark,
                 ),
               ]),
               const SizedBox(height: 28),
 
               // ── Langue ───────────────────────────────────────────────
-              const _SectionLabel('Langue'),
+              _SectionLabel(l.profSectionLanguage),
               const SizedBox(height: 10),
               _Card(children: [
                 _LangOption(
                   code: null,
                   current: settings.localeCode,
                   icon: Icons.phone_android_outlined,
-                  label: 'Langue du système',
+                  label: l.profLangSystem,
                 ),
                 const _Sep(),
                 _LangOption(
@@ -316,43 +318,43 @@ class _ProfileBody extends ConsumerWidget {
               const SizedBox(height: 28),
 
               // ── Sécurité ─────────────────────────────────────────────
-              const _SectionLabel('Sécurité'),
+              _SectionLabel(l.profSectionSecurity),
               const SizedBox(height: 10),
               const _Card(children: [_BiometricTile()]),
               const SizedBox(height: 28),
 
               // ── Aide & support ───────────────────────────────────────
-              const _SectionLabel('Aide & support'),
+              _SectionLabel(l.profSectionHelp),
               const SizedBox(height: 10),
               _Card(children: [
                 _Tile(
                   icon: Icons.help_outline,
-                  label: 'Aide & FAQ',
+                  label: l.profHelpFaq,
                   onTap: () => context.push('/help'),
                 ),
                 const _Sep(),
                 _Tile(
                   icon: Icons.support_agent,
-                  label: 'Contacter le support',
+                  label: l.profContactSupport,
                   onTap: () => context.push('/support'),
                 ),
                 const _Sep(),
                 _Tile(
                   icon: Icons.privacy_tip_outlined,
-                  label: 'Confidentialité',
+                  label: l.profPrivacy,
                   onTap: () => context.push('/privacy'),
                 ),
               ]),
               const SizedBox(height: 28),
 
               // ── À propos ─────────────────────────────────────────────
-              const _SectionLabel('À propos'),
+              _SectionLabel(l.profSectionAbout),
               const SizedBox(height: 10),
               _Card(children: [
                 ListTile(
                   leading: Icon(Icons.info_outline,
                       color: AppColors.onSurfaceVariant),
-                  title: const Text('Version'),
+                  title: Text(l.profVersion),
                   trailing: Text('1.0.0',
                       style: TextStyle(color: AppColors.onSurfaceVariant)),
                 ),
@@ -363,20 +365,20 @@ class _ProfileBody extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => ProfilePage._logout(context, ref),
                 icon: const Icon(Icons.logout),
-                label: const Text('Se déconnecter'),
+                label: Text(l.profLogout),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                 ),
               ),
               const SizedBox(height: 24),
-              const _SectionLabel('Zone de danger'),
+              _SectionLabel(l.profSectionDanger),
               const SizedBox(height: 8),
               TextButton.icon(
                 onPressed: () => ProfilePage._deleteAccount(context, ref),
                 icon: const Icon(Icons.delete_forever_outlined,
                     color: AppColors.error),
-                label: const Text('Supprimer mon compte (RGPD)',
-                    style: TextStyle(color: AppColors.error)),
+                label: Text(l.profDeleteAccount,
+                    style: const TextStyle(color: AppColors.error)),
               ),
               const SizedBox(height: 32),
             ]),
@@ -408,7 +410,8 @@ class _CompletionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fields = _profileFields(profile);
+    final l = AppLocalizations.of(context);
+    final fields = _profileFields(profile, l);
     final filled = fields.where((f) => f.filled).length;
     final missing = fields.where((f) => !f.filled).toList();
 
@@ -425,7 +428,7 @@ class _CompletionCard extends StatelessWidget {
           Row(children: [
             Icon(Icons.task_alt, size: 18, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text('$filled/${fields.length} champs renseignés',
+            Text(l.profFieldsFilled(filled, fields.length),
                 style: const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w700)),
           ]),
@@ -526,9 +529,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       initialDate: _dob ?? DateTime(now.year - 25),
       firstDate: DateTime(1920),
       lastDate: lastDate,
-      helpText: 'Votre date de naissance',
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
+      helpText: AppLocalizations.of(context).verifDobHelp,
+      cancelText: AppLocalizations.of(context).cancel,
+      confirmText: AppLocalizations.of(context).verifValidate,
     );
     if (picked != null) setState(() => _dob = picked);
   }
@@ -607,9 +610,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         setState(() {
           _saving = false;
           _error = identity.isNotEmpty
-            ? 'Vos informations ont été enregistrées ✓ — mais : $err '
-                'Effacez ce champ ou utilisez une autre coordonnée.'
-            : err;
+              ? AppLocalizations.of(context).profSavePartialError(err)
+              : err;
         });
         return;
       }
@@ -619,10 +621,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     setState(() => _saving = false);
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Row(children: [
-        Icon(Icons.check_circle, color: Colors.white, size: 18),
-        SizedBox(width: 8),
-        Text('Profil mis à jour'),
+      content: Row(children: [
+        const Icon(Icons.check_circle, color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        Text(AppLocalizations.of(context).profUpdated),
       ]),
       backgroundColor: Colors.green.shade700,
     ));
@@ -630,6 +632,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 24,
@@ -642,11 +645,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Mon profil',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(l.profSectionMyProfile,
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
-              'Complétez vos informations. La photo se change depuis l\'avatar.',
+              l.profEditSubtitle,
               style: TextStyle(
                   fontSize: 13, color: AppColors.onSurfaceVariant),
             ),
@@ -656,7 +660,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             // (une fois rempli, il devient officiel et non modifiable).
             if (widget.profile.fullName.trim().isNotEmpty)
               _ReadOnlyField(
-                label: 'Nom complet',
+                label: l.profFieldName,
                 value: widget.profile.fullName,
                 icon: Icons.badge_outlined,
               )
@@ -664,10 +668,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               TextField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nom complet (nom et prénom)',
-                  helperText: 'Non modifiable une fois enregistré.',
-                  prefixIcon: Icon(Icons.badge_outlined),
+                decoration: InputDecoration(
+                  labelText: l.profNameInputLabel,
+                  helperText: l.profNameInputHelper,
+                  prefixIcon: const Icon(Icons.badge_outlined),
                 ),
               ),
             const SizedBox(height: 14),
@@ -675,7 +679,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             // ── Téléphone : lecture seule si présent, ajoutable sinon ──
             if (_hasPhone)
               _ReadOnlyField(
-                label: 'Numéro de téléphone',
+                label: l.profPhoneLabel,
                 value: widget.profile.phoneNumber,
                 icon: Icons.phone_outlined,
               )
@@ -683,10 +687,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               TextField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Ajouter un numéro (+237…)',
-                  helperText: 'Pour vous connecter aussi par SMS.',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                decoration: InputDecoration(
+                  labelText: l.profAddPhoneLabel,
+                  helperText: l.profAddPhoneHelper,
+                  prefixIcon: const Icon(Icons.phone_outlined),
                 ),
               ),
             const SizedBox(height: 14),
@@ -694,7 +698,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             // ── Email : lecture seule si présent, ajoutable sinon ──
             if (_hasEmail)
               _ReadOnlyField(
-                label: 'Email',
+                label: l.profEmailLabel,
                 value: widget.profile.email!,
                 icon: Icons.email_outlined,
               )
@@ -702,10 +706,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               TextField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Ajouter un email',
-                  helperText: 'Pour vous connecter aussi via Google.',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: l.profAddEmailLabel,
+                  helperText: l.profAddEmailHelper,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
               ),
             const SizedBox(height: 14),
@@ -715,14 +719,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               onTap: _pickDateOfBirth,
               borderRadius: BorderRadius.circular(8),
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date de naissance',
-                  helperText: 'Utilisée pour vérifier votre identité.',
-                  prefixIcon: Icon(Icons.cake_outlined),
-                  suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                decoration: InputDecoration(
+                  labelText: l.profFieldDob,
+                  helperText: l.profDobHelper,
+                  prefixIcon: const Icon(Icons.cake_outlined),
+                  suffixIcon:
+                      const Icon(Icons.calendar_today_outlined, size: 18),
                 ),
                 child: Text(
-                  _dob != null ? _formatDate(_dob!) : 'Sélectionner…',
+                  _dob != null ? _formatDate(_dob!) : l.verifDobSelect,
                   style: TextStyle(
                     fontSize: 16,
                     color: _dob != null
@@ -737,12 +742,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             // ── Genre ──
             DropdownButtonFormField<String>(
               initialValue: _gender,
-              decoration: const InputDecoration(
-                labelText: 'Genre',
-                prefixIcon: Icon(Icons.wc_outlined),
+              decoration: InputDecoration(
+                labelText: l.profFieldGender,
+                prefixIcon: const Icon(Icons.wc_outlined),
               ),
               items: _genders
-                  .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                  .map((g) => DropdownMenuItem(
+                      value: g, child: Text(l.genderLabel(g))))
                   .toList(),
               onChanged: (v) => setState(() => _gender = v),
             ),
@@ -751,17 +757,17 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             TextField(
               controller: _cityCtrl,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Ville',
-                prefixIcon: Icon(Icons.location_city_outlined),
+              decoration: InputDecoration(
+                labelText: l.profFieldCity,
+                prefixIcon: const Icon(Icons.location_city_outlined),
               ),
             ),
             const SizedBox(height: 14),
             TextField(
               controller: _addressCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Adresse actuelle',
-                prefixIcon: Icon(Icons.home_outlined),
+              decoration: InputDecoration(
+                labelText: l.profAddressLabel,
+                prefixIcon: const Icon(Icons.home_outlined),
               ),
             ),
             const SizedBox(height: 14),
@@ -770,10 +776,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             TextField(
               controller: _idCtrl,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Numéro CNI / Passeport',
-                helperText: 'Optionnel — accélère la vérification.',
-                prefixIcon: Icon(Icons.credit_card_outlined),
+              decoration: InputDecoration(
+                labelText: l.profFieldIdNum,
+                helperText: l.profIdHelper,
+                prefixIcon: const Icon(Icons.credit_card_outlined),
               ),
             ),
             // ── Erreur inline : la feuille reste ouverte pour corriger ──
@@ -811,7 +817,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         height: 20,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Text('Enregistrer'),
+                    : Text(l.restSave),
               ),
             ),
           ],
@@ -841,7 +847,7 @@ class _ReadOnlyField extends StatelessWidget {
         labelText: label,
         prefixIcon: Icon(icon),
         suffixIcon: const Icon(Icons.lock_outline, size: 18),
-        helperText: 'Vérification requise pour modifier.',
+        helperText: AppLocalizations.of(context).profReadOnlyHelper,
       ),
     );
   }
@@ -854,6 +860,7 @@ class _Header extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final gradColors = isDark
         ? [Theme.of(context).colorScheme.surface, AppColors.surface]
@@ -878,8 +885,8 @@ class _Header extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Profil',
-                  style: TextStyle(
+              Text(l.profTitle,
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.w800)),
@@ -893,8 +900,9 @@ class _Header extends ConsumerWidget {
                           .updateAvatar();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content:
-                              Text(ok ? 'Photo mise à jour' : 'Annulé'),
+                          content: Text(ok
+                              ? l.profAvatarUpdated
+                              : l.profAvatarCancelled),
                           backgroundColor:
                               ok ? AppColors.primary : Colors.grey,
                         ));
@@ -943,7 +951,7 @@ class _Header extends ConsumerWidget {
                         Text(
                           profile.fullName.isNotEmpty
                               ? profile.fullName
-                              : 'Utilisateur',
+                              : l.commonUser,
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -1032,7 +1040,10 @@ class _Badge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color),
       ),
-      child: Text(complete ? 'Complet' : 'Incomplet',
+      child: Text(
+          complete
+              ? AppLocalizations.of(context).profBadgeComplete
+              : AppLocalizations.of(context).profBadgeIncomplete,
           style: TextStyle(
               color: color, fontSize: 11, fontWeight: FontWeight.w700)),
     );
@@ -1111,29 +1122,29 @@ class _BiometricTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final enabled = ref.watch(biometricEnabledProvider);
     return SwitchListTile(
       value: enabled,
       activeThumbColor: AppColors.primary,
       secondary: Icon(Icons.fingerprint, color: AppColors.primary),
-      title: Text('Déverrouillage biométrique',
+      title: Text(l.profBiometricTitle,
           style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
               color: AppColors.onSurface)),
-      subtitle: Text('Empreinte ou visage à l\'ouverture',
+      subtitle: Text(l.profBiometricSub,
           style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
       onChanged: (v) async {
         final messenger = ScaffoldMessenger.of(context);
         if (v) {
           if (!await BiometricService.isAvailable()) {
-            messenger.showSnackBar(const SnackBar(
-                content: Text(
-                    'Aucune biométrie configurée sur cet appareil.')));
+            messenger.showSnackBar(
+                SnackBar(content: Text(l.profBiometricNone)));
             return;
           }
           final ok = await BiometricService.authenticate(
-              reason: 'Activez le verrouillage biométrique');
+              reason: l.profBiometricReason);
           if (!ok) return;
         }
         await ref.read(biometricEnabledProvider.notifier).setEnabled(v);
@@ -1212,6 +1223,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1220,7 +1232,7 @@ class _ErrorView extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: 12),
-            Text('Impossible de charger le profil',
+            Text(l.profErrorTitle,
                 style: TextStyle(
                     fontWeight: FontWeight.w600, color: AppColors.onSurface)),
             const SizedBox(height: 8),
@@ -1229,9 +1241,8 @@ class _ErrorView extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 12, color: AppColors.onSurfaceVariant)),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
-            TextButton(
-                onPressed: onLogout, child: const Text('Se déconnecter')),
+            ElevatedButton(onPressed: onRetry, child: Text(l.retry)),
+            TextButton(onPressed: onLogout, child: Text(l.profLogout)),
           ],
         ),
       ),
