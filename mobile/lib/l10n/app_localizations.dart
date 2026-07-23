@@ -189,6 +189,17 @@ class AppLocalizations {
       'profileCompleteBanner': 'Complétez votre profil',
       'profileCompleteBannerSub': 'Nom, photo et adresse — nécessaires pour la restitution.',
       'retry': 'Réessayer',
+      // Splash
+      'splashTagline': 'Retrouver. Restituer. Confiance.',
+      // Notifications
+      'notifTitle': 'Notifications',
+      'notifClearAll': 'Tout effacer',
+      'notifLoadError': 'Impossible de charger les notifications',
+      'notifEmpty': 'Aucune notification',
+      'notifEmptySub': 'Vous serez alerté dès qu\'un document\ncorrespondant est trouvé.',
+      'notifMatchFound': 'Document correspondant trouvé !',
+      'notifGeneric': 'Notification',
+      'notifCorrespondence': '% de correspondance',
     },
     'en': {
       'appName': 'ReTurn',
@@ -354,6 +365,17 @@ class AppLocalizations {
       'profileCompleteBanner': 'Complete your profile',
       'profileCompleteBannerSub': 'Name, photo and address — needed for the handover.',
       'retry': 'Retry',
+      // Splash
+      'splashTagline': 'Find. Return. Trust.',
+      // Notifications
+      'notifTitle': 'Notifications',
+      'notifClearAll': 'Clear all',
+      'notifLoadError': 'Unable to load notifications',
+      'notifEmpty': 'No notifications',
+      'notifEmptySub': 'You\'ll be alerted as soon as a\nmatching document is found.',
+      'notifMatchFound': 'Matching document found!',
+      'notifGeneric': 'Notification',
+      'notifCorrespondence': '% match',
     },
   };
 
@@ -392,6 +414,15 @@ class AppLocalizations {
   String get profileCompleteBanner => _t('profileCompleteBanner');
   String get profileCompleteBannerSub => _t('profileCompleteBannerSub');
   String get retry => _t('retry');
+  String get splashTagline => _t('splashTagline');
+  String get notifTitle => _t('notifTitle');
+  String get notifClearAll => _t('notifClearAll');
+  String get notifLoadError => _t('notifLoadError');
+  String get notifEmpty => _t('notifEmpty');
+  String get notifEmptySub => _t('notifEmptySub');
+  String get notifMatchFound => _t('notifMatchFound');
+  String get notifGeneric => _t('notifGeneric');
+  String get notifCorrespondence => _t('notifCorrespondence');
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');

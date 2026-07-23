@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/storage/auth_storage.dart';
+import '../../l10n/app_localizations.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -125,7 +126,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                 FadeTransition(
                   opacity: _subtitleFade,
                   child: Text(
-                    'Retrouver. Restituer. Confiance.',
+                    AppLocalizations.of(context).splashTagline,
                     style: TextStyle(
                       fontFamily: 'Satoshi',
                       fontSize: 14,

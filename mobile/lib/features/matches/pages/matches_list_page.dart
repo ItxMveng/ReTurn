@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/appear.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/matches_provider.dart';
 import '../repositories/matches_repository.dart';
@@ -411,10 +412,11 @@ class NotificationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(notificationsProvider);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l.notifTitle),
         actions: [
           if ((async.valueOrNull?.isNotEmpty ?? false))
             TextButton(
@@ -424,7 +426,7 @@ class NotificationsPage extends ConsumerWidget {
                     .clearNotifications();
                 ref.invalidate(notificationsProvider);
               },
-              child: const Text('Tout effacer'),
+              child: Text(l.notifClearAll),
             ),
         ],
       ),
@@ -435,11 +437,11 @@ class NotificationsPage extends ConsumerWidget {
             Icon(Icons.wifi_off,
                 size: 40, color: cs.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 12),
-            const Text('Impossible de charger les notifications'),
+            Text(l.notifLoadError),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => ref.invalidate(notificationsProvider),
-              child: const Text('Réessayer'),
+              child: Text(l.retry),
             ),
           ]),
         ),
@@ -458,12 +460,12 @@ class NotificationsPage extends ConsumerWidget {
                       size: 42, color: cs.primary.withValues(alpha: 0.6)),
                 ),
                 const SizedBox(height: 16),
-                const Text('Aucune notification',
-                    style: TextStyle(
+                Text(l.notifEmpty,
+                    style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Text(
-                  'Vous serez alerté dès qu\'un document\ncorrespondant est trouvé.',
+                  l.notifEmptySub,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: cs.onSurface.withValues(alpha: 0.5),
@@ -503,9 +505,7 @@ class NotificationsPage extends ConsumerWidget {
                         color: cs.primary),
                   ),
                   title: Text(
-                    isMatch
-                        ? 'Document correspondant trouvé !'
-                        : 'Notification',
+                    isMatch ? l.notifMatchFound : l.notifGeneric,
                     style: const TextStyle(
                         fontSize: 14.5, fontWeight: FontWeight.w700),
                   ),
@@ -514,7 +514,7 @@ class NotificationsPage extends ConsumerWidget {
                     children: [
                       Text(
                         isMatch && score != null
-                            ? '$docLabel · ${(score * 100).round()}% de correspondance'
+                            ? '$docLabel · ${(score * 100).round()}${l.notifCorrespondence}'
                             : docLabel,
                         style: const TextStyle(fontSize: 12.5),
                       ),
