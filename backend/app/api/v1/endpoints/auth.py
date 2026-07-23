@@ -147,24 +147,46 @@ async def admin_login(
     donc sur un secret (ADMIN_BOOTSTRAP_SECRET) + un numéro déclaré admin
     (ADMIN_PHONE_NUMBERS). Sécurisé par comparaison à temps constant.
     """
-    configured = settings.ADMIN_BOOTSTRAP_SECRET
+    configured = settings.ADMIN_BOOTSTRAP_SECRET.strip()
     if not configured:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Connexion admin non configurée sur ce serveur.",
         )
+
+    # Comparaison du secret à temps constant (on tolère les espaces parasites
+    # que Render ajoute parfois aux valeurs collées).
+    secret_ok = secrets.compare_digest(body.secret.strip(), configured)
+
+    # Numéro : comparaison tolérante au format (+237 optionnel, espaces).
+    def _digits(p: str) -> str:
+        return "".join(c for c in p if c.isdigit())
+
     phone = body.phone_number.strip().replace(" ", "")
-    if not (
-        secrets.compare_digest(body.secret, configured)
-        and phone in settings.admin_phone_set
-    ):
+    input_digits = _digits(phone)
+    phone_ok = any(
+        input_digits == _digits(a) or input_digits[-9:] == _digits(a)[-9:]
+        for a in settings.admin_phone_set
+        if _digits(a)
+    )
+    if not (secret_ok and phone_ok):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Numéro ou secret admin invalide.",
         )
 
+    # Retrouve l'utilisateur : correspondance exacte, sinon sur les 9 derniers
+    # chiffres (tolère le format du numéro stocké).
     result = await db.execute(select(User).where(User.phone_number == phone))
     user = result.scalar_one_or_none()
+    if user is None and len(input_digits) >= 9:
+        # Tolère le format stocké (+237… vs 6…) via les 9 derniers chiffres.
+        suffix = input_digits[-9:]
+        user = (
+            await db.execute(
+                select(User).where(User.phone_number.like(f"%{suffix}"))
+            )
+        ).scalars().first()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
