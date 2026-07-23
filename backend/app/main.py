@@ -2,9 +2,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api.v1.router import router as v1_router
 from app.core.config import settings
@@ -73,6 +73,22 @@ app.add_middleware(
 )
 
 app.include_router(v1_router)
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception):
+    """Renvoie une 500 JSON qui PASSE par le middleware CORS.
+
+    Par défaut, une exception non gérée est interceptée hors de la chaîne CORS
+    → la réponse 500 n'a pas d'en-tête Access-Control-Allow-Origin, et le
+    navigateur affiche « CORS missing header » au lieu de la vraie erreur.
+    Ce handler la renvoie proprement (avec CORS) et la loggue côté serveur.
+    """
+    logger.exception("Erreur non gérée sur %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erreur serveur interne."},
+    )
 
 
 @app.get("/health", tags=["health"])
