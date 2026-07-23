@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/appear.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/media_url.dart';
 import '../../matches/providers/matches_provider.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -23,20 +24,20 @@ class DeclarationsListPage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text('Que voulez-vous déclarer ?',
-                  style:
-                      TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Text(AppLocalizations.of(ctx).declChooseTitle,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w800)),
             ),
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: cs.primary.withValues(alpha: 0.15),
                 child: Icon(Icons.travel_explore, color: cs.primary),
               ),
-              title: const Text("J'ai trouvé un document",
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('Aidez à le rendre à son propriétaire'),
+              title: Text(AppLocalizations.of(ctx).declChooseFound,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppLocalizations.of(ctx).declChooseFoundSub),
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/declarations/new?type=found');
@@ -47,9 +48,9 @@ class DeclarationsListPage extends ConsumerWidget {
                 backgroundColor: Colors.orange.withValues(alpha: 0.15),
                 child: const Icon(Icons.search_off, color: Colors.orange),
               ),
-              title: const Text("J'ai perdu un document",
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('Soyez alerté dès qu\'il est retrouvé'),
+              title: Text(AppLocalizations.of(ctx).declChooseLost,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppLocalizations.of(ctx).declChooseLostSub),
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/declarations/new?type=lost');
@@ -134,13 +135,13 @@ class DeclarationsListPage extends ConsumerWidget {
                                         .withValues(alpha: 0.6)),
                               ),
                               const SizedBox(height: 16),
-                              const Text('Vous n\'avez aucune déclaration',
-                                  style: TextStyle(
+                              Text(AppLocalizations.of(context).declEmptyTitle,
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 8),
                               Text(
-                                  'Vous avez perdu un document ?\nSignalez-le en 60 secondes.',
+                                  AppLocalizations.of(context).declEmptySubtitle,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       color: cs.onSurface
@@ -150,8 +151,8 @@ class DeclarationsListPage extends ConsumerWidget {
                                 onPressed: () => context
                                     .go('/declarations/new?type=lost'),
                                 icon: const Icon(Icons.search),
-                                label: const Text(
-                                    'Déclarer un document perdu'),
+                                label: Text(
+                                    AppLocalizations.of(context).declEmptyCta),
                               ),
                               const SizedBox(height: 24),
                             ]),
@@ -163,9 +164,9 @@ class DeclarationsListPage extends ConsumerWidget {
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                         child: Row(
                           children: [
-                            const Expanded(
-                              child: Text('Mes déclarations',
-                                  style: TextStyle(
+                            Expanded(
+                              child: Text(AppLocalizations.of(context).declMine,
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800)),
                             ),
@@ -182,7 +183,7 @@ class DeclarationsListPage extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                    '${limits.activeCount} / ${limits.limit} actives',
+                                    '${limits.activeCount} / ${limits.limit} ${AppLocalizations.of(context).declActive}',
                                     style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -194,14 +195,14 @@ class DeclarationsListPage extends ConsumerWidget {
                             ],
                             Tooltip(
                               message: atLimit
-                                  ? 'Clôturez une déclaration pour en créer une nouvelle'
-                                  : 'Nouvelle déclaration',
+                                  ? AppLocalizations.of(context).declLimitReached
+                                  : AppLocalizations.of(context).declNew,
                               child: TextButton.icon(
                                 onPressed: atLimit
                                     ? null
                                     : () => _chooseType(context),
                                 icon: const Icon(Icons.add, size: 18),
-                                label: const Text('Nouvelle'),
+                                label: Text(AppLocalizations.of(context).declNew),
                               ),
                             ),
                           ],
@@ -278,7 +279,9 @@ class _GreetingHeader extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  firstName == null ? 'Bonjour' : 'Bonjour $firstName',
+                  firstName == null
+                      ? AppLocalizations.of(context).greetingHello
+                      : '${AppLocalizations.of(context).greetingHello} $firstName',
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.w800),
                 ),
@@ -366,13 +369,13 @@ class _HeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Un document entre vos mains ?',
-              style: TextStyle(
+          Text(AppLocalizations.of(context).homeHeroTitle,
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text('Déclarez-le, on s\'occupe du rapprochement.',
+          Text(AppLocalizations.of(context).homeHeroSubtitle,
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
           const SizedBox(height: 14),
@@ -380,7 +383,7 @@ class _HeroCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _HeroButton(
-                  label: "J'ai trouvé",
+                  label: AppLocalizations.of(context).homeFound,
                   icon: Icons.document_scanner_outlined,
                   background: AppColors.kGreen,
                   foreground: Colors.white,
@@ -390,7 +393,7 @@ class _HeroCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _HeroButton(
-                  label: "J'ai perdu",
+                  label: AppLocalizations.of(context).homeLost,
                   icon: Icons.search,
                   background: Colors.white,
                   foreground: AppColors.kGreenDark,
@@ -464,17 +467,19 @@ class _StatsRow extends StatelessWidget {
       child: Row(
         children: [
           _StatCard(
-              value: active, label: 'Actives', color: AppColors.kGreenDark),
+              value: active,
+              label: AppLocalizations.of(context).statActive,
+              color: AppColors.kGreenDark),
           const SizedBox(width: 10),
           _StatCard(
               value: matched,
-              label: 'Matchées',
+              label: AppLocalizations.of(context).statMatched,
               color: AppColors.secondary,
               onTap: () => context.go('/matches')),
           const SizedBox(width: 10),
           _StatCard(
               value: closed,
-              label: 'Restituées',
+              label: AppLocalizations.of(context).statRestituted,
               color: AppColors.onSurface,
               onTap: () => context.push('/restitutions')),
         ],
@@ -561,12 +566,12 @@ class _ProfileBanner extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Complétez votre profil',
-                          style: TextStyle(
+                      Text(AppLocalizations.of(context).profileCompleteBanner,
+                          style: const TextStyle(
                               fontWeight: FontWeight.w700, fontSize: 14)),
                       const SizedBox(height: 2),
                       Text(
-                        'Nom, photo et adresse — nécessaires pour la restitution.',
+                        AppLocalizations.of(context).profileCompleteBannerSub,
                         style: TextStyle(
                             fontSize: 12,
                             color: cs.onSurface.withValues(alpha: 0.6)),

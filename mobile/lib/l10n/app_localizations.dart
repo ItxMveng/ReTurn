@@ -160,6 +160,35 @@ class AppLocalizations {
       'confirmDelete': 'Supprimer ?',
       'confirmDeleteDesc': 'Cette déclaration sera définitivement supprimée.',
       'selfieRequired': 'Selfie requis',
+      // Navigation
+      'navDocuments': 'Documents',
+      'navMatches': 'Matchs',
+      'navMessages': 'Messages',
+      'navProfile': 'Profil',
+      // Accueil / déclarations
+      'greetingHello': 'Bonjour',
+      'homeHeroTitle': 'Un document entre vos mains ?',
+      'homeHeroSubtitle': 'Déclarez-le, on s\'occupe du rapprochement.',
+      'homeFound': 'J\'ai trouvé',
+      'homeLost': 'J\'ai perdu',
+      'declMine': 'Mes déclarations',
+      'declNew': 'Nouvelle',
+      'declActive': 'actives',
+      'declLimitReached': 'Clôturez une déclaration pour en créer une nouvelle',
+      'statActive': 'Actives',
+      'statMatched': 'Matchées',
+      'statRestituted': 'Restituées',
+      'declEmptyTitle': 'Vous n\'avez aucune déclaration',
+      'declEmptySubtitle': 'Vous avez perdu un document ?\nSignalez-le en 60 secondes.',
+      'declEmptyCta': 'Déclarer un document perdu',
+      'declChooseTitle': 'Que voulez-vous déclarer ?',
+      'declChooseFound': 'J\'ai trouvé un document',
+      'declChooseFoundSub': 'Aidez à le rendre à son propriétaire',
+      'declChooseLost': 'J\'ai perdu un document',
+      'declChooseLostSub': 'Soyez alerté dès qu\'il est retrouvé',
+      'profileCompleteBanner': 'Complétez votre profil',
+      'profileCompleteBannerSub': 'Nom, photo et adresse — nécessaires pour la restitution.',
+      'retry': 'Réessayer',
     },
     'en': {
       'appName': 'ReTurn',
@@ -296,6 +325,35 @@ class AppLocalizations {
       'confirmDelete': 'Delete?',
       'confirmDeleteDesc': 'This declaration will be permanently deleted.',
       'selfieRequired': 'Selfie required',
+      // Navigation
+      'navDocuments': 'Documents',
+      'navMatches': 'Matches',
+      'navMessages': 'Messages',
+      'navProfile': 'Profile',
+      // Home / declarations
+      'greetingHello': 'Hello',
+      'homeHeroTitle': 'A document in your hands?',
+      'homeHeroSubtitle': 'Report it, we\'ll handle the matching.',
+      'homeFound': 'I found one',
+      'homeLost': 'I lost one',
+      'declMine': 'My declarations',
+      'declNew': 'New',
+      'declActive': 'active',
+      'declLimitReached': 'Close a declaration to create a new one',
+      'statActive': 'Active',
+      'statMatched': 'Matched',
+      'statRestituted': 'Returned',
+      'declEmptyTitle': 'You have no declarations',
+      'declEmptySubtitle': 'Lost a document?\nReport it in 60 seconds.',
+      'declEmptyCta': 'Report a lost document',
+      'declChooseTitle': 'What would you like to declare?',
+      'declChooseFound': 'I found a document',
+      'declChooseFoundSub': 'Help return it to its owner',
+      'declChooseLost': 'I lost a document',
+      'declChooseLostSub': 'Get notified as soon as it\'s found',
+      'profileCompleteBanner': 'Complete your profile',
+      'profileCompleteBannerSub': 'Name, photo and address — needed for the handover.',
+      'retry': 'Retry',
     },
   };
 
@@ -305,6 +363,35 @@ class AppLocalizations {
   }
 
   String get appName => _t('appName');
+  // Navigation
+  String get navDocuments => _t('navDocuments');
+  String get navMatches => _t('navMatches');
+  String get navMessages => _t('navMessages');
+  String get navProfile => _t('navProfile');
+  // Accueil / déclarations
+  String get greetingHello => _t('greetingHello');
+  String get homeHeroTitle => _t('homeHeroTitle');
+  String get homeHeroSubtitle => _t('homeHeroSubtitle');
+  String get homeFound => _t('homeFound');
+  String get homeLost => _t('homeLost');
+  String get declMine => _t('declMine');
+  String get declNew => _t('declNew');
+  String get declActive => _t('declActive');
+  String get declLimitReached => _t('declLimitReached');
+  String get statActive => _t('statActive');
+  String get statMatched => _t('statMatched');
+  String get statRestituted => _t('statRestituted');
+  String get declEmptyTitle => _t('declEmptyTitle');
+  String get declEmptySubtitle => _t('declEmptySubtitle');
+  String get declEmptyCta => _t('declEmptyCta');
+  String get declChooseTitle => _t('declChooseTitle');
+  String get declChooseFound => _t('declChooseFound');
+  String get declChooseFoundSub => _t('declChooseFoundSub');
+  String get declChooseLost => _t('declChooseLost');
+  String get declChooseLostSub => _t('declChooseLostSub');
+  String get profileCompleteBanner => _t('profileCompleteBanner');
+  String get profileCompleteBannerSub => _t('profileCompleteBannerSub');
+  String get retry => _t('retry');
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');

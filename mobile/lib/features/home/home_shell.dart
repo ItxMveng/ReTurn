@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/connectivity_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/guided_tour.dart';
 import '../profile/pages/profile_page.dart';
 import '../profile/providers/profile_provider.dart';
@@ -65,6 +66,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     final idx = _indexOf(context);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
+    final labels = [l.navDocuments, l.navMatches, l.navMessages, l.navProfile];
     final offline = ref.watch(isOfflineProvider).valueOrNull ?? false;
     return GuidedTourOverlay(
       child: Scaffold(
@@ -85,7 +88,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               .map((e) => NavigationDestination(
                     icon: Icon(e.value.icon),
                     selectedIcon: Icon(e.value.selectedIcon, color: cs.primary),
-                    label: e.value.label,
+                    label: labels[e.key],
                   ))
               .toList(),
         ),
@@ -113,9 +116,9 @@ class _OfflineBanner extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
       child: visible
-          ? Material(
-              color: const Color(0xFF14331F),
-              child: const SafeArea(
+          ? const Material(
+              color: Color(0xFF14331F),
+              child: SafeArea(
                 bottom: false,
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 7),
