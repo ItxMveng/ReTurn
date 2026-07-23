@@ -93,6 +93,19 @@ class Settings(BaseSettings):
     # jamais embarquée dans l'APK mobile. L'app appelle /api/v1/ocr/extract.
     MISTRAL_API_KEY: str = ""
 
+    # Administrateurs déclarés par configuration (sans shell) : numéros E.164
+    # séparés par des virgules. À chaque connexion, ces numéros sont promus
+    # admin automatiquement. Ex. ADMIN_PHONE_NUMBERS="+237690000000,+237680000000"
+    ADMIN_PHONE_NUMBERS: str = ""
+
+    @property
+    def admin_phone_set(self) -> set[str]:
+        return {
+            p.strip().replace(" ", "")
+            for p in self.ADMIN_PHONE_NUMBERS.split(",")
+            if p.strip()
+        }
+
     # Firebase Admin SDK
     FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: str = ""
     FIREBASE_MOCK_MODE: bool = False

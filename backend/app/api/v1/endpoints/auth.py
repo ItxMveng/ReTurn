@@ -95,6 +95,16 @@ async def verify_firebase_token_endpoint(
         is_email_auth=is_email_auth,
     )
 
+    # — Promotion admin déclarative (sans shell) : si le numéro figure dans
+    #   ADMIN_PHONE_NUMBERS, on garantit is_admin=true à chaque connexion. —
+    if (
+        phone_number
+        and phone_number.replace(" ", "") in settings.admin_phone_set
+        and not getattr(user, "is_admin", False)
+    ):
+        user.is_admin = True
+        db.add(user)
+
     # — Log connexion Firebase —
     conn_status = ConnectionStatus.BANNED if getattr(user, "is_banned", False) else ConnectionStatus.SUCCESS
     await _log_connection(
