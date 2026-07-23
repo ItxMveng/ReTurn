@@ -214,18 +214,6 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-const _docTileLabels = <String, String>{
-  'cni': 'Carte Nationale d\'Identité',
-  'passport': 'Passeport',
-  'driving_license': 'Permis de conduire',
-  'vehicle_registration': 'Carte grise',
-  'birth_certificate': 'Acte de naissance',
-  'student_card': 'Carte étudiante',
-  'bank_card': 'Carte bancaire',
-  'diploma': 'Diplôme',
-  'other': 'Autre document',
-};
-
 /// Masque partiellement un nom tant que le match n'est pas confirmé
 /// (anti-scraping) : « Jean Mbarga » → « Jean M••••• ».
 String _maskName(String name) {
@@ -260,11 +248,10 @@ class _MatchTile extends StatelessWidget {
         : match.score >= 0.55
             ? AppColors.secondary
             : AppColors.error;
-    final docLabel =
-        _docTileLabels[match.documentType] ?? match.documentType;
+    final docLabel = AppLocalizations.of(context).docType(match.documentType);
     final rawName = (match.otherUserName?.trim().isNotEmpty ?? false)
         ? match.otherUserName!.trim()
-        : 'Utilisateur';
+        : AppLocalizations.of(context).commonUser;
     // Nom partiellement masqué tant que le match n'est pas confirmé.
     final displayName =
         match.isConfirmed ? rawName : _maskName(rawName);
@@ -481,8 +468,8 @@ class NotificationsPage extends ConsumerWidget {
               itemBuilder: (_, i) {
                 final n = items[i];
                 final type = n['type'] as String? ?? '';
-                final docLabel = _docTileLabels[n['document_type']] ??
-                    (n['document_type'] as String? ?? 'Document');
+                final docLabel =
+                    l.docType(n['document_type'] as String? ?? 'Document');
                 final score = (n['score'] as num?)?.toDouble();
                 final matchId = n['match_id'] as String?;
                 final isMatch = type == 'match_found';

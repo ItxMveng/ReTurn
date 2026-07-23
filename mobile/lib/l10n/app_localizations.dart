@@ -278,6 +278,62 @@ class AppLocalizations {
       'reasonIdentityTheft': 'Usurpation d\'identité',
       'reasonInappropriate': 'Contenu inapproprié',
       'reasonOther': 'Autre',
+      // Types de documents
+      'docCni': 'Carte Nationale d\'Identité',
+      'docPassport': 'Passeport',
+      'docDrivingLicense': 'Permis de conduire',
+      'docVehicleReg': 'Carte grise',
+      'docBirthCert': 'Acte de naissance',
+      'docStudentCard': 'Carte étudiante',
+      'docBankCard': 'Carte bancaire',
+      'docDiploma': 'Diplôme',
+      'docOther': 'Autre document',
+      'declRemoveDoc': 'Retirer ce document',
+      'commonUser': 'Utilisateur',
+      // Détail de la correspondance
+      'mdTitle': 'Correspondance',
+      'mdLoadError': 'Impossible de charger la correspondance',
+      'mdScoreStrong': 'Correspondance forte',
+      'mdScoreProbable': 'Correspondance probable',
+      'mdScoreWeak': 'Correspondance faible',
+      'mdConfidence': 'confiance',
+      'mdScoreExplain': 'Score basé sur : le nom sur le document (fort), '
+          'le numéro du document (fort), la localisation (moyen) '
+          'et la cohérence des dates.',
+      'mdFieldDocument': 'Document',
+      'mdFieldNameOnDoc': 'Nom sur le document',
+      'mdFieldLocation': 'Lieu',
+      'mdFieldStatus': 'Statut',
+      'mdFieldDetectedOn': 'Détecté le',
+      'mdStatusPending': 'En attente de vérification',
+      'mdStatusVerified': 'Identité vérifiée',
+      'mdStatusConfirmed': 'Confirmé',
+      'mdStatusIgnored': 'Ignoré',
+      'mdStatusClosed': 'Clôturé',
+      'mdOwnerVerified': 'Identité vérifiée ✓ — vous pouvez discuter avec '
+          '{name} pour organiser la récupération.',
+      'mdOpenConversation': 'Ouvrir la conversation',
+      'mdOwnerInReview': 'Votre dossier de vérification est en cours de '
+          'validation par notre équipe (sous 24 h). Vous serez notifié.',
+      'mdOwnerRejectedReason': 'Vérification refusée : {reason}. '
+          'Vous pouvez réessayer.',
+      'mdOwnerRejected': 'Vérification refusée. Vous pouvez réessayer.',
+      'mdRetryVerification': 'Réessayer la vérification',
+      'mdOwnerPrompt': 'Ce document semble être le vôtre. Vérifiez votre '
+          'identité pour débloquer la conversation avec la personne '
+          'qui l\'a trouvé.',
+      'mdVerifyMyIdentity': 'Vérifier mon identité',
+      'mdNotMyDocument': 'Ce n\'est pas mon document',
+      'mdFinderVerified': '{name} a vérifié son identité ✓ — vous pouvez '
+          'discuter pour organiser la remise du document.',
+      'mdFinderWaiting': 'Un propriétaire potentiel a été trouvé. En attente '
+          'de la vérification de son identité — vous serez notifié dès '
+          'qu\'elle est faite.',
+      'mdDocPhotos': 'Photos du document',
+      'mdProtectedData': 'Données protégées',
+      'mdStepDiscovered': 'Découvert',
+      'mdStepVerified': 'Vérifié',
+      'mdStepReturned': 'Restitué',
     },
     'en': {
       'appName': 'ReTurn',
@@ -532,6 +588,60 @@ class AppLocalizations {
       'reasonIdentityTheft': 'Identity theft',
       'reasonInappropriate': 'Inappropriate content',
       'reasonOther': 'Other',
+      // Document types
+      'docCni': 'National ID Card',
+      'docPassport': 'Passport',
+      'docDrivingLicense': 'Driving license',
+      'docVehicleReg': 'Vehicle registration',
+      'docBirthCert': 'Birth certificate',
+      'docStudentCard': 'Student card',
+      'docBankCard': 'Bank card',
+      'docDiploma': 'Diploma',
+      'docOther': 'Other document',
+      'declRemoveDoc': 'Remove this document',
+      'commonUser': 'User',
+      // Match detail
+      'mdTitle': 'Match',
+      'mdLoadError': 'Could not load the match',
+      'mdScoreStrong': 'Strong match',
+      'mdScoreProbable': 'Likely match',
+      'mdScoreWeak': 'Weak match',
+      'mdConfidence': 'confidence',
+      'mdScoreExplain': 'Score based on: the name on the document (strong), '
+          'the document number (strong), location (medium) '
+          'and date consistency.',
+      'mdFieldDocument': 'Document',
+      'mdFieldNameOnDoc': 'Name on the document',
+      'mdFieldLocation': 'Location',
+      'mdFieldStatus': 'Status',
+      'mdFieldDetectedOn': 'Detected on',
+      'mdStatusPending': 'Awaiting verification',
+      'mdStatusVerified': 'Identity verified',
+      'mdStatusConfirmed': 'Confirmed',
+      'mdStatusIgnored': 'Ignored',
+      'mdStatusClosed': 'Closed',
+      'mdOwnerVerified': 'Identity verified ✓ — you can now chat with '
+          '{name} to arrange the pickup.',
+      'mdOpenConversation': 'Open the conversation',
+      'mdOwnerInReview': 'Your verification file is being reviewed by our '
+          'team (within 24 h). You will be notified.',
+      'mdOwnerRejectedReason': 'Verification rejected: {reason}. '
+          'You can try again.',
+      'mdOwnerRejected': 'Verification rejected. You can try again.',
+      'mdRetryVerification': 'Retry verification',
+      'mdOwnerPrompt': 'This document appears to be yours. Verify your '
+          'identity to unlock the conversation with the person who found it.',
+      'mdVerifyMyIdentity': 'Verify my identity',
+      'mdNotMyDocument': 'This is not my document',
+      'mdFinderVerified': '{name} verified their identity ✓ — you can now '
+          'chat to arrange handing over the document.',
+      'mdFinderWaiting': 'A potential owner was found. Awaiting their '
+          'identity verification — you will be notified as soon as it is done.',
+      'mdDocPhotos': 'Document photos',
+      'mdProtectedData': 'Protected data',
+      'mdStepDiscovered': 'Discovered',
+      'mdStepVerified': 'Verified',
+      'mdStepReturned': 'Returned',
     },
   };
 
@@ -658,6 +768,73 @@ class AppLocalizations {
   String get reasonIdentityTheft => _t('reasonIdentityTheft');
   String get reasonInappropriate => _t('reasonInappropriate');
   String get reasonOther => _t('reasonOther');
+
+  /// Libellé traduit d'un type de document (clé backend → libellé localisé).
+  String docType(String key) {
+    switch (key.toLowerCase()) {
+      case 'cni':
+        return _t('docCni');
+      case 'passport':
+        return _t('docPassport');
+      case 'driving_license':
+        return _t('docDrivingLicense');
+      case 'vehicle_registration':
+        return _t('docVehicleReg');
+      case 'birth_certificate':
+        return _t('docBirthCert');
+      case 'student_card':
+        return _t('docStudentCard');
+      case 'bank_card':
+        return _t('docBankCard');
+      case 'diploma':
+        return _t('docDiploma');
+      case 'other':
+        return _t('docOther');
+      default:
+        return key;
+    }
+  }
+
+  String get declRemoveDoc => _t('declRemoveDoc');
+  String get commonUser => _t('commonUser');
+  // Détail de la correspondance
+  String get mdTitle => _t('mdTitle');
+  String get mdLoadError => _t('mdLoadError');
+  String get mdScoreStrong => _t('mdScoreStrong');
+  String get mdScoreProbable => _t('mdScoreProbable');
+  String get mdScoreWeak => _t('mdScoreWeak');
+  String get mdConfidence => _t('mdConfidence');
+  String get mdScoreExplain => _t('mdScoreExplain');
+  String get mdFieldDocument => _t('mdFieldDocument');
+  String get mdFieldNameOnDoc => _t('mdFieldNameOnDoc');
+  String get mdFieldLocation => _t('mdFieldLocation');
+  String get mdFieldStatus => _t('mdFieldStatus');
+  String get mdFieldDetectedOn => _t('mdFieldDetectedOn');
+  String get mdStatusPending => _t('mdStatusPending');
+  String get mdStatusVerified => _t('mdStatusVerified');
+  String get mdStatusConfirmed => _t('mdStatusConfirmed');
+  String get mdStatusIgnored => _t('mdStatusIgnored');
+  String get mdStatusClosed => _t('mdStatusClosed');
+  String mdOwnerVerified(String name) =>
+      _t('mdOwnerVerified').replaceAll('{name}', name);
+  String get mdOpenConversation => _t('mdOpenConversation');
+  String get mdOwnerInReview => _t('mdOwnerInReview');
+  String mdOwnerRejectedReason(String reason) =>
+      _t('mdOwnerRejectedReason').replaceAll('{reason}', reason);
+  String get mdOwnerRejected => _t('mdOwnerRejected');
+  String get mdRetryVerification => _t('mdRetryVerification');
+  String get mdOwnerPrompt => _t('mdOwnerPrompt');
+  String get mdVerifyMyIdentity => _t('mdVerifyMyIdentity');
+  String get mdNotMyDocument => _t('mdNotMyDocument');
+  String mdFinderVerified(String name) =>
+      _t('mdFinderVerified').replaceAll('{name}', name);
+  String get mdFinderWaiting => _t('mdFinderWaiting');
+  String get mdDocPhotos => _t('mdDocPhotos');
+  String get mdProtectedData => _t('mdProtectedData');
+  String get mdStepDiscovered => _t('mdStepDiscovered');
+  String get mdStepVerified => _t('mdStepVerified');
+  String get mdStepReturned => _t('mdStepReturned');
+
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');

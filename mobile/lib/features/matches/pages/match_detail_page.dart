@@ -4,24 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/media_url.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../restitution/repositories/restitution_repository.dart';
 import '../../verification/repositories/verification_repository.dart';
 import '../providers/matches_provider.dart';
 import '../repositories/matches_repository.dart';
-
-const _docLabels = <String, String>{
-  'cni': "Carte Nationale d'Identité",
-  'passport': 'Passeport',
-  'driving_license': 'Permis de conduire',
-  'vehicle_registration': 'Carte grise',
-  'birth_certificate': 'Acte de naissance',
-  'student_card': 'Carte étudiante',
-  'bank_card': 'Carte bancaire',
-  'diploma': 'Diplôme',
-  'other': 'Autre document',
-};
 
 /// Statut de la vérification d'identité du PROPRIÉTAIRE pour ce match —
 /// le backend renvoie la même chose aux deux participants : le trouveur
@@ -53,9 +42,10 @@ class MatchDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(matchDetailProvider(id));
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Correspondance')),
+      appBar: AppBar(title: Text(l.mdTitle)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -65,17 +55,17 @@ class MatchDetailPage extends ConsumerWidget {
               Icon(Icons.wifi_off,
                   size: 40, color: cs.onSurface.withValues(alpha: 0.3)),
               const SizedBox(height: 12),
-              const Text('Impossible de charger la correspondance'),
+              Text(l.mdLoadError),
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => ref.invalidate(matchDetailProvider(id)),
-                child: const Text('Réessayer'),
+                child: Text(l.retry),
               ),
             ]),
           ),
         ),
         data: (m) {
-          final docLabel = _docLabels[m.documentType] ?? m.documentType;
+          final docLabel = l.docType(m.documentType);
           final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
           // Rôles : le PROPRIÉTAIRE (a perdu) vérifie son identité ; le
           // TROUVEUR attend simplement cette vérification.
@@ -103,17 +93,17 @@ class MatchDetailPage extends ConsumerWidget {
                   ? Colors.orange
                   : cs.error;
           final scoreLabel = score >= 0.70
-              ? 'Correspondance forte'
+              ? l.mdScoreStrong
               : score >= 0.55
-                  ? 'Correspondance probable'
-                  : 'Correspondance faible';
+                  ? l.mdScoreProbable
+                  : l.mdScoreWeak;
 
           // Identité de l'autre partie : cachée tant que le propriétaire
           // n'a pas vérifié son identité (anti-scraping). Le vrai nom n'est
           // révélé que dans les bandeaux « vérifié » ci-dessous.
           final rawOtherName = (m.otherUserName?.trim().isNotEmpty ?? false)
               ? m.otherUserName!.trim()
-              : 'Utilisateur';
+              : l.commonUser;
 
           Future<void> openVerification() async {
             HapticFeedback.lightImpact();
@@ -174,7 +164,7 @@ class MatchDetailPage extends ConsumerWidget {
                         Text('${m.scorePercent}%',
                             style: const TextStyle(
                                 fontSize: 28, fontWeight: FontWeight.w900)),
-                        Text('confiance',
+                        Text(l.mdConfidence,
                             style: TextStyle(
                                 fontSize: 11,
                                 color: cs.onSurface.withValues(alpha: 0.5))),
@@ -209,9 +199,7 @@ class MatchDetailPage extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Score basé sur : le nom sur le document (fort), '
-                        'le numéro du document (fort), la localisation '
-                        '(moyen) et la cohérence des dates.',
+                        l.mdScoreExplain,
                         style: TextStyle(
                             fontSize: 12,
                             height: 1.4,
@@ -231,22 +219,23 @@ class MatchDetailPage extends ConsumerWidget {
                   border: Border.all(color: cs.outlineVariant),
                 ),
                 child: Column(children: [
-                  _row(cs, Icons.badge_outlined, 'Document', docLabel),
+                  _row(cs, Icons.badge_outlined, l.mdFieldDocument, docLabel),
                   if (m.ownerName != null && m.ownerName!.isNotEmpty) ...[
                     Divider(height: 1, color: cs.outlineVariant, indent: 52),
-                    _row(cs, Icons.person_outline, 'Nom sur le document',
+                    _row(cs, Icons.person_outline, l.mdFieldNameOnDoc,
                         verified ? m.ownerName! : _maskName(m.ownerName!)),
                   ],
                   if (m.location != null && m.location!.isNotEmpty) ...[
                     Divider(height: 1, color: cs.outlineVariant, indent: 52),
-                    _row(cs, Icons.location_on_outlined, 'Lieu', m.location!),
+                    _row(cs, Icons.location_on_outlined, l.mdFieldLocation,
+                        m.location!),
                   ],
                   Divider(height: 1, color: cs.outlineVariant, indent: 52),
-                  _row(cs, Icons.flag_outlined, 'Statut',
-                      _statusLabel(m.status, verified: verified)),
+                  _row(cs, Icons.flag_outlined, l.mdFieldStatus,
+                      _statusLabel(l, m.status, verified: verified)),
                   if (m.createdAt != null) ...[
                     Divider(height: 1, color: cs.outlineVariant, indent: 52),
-                    _row(cs, Icons.event_outlined, 'Détecté le',
+                    _row(cs, Icons.event_outlined, l.mdFieldDetectedOn,
                         '${m.createdAt!.day}/${m.createdAt!.month}/${m.createdAt!.year}'),
                   ],
                 ]),
@@ -260,25 +249,21 @@ class MatchDetailPage extends ConsumerWidget {
                   _StatusBanner(
                     icon: Icons.verified_rounded,
                     color: cs.primary,
-                    text:
-                        'Identité vérifiée ✓ — vous pouvez discuter avec $rawOtherName '
-                        'pour organiser la récupération.',
+                    text: l.mdOwnerVerified(rawOtherName),
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: openConversation,
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Ouvrir la conversation'),
+                    label: Text(l.mdOpenConversation),
                     style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52)),
                   ),
                 ] else if (verifInReview) ...[
-                  const _StatusBanner(
+                  _StatusBanner(
                     icon: Icons.hourglass_top_rounded,
                     color: Colors.orange,
-                    text:
-                        'Votre dossier de vérification est en cours de validation '
-                        'par notre équipe (sous 24 h). Vous serez notifié.',
+                    text: l.mdOwnerInReview,
                   ),
                 ] else if (verifRejected) ...[
                   _StatusBanner(
@@ -287,14 +272,15 @@ class MatchDetailPage extends ConsumerWidget {
                     text: (verif?['rejection_reason'] as String?)
                                 ?.isNotEmpty ==
                             true
-                        ? 'Vérification refusée : ${verif!['rejection_reason']}. Vous pouvez réessayer.'
-                        : 'Vérification refusée. Vous pouvez réessayer.',
+                        ? l.mdOwnerRejectedReason(
+                            verif!['rejection_reason'] as String)
+                        : l.mdOwnerRejected,
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: openVerification,
                     icon: const Icon(Icons.verified_user_outlined),
-                    label: const Text('Réessayer la vérification'),
+                    label: Text(l.mdRetryVerification),
                     style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52)),
                   ),
@@ -302,15 +288,13 @@ class MatchDetailPage extends ConsumerWidget {
                   _StatusBanner(
                     icon: Icons.shield_outlined,
                     color: cs.primary,
-                    text:
-                        'Ce document semble être le vôtre. Vérifiez votre identité '
-                        'pour débloquer la conversation avec la personne qui l\'a trouvé.',
+                    text: l.mdOwnerPrompt,
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: openVerification,
                     icon: const Icon(Icons.verified_user_outlined),
-                    label: const Text('Vérifier mon identité'),
+                    label: Text(l.mdVerifyMyIdentity),
                     style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52)),
                   ),
@@ -325,7 +309,7 @@ class MatchDetailPage extends ConsumerWidget {
                         ref.invalidate(matchesProvider);
                         if (context.mounted) context.pop();
                       },
-                      child: Text('Ce n\'est pas mon document',
+                      child: Text(l.mdNotMyDocument,
                           style: TextStyle(
                               color:
                                   cs.onSurface.withValues(alpha: 0.55))),
@@ -339,26 +323,21 @@ class MatchDetailPage extends ConsumerWidget {
                   _StatusBanner(
                     icon: Icons.verified_rounded,
                     color: cs.primary,
-                    text:
-                        '$rawOtherName a vérifié son identité ✓ — vous pouvez '
-                        'discuter pour organiser la remise du document.',
+                    text: l.mdFinderVerified(rawOtherName),
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: openConversation,
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Ouvrir la conversation'),
+                    label: Text(l.mdOpenConversation),
                     style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52)),
                   ),
                 ] else ...[
-                  const _StatusBanner(
+                  _StatusBanner(
                     icon: Icons.hourglass_top_rounded,
                     color: Colors.orange,
-                    text:
-                        'Un propriétaire potentiel a été trouvé. En attente de '
-                        'la vérification de son identité — vous serez notifié '
-                        'dès qu\'elle est faite.',
+                    text: l.mdFinderWaiting,
                   ),
                 ],
               ],
@@ -370,11 +349,12 @@ class MatchDetailPage extends ConsumerWidget {
     );
   }
 
-  String _statusLabel(String s, {required bool verified}) => switch (s) {
-        'pending' => 'En attente de vérification',
-        'confirmed' => verified ? 'Identité vérifiée' : 'Confirmé',
-        'ignored' => 'Ignoré',
-        'closed' => 'Clôturé',
+  String _statusLabel(AppLocalizations l, String s, {required bool verified}) =>
+      switch (s) {
+        'pending' => l.mdStatusPending,
+        'confirmed' => verified ? l.mdStatusVerified : l.mdStatusConfirmed,
+        'ignored' => l.mdStatusIgnored,
+        'closed' => l.mdStatusClosed,
         _ => s,
       };
 
@@ -446,14 +426,15 @@ class _MaskedPhotos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
           Icon(Icons.photo_library_outlined, size: 18, color: cs.primary),
           const SizedBox(width: 8),
-          const Text('Photos du document',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(l.mdDocPhotos,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 10),
         SizedBox(
@@ -494,13 +475,13 @@ class _MaskedPhotos extends StatelessWidget {
                         color: Colors.black.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(mainAxisSize: MainAxisSize.min,
+                      child: Row(mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock_outline,
+                            const Icon(Icons.lock_outline,
                                 size: 12, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text('Données protégées',
-                                style: TextStyle(
+                            const SizedBox(width: 4),
+                            Text(l.mdProtectedData,
+                                style: const TextStyle(
                                     fontSize: 10,
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),
@@ -522,13 +503,13 @@ class _ProgressStepper extends StatelessWidget {
   final bool done; // true si tout le parcours est terminé
   const _ProgressStepper({required this.currentStep, required this.done});
 
-  static const _labels = ['Découvert', 'Vérifié', 'Restitué'];
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
+    final labels = [l.mdStepDiscovered, l.mdStepVerified, l.mdStepReturned];
     return Row(
-      children: List.generate(_labels.length * 2 - 1, (i) {
+      children: List.generate(labels.length * 2 - 1, (i) {
         if (i.isOdd) {
           // Connecteur entre deux étapes.
           final leftStep = i ~/ 2;
@@ -581,7 +562,7 @@ class _ProgressStepper extends StatelessWidget {
                     ),
             ),
             const SizedBox(height: 4),
-            Text(_labels[step],
+            Text(labels[step],
                 style: TextStyle(
                     fontSize: 10,
                     fontWeight:

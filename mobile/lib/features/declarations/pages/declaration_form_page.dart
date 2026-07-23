@@ -562,7 +562,7 @@ class _DocRow extends StatelessWidget {
                             Icon(_docIcons[e.key], size: 18, color: cs.primary),
                             const SizedBox(width: 10),
                             Flexible(
-                              child: Text(e.value,
+                              child: Text(AppLocalizations.of(context).docType(e.key),
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       fontSize: 14,
@@ -578,7 +578,7 @@ class _DocRow extends StatelessWidget {
             ),
             if (canRemove)
               IconButton(
-                tooltip: 'Retirer ce document',
+                tooltip: AppLocalizations.of(context).declRemoveDoc,
                 onPressed: onRemove,
                 icon: Icon(Icons.close, size: 20, color: cs.onSurface.withValues(alpha: 0.5)),
               ),
