@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/media_service.dart';
 import '../../../core/utils/media_url.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../matches/providers/matches_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../zones/pages/zones_page.dart';
@@ -32,25 +33,23 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
 
   /// Confirme la remise — exige une photo de preuve au préalable.
   Future<void> _confirm(Restitution r) async {
+    final l = AppLocalizations.of(context);
     HapticFeedback.lightImpact();
     // Photo de preuve requise avant la validation (anti-litige).
     if (r.proofPhotos.isEmpty) {
       final take = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Photo de preuve requise'),
-          content: const Text(
-            'Prenez une photo du document au moment de la remise. '
-            'Elle protège les deux parties en cas de litige.',
-          ),
+          title: Text(l.restProofTitle),
+          content: Text(l.restProofBody),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Annuler')),
+                child: Text(l.cancel)),
             FilledButton.icon(
               onPressed: () => Navigator.pop(ctx, true),
               icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('Prendre la photo'),
+              label: Text(l.restTakePhoto),
             ),
           ],
         ),
@@ -71,7 +70,7 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
             .read(restitutionRepositoryProvider)
             .uploadProof(r.id, shot.path);
       } catch (_) {
-        _toast('Envoi de la photo impossible. Réessayez.');
+        _toast(l.verifErrDocPhoto);
         if (mounted) setState(() => _busy = false);
         return;
       }
@@ -91,13 +90,14 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
         setState(() => _showConfetti = true);
       }
     } catch (_) {
-      _toast('Action impossible, réessayez.');
+      _toast(l.restActionFail);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _editMeeting(Restitution r) async {
+    final l = AppLocalizations.of(context);
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -105,19 +105,19 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.near_me_outlined),
-            title: const Text('Suggérer un lieu public à proximité'),
-            subtitle: const Text('Utilise votre position GPS'),
+            title: Text(l.restMeetNearby),
+            subtitle: Text(l.restMeetNearbySub),
             onTap: () => Navigator.pop(ctx, 'nearby'),
           ),
           ListTile(
             leading: const Icon(Icons.verified_outlined),
-            title: const Text('Choisir une zone certifiée'),
-            subtitle: const Text('Commissariat, mairie, campus — recommandé'),
+            title: Text(l.restMeetZone),
+            subtitle: Text(l.restMeetZoneSub),
             onTap: () => Navigator.pop(ctx, 'zone'),
           ),
           ListTile(
             leading: const Icon(Icons.edit_location_alt_outlined),
-            title: const Text('Saisir un autre lieu'),
+            title: Text(l.restMeetManual),
             onTap: () => Navigator.pop(ctx, 'manual'),
           ),
           const SizedBox(height: 8),
@@ -141,29 +141,30 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
       await ref.read(restitutionRepositoryProvider).setMeeting(r.id, value);
       ref.invalidate(restitutionByMatchProvider(widget.matchId));
     } catch (_) {
-      _toast('Impossible d\'enregistrer le lieu.');
+      _toast(l.restMeetingSaveFail);
     }
   }
 
   /// Suggestions de lieux publics proches : zones certifiées triées par
   /// distance à la position GPS de l'utilisateur.
   Future<String?> _suggestNearby() async {
+    final l = AppLocalizations.of(context);
     final pos = await LocationService.coarsePosition();
     if (!mounted) return null;
     if (pos == null) {
-      _toast('Position indisponible — vérifiez la localisation.');
+      _toast(l.restPosUnavailable);
       return null;
     }
     List<Zone> zones;
     try {
       zones = await ref.read(zoneRepositoryProvider).list();
     } catch (_) {
-      _toast('Chargement des lieux impossible. Réessayez.');
+      _toast(l.restZonesLoadFail);
       return null;
     }
     if (!mounted) return null;
     if (zones.isEmpty) {
-      _toast('Aucun lieu public référencé pour le moment.');
+      _toast(l.restNoZones);
       return null;
     }
 
@@ -187,10 +188,11 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Text('Lieux publics à proximité',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Text(l.restNearbyTitle,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
           ...top.map((z) => ListTile(
                 leading: const Icon(Icons.place_outlined),
@@ -209,39 +211,41 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
   }
 
   Future<String?> _askText(String initial) {
+    final l = AppLocalizations.of(context);
     final ctrl = TextEditingController(text: initial);
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Lieu de rendez-vous'),
+        title: Text(l.restMeetDialogTitle),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Ex : Commissariat de Bonanjo',
-            helperText: 'Privilégiez un lieu public ou certifié.',
+          decoration: InputDecoration(
+            hintText: l.restMeetHint,
+            helperText: l.restMeetHelper,
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
+              child: Text(l.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Enregistrer')),
+              child: Text(l.restSave)),
         ],
       ),
     );
   }
 
   Future<void> _rate(Restitution r, int stars, String comment) async {
+    final l = AppLocalizations.of(context);
     try {
       await ref
           .read(restitutionRepositoryProvider)
           .rate(r.id, stars, comment: comment);
       ref.invalidate(restitutionByMatchProvider(widget.matchId));
-      _toast('Merci pour votre évaluation !');
+      _toast(l.restRateThanks);
     } catch (_) {
-      _toast('Évaluation impossible (déjà notée ?).');
+      _toast(l.restRateFail);
     }
   }
 
@@ -261,8 +265,9 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
     final reputation =
         ref.watch(profileProvider).valueOrNull?.scoreReputation;
 
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Restitution')),
+      appBar: AppBar(title: Text(l.restTitle)),
       body: Stack(children: [
         async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -272,12 +277,12 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.wifi_off, size: 40),
                 const SizedBox(height: 12),
-                const Text('Impossible de charger la restitution.'),
+                Text(l.restLoadError),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => ref
                       .invalidate(restitutionByMatchProvider(widget.matchId)),
-                  child: const Text('Réessayer'),
+                  child: Text(l.retry),
                 ),
               ]),
             ),
@@ -313,6 +318,7 @@ class _NotReady extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -322,12 +328,12 @@ class _NotReady extends StatelessWidget {
             Icon(Icons.handshake_outlined,
                 size: 56, color: cs.onSurface.withValues(alpha: 0.25)),
             const SizedBox(height: 16),
-            const Text('Restitution pas encore ouverte',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            Text(l.restNotReadyTitle,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 8),
             Text(
-              'Les deux parties doivent d\'abord confirmer le match. '
-              'La restitution s\'ouvrira automatiquement ensuite.',
+              l.restNotReadyBody,
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurface.withValues(alpha: 0.55)),
             ),
@@ -366,6 +372,7 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final hasMeeting = r.meetingLocation?.isNotEmpty == true;
     // Étape courante : 0 = RDV, 1 = remise, 2 = évaluation.
     final currentStep = r.isCompleted ? 2 : (hasMeeting ? 1 : 0);
@@ -394,11 +401,12 @@ class _Content extends StatelessWidget {
             Expanded(
               child: Text(
                 r.isCompleted
-                    ? 'Document récupéré ! 🎉 Merci d\'avoir utilisé ReTurn.'
+                    ? l.restDoneStatus
                     : _iConfirmed
-                        ? 'Vous avez confirmé ✓ — en attente de la '
-                            'confirmation de l\'autre partie.'
-                        : 'Étape ${currentStep + 1}/3 — ${currentStep == 0 ? "Convenez d'un lieu public pour la remise." : "Confirmez une fois le document remis en main propre."}',
+                        ? l.restIConfirmedWaiting
+                        : currentStep == 0
+                            ? l.restStep1Of3
+                            : l.restStep2Of3,
                 style: const TextStyle(
                     fontSize: 13.5, fontWeight: FontWeight.w500),
               ),
@@ -410,15 +418,13 @@ class _Content extends StatelessWidget {
         // ── Étape 1 : lieu de rendez-vous ──
         _Card(
           icon: Icons.location_on_outlined,
-          title: 'Lieu de rendez-vous',
-          subtitle: hasMeeting
-              ? r.meetingLocation!
-              : 'Non défini — convenez d\'un lieu public ou certifié.',
+          title: l.restMeetDialogTitle,
+          subtitle: hasMeeting ? r.meetingLocation! : l.restMeetingUnset,
           trailing: r.isCompleted
               ? null
               : TextButton(
                   onPressed: onEditMeeting,
-                  child: Text(hasMeeting ? 'Modifier' : 'Choisir')),
+                  child: Text(hasMeeting ? l.restEdit : l.restChoose)),
         ),
         const SizedBox(height: 12),
 
@@ -426,18 +432,17 @@ class _Content extends StatelessWidget {
         if (hasMeeting)
           _Card(
             icon: Icons.how_to_reg_outlined,
-            title: 'Confirmation de la remise',
+            title: l.restHandoffTitle,
             subtitle:
-                'Propriétaire : ${r.handoffConfirmedByOwner ? "confirmé ✓" : "en attente"}\n'
-                'Découvreur : ${r.handoffConfirmedByFinder ? "confirmé ✓" : "en attente"}',
+                '${l.restRoleOwner} : ${r.handoffConfirmedByOwner ? l.restConfirmed : l.restPending}\n'
+                '${l.restRoleFinder} : ${r.handoffConfirmedByFinder ? l.restConfirmed : l.restPending}',
           ),
         if (r.proofPhotos.isNotEmpty) ...[
           const SizedBox(height: 12),
           _Card(
             icon: Icons.photo_camera_outlined,
-            title: 'Photo de preuve',
-            subtitle:
-                '${r.proofPhotos.length} photo(s) enregistrée(s) — protège les deux parties.',
+            title: l.restProofCardTitle,
+            subtitle: l.restProofCardSub(r.proofPhotos.length),
           ),
         ],
         const SizedBox(height: 20),
@@ -451,12 +456,11 @@ class _Content extends StatelessWidget {
               style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52)),
               icon: const Icon(Icons.location_on_outlined),
-              label: const Text('Choisir le lieu de rendez-vous'),
+              label: Text(l.restChooseMeetingBtn),
             ),
             const SizedBox(height: 8),
             Text(
-              'Étape suivante : confirmer la remise une fois le document '
-              'échangé en main propre.',
+              l.restNextStepHint,
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12,
@@ -475,9 +479,7 @@ class _Content extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.check_circle_outline),
-            label: Text(isOwner
-                ? 'J\'ai récupéré mon document'
-                : 'J\'ai remis le document'),
+            label: Text(isOwner ? l.restIGotDoc : l.restIGaveDoc),
           )
         else if (!r.isCompleted && _iConfirmed)
           Container(
@@ -496,11 +498,10 @@ class _Content extends StatelessWidget {
                     color: cs.primary.withValues(alpha: 0.7)),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'En attente de la confirmation de l\'autre partie. '
-                  'Vous serez notifié dès qu\'elle sera faite.',
-                  style: TextStyle(fontSize: 13),
+                  l.restWaitingOther,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
             ]),
@@ -525,8 +526,10 @@ class _Content extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Comment s\'est passée la remise avec '
-                '${(otherName?.trim().isNotEmpty ?? false) ? otherName!.trim() : "l'autre partie"} ?',
+                l.restRateQuestion(
+                    (otherName?.trim().isNotEmpty ?? false)
+                        ? otherName!.trim()
+                        : l.restOtherParty),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -534,10 +537,10 @@ class _Content extends StatelessWidget {
           const SizedBox(height: 8),
           _RatingForm(onSubmit: onRate),
         ] else
-          const _Card(
+          _Card(
             icon: Icons.star_rounded,
-            title: 'Évaluation envoyée',
-            subtitle: 'Merci ! Votre note aide la communauté ReTurn.',
+            title: l.restRatedTitle,
+            subtitle: l.restRatedSub,
           ),
         const SizedBox(height: 24),
       ],
@@ -550,18 +553,18 @@ class _Stepper extends StatelessWidget {
   final int current; // étape en cours (0–2), 3 = tout est terminé
   const _Stepper({required this.current});
 
-  static const _labels = ['RDV', 'Remise', 'Évaluation'];
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
+    final labels = [l.restStepRdv, l.restStepHandover, l.restStepRating];
     return Column(
       children: [
         Row(
           children: [
-            for (int i = 0; i < _labels.length; i++) ...[
+            for (int i = 0; i < labels.length; i++) ...[
               _dot(cs, i),
-              if (i < _labels.length - 1)
+              if (i < labels.length - 1)
                 Expanded(
                   child: Container(
                     height: 3,
@@ -577,8 +580,8 @@ class _Stepper extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (int i = 0; i < _labels.length; i++)
-              Text(_labels[i],
+            for (int i = 0; i < labels.length; i++)
+              Text(labels[i],
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight:
@@ -694,6 +697,7 @@ class _RatingFormState extends State<_RatingForm> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -722,9 +726,9 @@ class _RatingFormState extends State<_RatingForm> {
           maxLength: 140,
           maxLines: 2,
           enabled: !_sent,
-          decoration: const InputDecoration(
-            labelText: 'Commentaire (optionnel)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l.restCommentLabel,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
@@ -739,7 +743,7 @@ class _RatingFormState extends State<_RatingForm> {
                     setState(() => _sent = true);
                     widget.onSubmit(_value, _commentCtrl.text.trim());
                   },
-            child: const Text('Envoyer mon évaluation'),
+            child: Text(l.restSendRating),
           ),
         ),
       ],
@@ -784,6 +788,7 @@ class _ConfettiOverlayState extends State<_ConfettiOverlay>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (_, __) => Stack(children: [
@@ -819,8 +824,8 @@ class _ConfettiOverlayState extends State<_ConfettiOverlay>
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Text('🎉', style: TextStyle(fontSize: 44)),
                   const SizedBox(height: 8),
-                  const Text('Document récupéré !',
-                      style: TextStyle(
+                  Text(l.restConfettiTitle,
+                      style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.w800)),
                   if (widget.reputation != null) ...[
                     const SizedBox(height: 8),
@@ -829,7 +834,8 @@ class _ConfettiOverlayState extends State<_ConfettiOverlay>
                           size: 18, color: Colors.amber),
                       const SizedBox(width: 4),
                       Text(
-                          'Réputation : ${widget.reputation!.toStringAsFixed(1)}/10',
+                          l.restReputation(
+                              widget.reputation!.toStringAsFixed(1)),
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,

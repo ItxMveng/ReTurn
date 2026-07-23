@@ -400,6 +400,68 @@ class AppLocalizations {
           'restitution en toute confiance.',
       'verifDoneRestitution': 'Organiser la restitution',
       'verifDoneLater': 'Plus tard',
+      // Restitution
+      'restTitle': 'Restitution',
+      'restLoadError': 'Impossible de charger la restitution.',
+      'restProofTitle': 'Photo de preuve requise',
+      'restProofBody': 'Prenez une photo du document au moment de la remise. '
+          'Elle protège les deux parties en cas de litige.',
+      'restTakePhoto': 'Prendre la photo',
+      'restActionFail': 'Action impossible, réessayez.',
+      'restMeetingSaveFail': 'Impossible d\'enregistrer le lieu.',
+      'restPosUnavailable': 'Position indisponible — vérifiez la localisation.',
+      'restZonesLoadFail': 'Chargement des lieux impossible. Réessayez.',
+      'restNoZones': 'Aucun lieu public référencé pour le moment.',
+      'restRateThanks': 'Merci pour votre évaluation !',
+      'restRateFail': 'Évaluation impossible (déjà notée ?).',
+      'restMeetNearby': 'Suggérer un lieu public à proximité',
+      'restMeetNearbySub': 'Utilise votre position GPS',
+      'restMeetZone': 'Choisir une zone certifiée',
+      'restMeetZoneSub': 'Commissariat, mairie, campus — recommandé',
+      'restMeetManual': 'Saisir un autre lieu',
+      'restNearbyTitle': 'Lieux publics à proximité',
+      'restMeetDialogTitle': 'Lieu de rendez-vous',
+      'restMeetHint': 'Ex : Commissariat de Bonanjo',
+      'restMeetHelper': 'Privilégiez un lieu public ou certifié.',
+      'restSave': 'Enregistrer',
+      'restNotReadyTitle': 'Restitution pas encore ouverte',
+      'restNotReadyBody': 'Les deux parties doivent d\'abord confirmer le '
+          'match. La restitution s\'ouvrira automatiquement ensuite.',
+      'restDoneStatus': 'Document récupéré ! 🎉 Merci d\'avoir utilisé ReTurn.',
+      'restIConfirmedWaiting': 'Vous avez confirmé ✓ — en attente de la '
+          'confirmation de l\'autre partie.',
+      'restStep1Of3': 'Étape 1/3 — Convenez d\'un lieu public pour la remise.',
+      'restStep2Of3': 'Étape 2/3 — Confirmez une fois le document remis en '
+          'main propre.',
+      'restMeetingUnset': 'Non défini — convenez d\'un lieu public ou certifié.',
+      'restEdit': 'Modifier',
+      'restChoose': 'Choisir',
+      'restHandoffTitle': 'Confirmation de la remise',
+      'restRoleOwner': 'Propriétaire',
+      'restRoleFinder': 'Découvreur',
+      'restConfirmed': 'confirmé ✓',
+      'restPending': 'en attente',
+      'restProofCardTitle': 'Photo de preuve',
+      'restProofCardSub': '{count} photo(s) enregistrée(s) — protège les '
+          'deux parties.',
+      'restChooseMeetingBtn': 'Choisir le lieu de rendez-vous',
+      'restNextStepHint': 'Étape suivante : confirmer la remise une fois le '
+          'document échangé en main propre.',
+      'restIGotDoc': 'J\'ai récupéré mon document',
+      'restIGaveDoc': 'J\'ai remis le document',
+      'restWaitingOther': 'En attente de la confirmation de l\'autre partie. '
+          'Vous serez notifié dès qu\'elle sera faite.',
+      'restRatedTitle': 'Évaluation envoyée',
+      'restRatedSub': 'Merci ! Votre note aide la communauté ReTurn.',
+      'restRateQuestion': 'Comment s\'est passée la remise avec {name} ?',
+      'restOtherParty': 'l\'autre partie',
+      'restStepRdv': 'RDV',
+      'restStepHandover': 'Remise',
+      'restStepRating': 'Évaluation',
+      'restCommentLabel': 'Commentaire (optionnel)',
+      'restSendRating': 'Envoyer mon évaluation',
+      'restConfettiTitle': 'Document récupéré !',
+      'restReputation': 'Réputation : {value}/10',
     },
     'en': {
       'appName': 'ReTurn',
@@ -771,6 +833,67 @@ class AppLocalizations {
           'full confidence.',
       'verifDoneRestitution': 'Arrange the return',
       'verifDoneLater': 'Later',
+      // Return handover
+      'restTitle': 'Return',
+      'restLoadError': 'Could not load the return.',
+      'restProofTitle': 'Proof photo required',
+      'restProofBody': 'Take a photo of the document at the moment of '
+          'handover. It protects both parties in case of a dispute.',
+      'restTakePhoto': 'Take the photo',
+      'restActionFail': 'Action failed, please try again.',
+      'restMeetingSaveFail': 'Could not save the location.',
+      'restPosUnavailable': 'Location unavailable — check your GPS.',
+      'restZonesLoadFail': 'Could not load places. Please try again.',
+      'restNoZones': 'No public place listed yet.',
+      'restRateThanks': 'Thank you for your review!',
+      'restRateFail': 'Could not submit the review (already rated?).',
+      'restMeetNearby': 'Suggest a public place nearby',
+      'restMeetNearbySub': 'Uses your GPS location',
+      'restMeetZone': 'Choose a certified zone',
+      'restMeetZoneSub': 'Police station, city hall, campus — recommended',
+      'restMeetManual': 'Enter another place',
+      'restNearbyTitle': 'Public places nearby',
+      'restMeetDialogTitle': 'Meeting place',
+      'restMeetHint': 'E.g. Bonanjo police station',
+      'restMeetHelper': 'Prefer a public or certified place.',
+      'restSave': 'Save',
+      'restNotReadyTitle': 'Return not open yet',
+      'restNotReadyBody': 'Both parties must first confirm the match. '
+          'The return will open automatically afterwards.',
+      'restDoneStatus': 'Document recovered! 🎉 Thank you for using ReTurn.',
+      'restIConfirmedWaiting': 'You confirmed ✓ — waiting for the other '
+          'party\'s confirmation.',
+      'restStep1Of3': 'Step 1/3 — Agree on a public place for the handover.',
+      'restStep2Of3': 'Step 2/3 — Confirm once the document is handed over '
+          'in person.',
+      'restMeetingUnset': 'Not set — agree on a public or certified place.',
+      'restEdit': 'Edit',
+      'restChoose': 'Choose',
+      'restHandoffTitle': 'Handover confirmation',
+      'restRoleOwner': 'Owner',
+      'restRoleFinder': 'Finder',
+      'restConfirmed': 'confirmed ✓',
+      'restPending': 'pending',
+      'restProofCardTitle': 'Proof photo',
+      'restProofCardSub': '{count} photo(s) saved — protects both parties.',
+      'restChooseMeetingBtn': 'Choose the meeting place',
+      'restNextStepHint': 'Next step: confirm the handover once the document '
+          'has been exchanged in person.',
+      'restIGotDoc': 'I got my document back',
+      'restIGaveDoc': 'I handed over the document',
+      'restWaitingOther': 'Waiting for the other party\'s confirmation. '
+          'You will be notified as soon as it is done.',
+      'restRatedTitle': 'Review sent',
+      'restRatedSub': 'Thank you! Your rating helps the ReTurn community.',
+      'restRateQuestion': 'How did the handover with {name} go?',
+      'restOtherParty': 'the other party',
+      'restStepRdv': 'Meeting',
+      'restStepHandover': 'Handover',
+      'restStepRating': 'Rating',
+      'restCommentLabel': 'Comment (optional)',
+      'restSendRating': 'Send my review',
+      'restConfettiTitle': 'Document recovered!',
+      'restReputation': 'Reputation: {value}/10',
     },
   };
 
@@ -1012,6 +1135,64 @@ class AppLocalizations {
   String get verifDoneBody => _t('verifDoneBody');
   String get verifDoneRestitution => _t('verifDoneRestitution');
   String get verifDoneLater => _t('verifDoneLater');
+  // Restitution
+  String get restTitle => _t('restTitle');
+  String get restLoadError => _t('restLoadError');
+  String get restProofTitle => _t('restProofTitle');
+  String get restProofBody => _t('restProofBody');
+  String get restTakePhoto => _t('restTakePhoto');
+  String get restActionFail => _t('restActionFail');
+  String get restMeetingSaveFail => _t('restMeetingSaveFail');
+  String get restPosUnavailable => _t('restPosUnavailable');
+  String get restZonesLoadFail => _t('restZonesLoadFail');
+  String get restNoZones => _t('restNoZones');
+  String get restRateThanks => _t('restRateThanks');
+  String get restRateFail => _t('restRateFail');
+  String get restMeetNearby => _t('restMeetNearby');
+  String get restMeetNearbySub => _t('restMeetNearbySub');
+  String get restMeetZone => _t('restMeetZone');
+  String get restMeetZoneSub => _t('restMeetZoneSub');
+  String get restMeetManual => _t('restMeetManual');
+  String get restNearbyTitle => _t('restNearbyTitle');
+  String get restMeetDialogTitle => _t('restMeetDialogTitle');
+  String get restMeetHint => _t('restMeetHint');
+  String get restMeetHelper => _t('restMeetHelper');
+  String get restSave => _t('restSave');
+  String get restNotReadyTitle => _t('restNotReadyTitle');
+  String get restNotReadyBody => _t('restNotReadyBody');
+  String get restDoneStatus => _t('restDoneStatus');
+  String get restIConfirmedWaiting => _t('restIConfirmedWaiting');
+  String get restStep1Of3 => _t('restStep1Of3');
+  String get restStep2Of3 => _t('restStep2Of3');
+  String get restMeetingUnset => _t('restMeetingUnset');
+  String get restEdit => _t('restEdit');
+  String get restChoose => _t('restChoose');
+  String get restHandoffTitle => _t('restHandoffTitle');
+  String get restRoleOwner => _t('restRoleOwner');
+  String get restRoleFinder => _t('restRoleFinder');
+  String get restConfirmed => _t('restConfirmed');
+  String get restPending => _t('restPending');
+  String get restProofCardTitle => _t('restProofCardTitle');
+  String restProofCardSub(int count) =>
+      _t('restProofCardSub').replaceAll('{count}', '$count');
+  String get restChooseMeetingBtn => _t('restChooseMeetingBtn');
+  String get restNextStepHint => _t('restNextStepHint');
+  String get restIGotDoc => _t('restIGotDoc');
+  String get restIGaveDoc => _t('restIGaveDoc');
+  String get restWaitingOther => _t('restWaitingOther');
+  String get restRatedTitle => _t('restRatedTitle');
+  String get restRatedSub => _t('restRatedSub');
+  String restRateQuestion(String name) =>
+      _t('restRateQuestion').replaceAll('{name}', name);
+  String get restOtherParty => _t('restOtherParty');
+  String get restStepRdv => _t('restStepRdv');
+  String get restStepHandover => _t('restStepHandover');
+  String get restStepRating => _t('restStepRating');
+  String get restCommentLabel => _t('restCommentLabel');
+  String get restSendRating => _t('restSendRating');
+  String get restConfettiTitle => _t('restConfettiTitle');
+  String restReputation(String value) =>
+      _t('restReputation').replaceAll('{value}', value);
 
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
