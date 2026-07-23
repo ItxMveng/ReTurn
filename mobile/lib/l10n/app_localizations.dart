@@ -198,6 +198,45 @@ class AppLocalizations {
       'notifMatchFound': 'Document correspondant trouvé !',
       'notifGeneric': 'Notification',
       'notifCorrespondence': '% de correspondance',
+      // Formulaire de déclaration (S-08/S-09)
+      'declFormTitle': 'Nouvelle déclaration',
+      'declTagFound': 'Trouvé',
+      'declTagLost': 'Perdu',
+      'declScanStep': 'Étape 1 — Scanner pour pré-remplir (IA)',
+      'declScanned': 'Document scanné ✓',
+      'declScanHint': 'Les informations sont lues automatiquement.',
+      'declScanRedo': 'Appuyez pour recommencer le scan.',
+      'declOwnLostTitle': 'Vous déclarez votre propre document',
+      'declOwnerLabel': 'Nom du propriétaire (sur le document)',
+      'declOwnerHint': 'Ex : ITOUA Francis',
+      'declFieldRequired': 'Champ requis',
+      'declWhichFound': 'Quel document avez-vous trouvé ?',
+      'declWhichLost': 'Quel document avez-vous perdu ?',
+      'declDossier': 'Documents du dossier',
+      'declAddOther': 'Ajouter un autre document de cette personne',
+      'declAddMore': 'Ajouter un document',
+      'declSamePerson': 'Ces documents appartiennent à la même personne et forment un seul dossier.',
+      'declDocNumber': 'Numéro du document (facultatif)',
+      'declDocNumberHint': 'Renforce la précision du rapprochement',
+      'declWhereWhenFound': 'Où et quand l\'avez-vous trouvé ?',
+      'declWhereWhenLost': 'Où et quand l\'avez-vous perdu ?',
+      'declPlaceFound': 'Lieu de la découverte',
+      'declPlaceLost': 'Ville / quartier de la perte',
+      'declMyPosition': 'Ma position',
+      'declPositionAdded': 'Position ajoutée',
+      'declDate': 'Date',
+      'declPhotosOptional': 'Photos (facultatif)',
+      'declDescOptional': 'Description (facultatif)',
+      'declSubmitFound': 'Déclarer le document trouvé',
+      'declSubmitLost': 'Déclarer la perte',
+      'declSubmitDossier': 'Déclarer le dossier',
+      'declNoteFound': 'Les données sensibles seront masquées automatiquement.',
+      'declNoteLost': 'Vous serez alerté dès qu\'un document correspond.',
+      'declSavedFound': 'Document trouvé déclaré.',
+      'declSavedLost': 'Perte déclarée.',
+      'declSaveError': 'Enregistrement impossible. Vérifiez votre connexion et réessayez.',
+      'declTakePhoto': 'Prendre une photo',
+      'declFromGallery': 'Choisir dans la galerie',
     },
     'en': {
       'appName': 'ReTurn',
@@ -372,6 +411,45 @@ class AppLocalizations {
       'notifMatchFound': 'Matching document found!',
       'notifGeneric': 'Notification',
       'notifCorrespondence': '% match',
+      // Declaration form (S-08/S-09)
+      'declFormTitle': 'New declaration',
+      'declTagFound': 'Found',
+      'declTagLost': 'Lost',
+      'declScanStep': 'Step 1 — Scan to auto-fill (AI)',
+      'declScanned': 'Document scanned ✓',
+      'declScanHint': 'Information is read automatically.',
+      'declScanRedo': 'Tap to scan again.',
+      'declOwnLostTitle': 'You are declaring your own document',
+      'declOwnerLabel': 'Owner name (as on the document)',
+      'declOwnerHint': 'E.g. ITOUA Francis',
+      'declFieldRequired': 'Required field',
+      'declWhichFound': 'Which document did you find?',
+      'declWhichLost': 'Which document did you lose?',
+      'declDossier': 'Documents in this file',
+      'declAddOther': 'Add another document for this person',
+      'declAddMore': 'Add a document',
+      'declSamePerson': 'These documents belong to the same person and form a single file.',
+      'declDocNumber': 'Document number (optional)',
+      'declDocNumberHint': 'Improves matching accuracy',
+      'declWhereWhenFound': 'Where and when did you find it?',
+      'declWhereWhenLost': 'Where and when did you lose it?',
+      'declPlaceFound': 'Place where you found it',
+      'declPlaceLost': 'City / neighborhood of the loss',
+      'declMyPosition': 'My location',
+      'declPositionAdded': 'Location added',
+      'declDate': 'Date',
+      'declPhotosOptional': 'Photos (optional)',
+      'declDescOptional': 'Description (optional)',
+      'declSubmitFound': 'Declare found document',
+      'declSubmitLost': 'Declare the loss',
+      'declSubmitDossier': 'Declare the file',
+      'declNoteFound': 'Sensitive data will be masked automatically.',
+      'declNoteLost': 'You\'ll be alerted as soon as a document matches.',
+      'declSavedFound': 'Found document declared.',
+      'declSavedLost': 'Loss declared.',
+      'declSaveError': 'Could not save. Check your connection and try again.',
+      'declTakePhoto': 'Take a photo',
+      'declFromGallery': 'Choose from gallery',
     },
   };
 
@@ -418,6 +496,45 @@ class AppLocalizations {
   String get notifMatchFound => _t('notifMatchFound');
   String get notifGeneric => _t('notifGeneric');
   String get notifCorrespondence => _t('notifCorrespondence');
+  // Formulaire de déclaration
+  String get declFormTitle => _t('declFormTitle');
+  String get declTagFound => _t('declTagFound');
+  String get declTagLost => _t('declTagLost');
+  String get declScanStep => _t('declScanStep');
+  String get declScanned => _t('declScanned');
+  String get declScanHint => _t('declScanHint');
+  String get declScanRedo => _t('declScanRedo');
+  String get declOwnLostTitle => _t('declOwnLostTitle');
+  String get declOwnerLabel => _t('declOwnerLabel');
+  String get declOwnerHint => _t('declOwnerHint');
+  String get declFieldRequired => _t('declFieldRequired');
+  String get declWhichFound => _t('declWhichFound');
+  String get declWhichLost => _t('declWhichLost');
+  String get declDossier => _t('declDossier');
+  String get declAddOther => _t('declAddOther');
+  String get declAddMore => _t('declAddMore');
+  String get declSamePerson => _t('declSamePerson');
+  String get declDocNumber => _t('declDocNumber');
+  String get declDocNumberHint => _t('declDocNumberHint');
+  String get declWhereWhenFound => _t('declWhereWhenFound');
+  String get declWhereWhenLost => _t('declWhereWhenLost');
+  String get declPlaceFound => _t('declPlaceFound');
+  String get declPlaceLost => _t('declPlaceLost');
+  String get declMyPosition => _t('declMyPosition');
+  String get declPositionAdded => _t('declPositionAdded');
+  String get declDate => _t('declDate');
+  String get declPhotosOptional => _t('declPhotosOptional');
+  String get declDescOptional => _t('declDescOptional');
+  String get declSubmitFound => _t('declSubmitFound');
+  String get declSubmitLost => _t('declSubmitLost');
+  String get declSubmitDossier => _t('declSubmitDossier');
+  String get declNoteFound => _t('declNoteFound');
+  String get declNoteLost => _t('declNoteLost');
+  String get declSavedFound => _t('declSavedFound');
+  String get declSavedLost => _t('declSavedLost');
+  String get declSaveError => _t('declSaveError');
+  String get declTakePhoto => _t('declTakePhoto');
+  String get declFromGallery => _t('declFromGallery');
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');

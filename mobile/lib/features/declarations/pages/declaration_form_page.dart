@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/services/location_service.dart';
 import '../../../core/services/media_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/declarations_provider.dart';
 import '../repositories/declarations_repository.dart';
@@ -130,12 +131,12 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.camera_alt_outlined),
-            title: const Text('Prendre une photo'),
+            title: Text(AppLocalizations.of(context).declTakePhoto),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Choisir dans la galerie'),
+            title: Text(AppLocalizations.of(context).declFromGallery),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
         ]),
@@ -244,14 +245,15 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
       ref.invalidate(declarationLimitsProvider);
       if (!mounted) return;
       final n = _docs.length;
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.white, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(n > 1
-                ? 'Dossier de $n documents déclaré.'
-                : (_isFound ? 'Document trouvé déclaré.' : 'Perte déclarée.')),
+                ? '${l.declSubmitDossier} — $n'
+                : (_isFound ? l.declSavedFound : l.declSavedLost)),
           ),
         ]),
         backgroundColor: Colors.green.shade700,
@@ -260,8 +262,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text(
-            'Enregistrement impossible. Vérifiez votre connexion et réessayez.'),
+        content: Text(AppLocalizations.of(context).declSaveError),
         backgroundColor: Theme.of(context).colorScheme.error,
       ));
     } finally {
@@ -274,11 +275,12 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final profileName =
         ref.watch(profileProvider).valueOrNull?.fullName.trim() ?? '';
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nouvelle déclaration'),
+        title: Text(l.declFormTitle),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -291,7 +293,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                       .withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(_isFound ? 'Trouvé' : 'Perdu',
+                child: Text(_isFound ? l.declTagFound : l.declTagLost,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -315,20 +317,20 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
 
             // ── Propriétaire (trouvé : saisi une fois pour tout le dossier) ──
             if (_isFound) ...[
-              const _SectionLabel('Nom du propriétaire (sur le document)'),
+              _SectionLabel(l.declOwnerLabel),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _ownerCtrl,
                 textCapitalization: TextCapitalization.words,
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                decoration: const InputDecoration(
-                  hintText: 'Ex : ITOUA Francis',
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: l.declOwnerHint,
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Champ requis' : null,
+                    (v == null || v.trim().isEmpty) ? l.declFieldRequired : null,
               ),
               const SizedBox(height: 22),
             ],
@@ -337,10 +339,8 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
             Row(children: [
               Expanded(
                 child: _SectionLabel(_docs.length > 1
-                    ? 'Documents du dossier (${_docs.length})'
-                    : (_isFound
-                        ? 'Quel document avez-vous trouvé ?'
-                        : 'Quel document avez-vous perdu ?')),
+                    ? '${l.declDossier} (${_docs.length})'
+                    : (_isFound ? l.declWhichFound : l.declWhichLost)),
               ),
             ]),
             const SizedBox(height: 8),
@@ -360,17 +360,15 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                 child: OutlinedButton.icon(
                   onPressed: _addDoc,
                   icon: const Icon(Icons.add, size: 18),
-                  label: Text(_docs.length == 1
-                      ? 'Ajouter un autre document de cette personne'
-                      : 'Ajouter un document'),
+                  label: Text(
+                      _docs.length == 1 ? l.declAddOther : l.declAddMore),
                 ),
               ),
             if (_docs.length > 1)
               Padding(
                 padding: const EdgeInsets.only(top: 6, left: 4),
                 child: Text(
-                  'Ces ${_docs.length} documents appartiennent à la même '
-                  'personne et forment un seul dossier.',
+                  l.declSamePerson,
                   style:
                       TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.6)),
                 ),
@@ -379,14 +377,12 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
 
             // ── Où et quand ? ──
             _SectionLabel(
-                _isFound ? 'Où et quand l\'avez-vous trouvé ?' : 'Où et quand l\'avez-vous perdu ?'),
+                _isFound ? l.declWhereWhenFound : l.declWhereWhenLost),
             const SizedBox(height: 8),
             TextFormField(
               controller: _locationCtrl,
               decoration: InputDecoration(
-                labelText: _isFound
-                    ? 'Lieu de la découverte'
-                    : 'Ville / quartier de la perte',
+                labelText: _isFound ? l.declPlaceFound : l.declPlaceLost,
                 prefixIcon: const Icon(Icons.location_on_outlined),
                 border: const OutlineInputBorder(),
               ),
@@ -403,7 +399,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : Icon(_lat != null ? Icons.check_circle : Icons.my_location_outlined,
                           size: 18, color: _lat != null ? cs.primary : null),
-                  label: Text(_lat != null ? 'Position ajoutée' : 'Ma position'),
+                  label: Text(_lat != null ? l.declPositionAdded : l.declMyPosition),
                 ),
               ),
               const SizedBox(width: 10),
@@ -413,14 +409,14 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                   icon: const Icon(Icons.calendar_today_outlined, size: 18),
                   label: Text(_eventDate != null
                       ? '${_eventDate!.day}/${_eventDate!.month}/${_eventDate!.year}'
-                      : 'Date'),
+                      : l.declDate),
                 ),
               ),
             ]),
             const SizedBox(height: 22),
 
             // ── Photos (facultatif) ──
-            const _SectionLabel('Photos (facultatif)'),
+            _SectionLabel(l.declPhotosOptional),
             const SizedBox(height: 8),
             Row(children: [
               ..._photos.asMap().entries.map((e) => Padding(
@@ -468,10 +464,10 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
             TextFormField(
               controller: _descriptionCtrl,
               maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Description (facultatif)',
-                prefixIcon: Icon(Icons.notes),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.declDescOptional,
+                prefixIcon: const Icon(Icons.notes),
+                border: const OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
             ),
@@ -490,17 +486,13 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check_circle_outline),
               label: Text(_docs.length > 1
-                  ? 'Déclarer le dossier (${_docs.length})'
-                  : (_isFound
-                      ? 'Déclarer le document trouvé'
-                      : 'Déclarer la perte')),
+                  ? '${l.declSubmitDossier} (${_docs.length})'
+                  : (_isFound ? l.declSubmitFound : l.declSubmitLost)),
             ),
             const SizedBox(height: 10),
             Center(
               child: Text(
-                _isFound
-                    ? 'Les données sensibles seront masquées automatiquement.'
-                    : 'Vous serez alerté dès qu\'un document correspond.',
+                _isFound ? l.declNoteFound : l.declNoteLost,
                 style: TextStyle(
                     fontSize: 11, color: cs.onSurface.withValues(alpha: 0.45)),
               ),
@@ -595,12 +587,12 @@ class _DocRow extends StatelessWidget {
           TextFormField(
             controller: entry.number,
             textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               isDense: true,
-              labelText: 'Numéro du document (facultatif)',
-              helperText: 'Renforce la précision du rapprochement',
-              prefixIcon: Icon(Icons.numbers, size: 20),
-              border: OutlineInputBorder(),
+              labelText: AppLocalizations.of(context).declDocNumber,
+              helperText: AppLocalizations.of(context).declDocNumberHint,
+              prefixIcon: const Icon(Icons.numbers, size: 20),
+              border: const OutlineInputBorder(),
             ),
           ),
         ],
@@ -618,6 +610,7 @@ class _ScanBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Material(
       color: cs.primary.withValues(alpha: scanned ? 0.06 : 0.1),
       borderRadius: BorderRadius.circular(14),
@@ -651,17 +644,13 @@ class _ScanBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    scanned
-                        ? 'Document scanné ✓'
-                        : 'Étape 1 — Scanner pour pré-remplir (IA)',
+                    scanned ? l.declScanned : l.declScanStep,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    scanned
-                        ? 'Appuyez pour recommencer le scan.'
-                        : 'Les informations sont lues automatiquement.',
+                    scanned ? l.declScanRedo : l.declScanHint,
                     style: TextStyle(
                         fontSize: 12,
                         color: cs.onSurface.withValues(alpha: 0.6)),
@@ -699,7 +688,7 @@ class _LostOwnerCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Vous déclarez votre propre document',
+              Text(AppLocalizations.of(context).declOwnLostTitle,
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
