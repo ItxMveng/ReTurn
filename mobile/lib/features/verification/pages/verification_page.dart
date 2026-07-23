@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/services/media_service.dart';
 import '../../../core/widgets/appear.dart';
+import '../../../l10n/app_localizations.dart';
 import '../repositories/verification_repository.dart';
 
 /// Étapes possibles — seules celles du niveau calculé sont affichées :
@@ -105,30 +106,32 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _pickDob() async {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: _dob ?? DateTime(now.year - 25),
       firstDate: DateTime(1920),
       lastDate: DateTime(now.year - 16, now.month, now.day),
-      helpText: 'Votre date de naissance',
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
+      helpText: l.verifDobHelp,
+      cancelText: l.cancel,
+      confirmText: l.verifValidate,
     );
     if (picked != null) setState(() => _dob = picked);
   }
 
   Future<void> _submitAnswers() async {
+    final l = AppLocalizations.of(context);
     if (_nameCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Veuillez saisir votre nom complet.');
+      setState(() => _error = l.verifErrName);
       return;
     }
     if (_dob == null) {
-      setState(() => _error = 'Veuillez indiquer votre date de naissance.');
+      setState(() => _error = l.verifErrDob);
       return;
     }
     if (_level >= 3 && _docCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Le numéro du document est requis pour cette vérification.');
+      setState(() => _error = l.verifErrDocNum);
       return;
     }
     HapticFeedback.lightImpact();
@@ -156,11 +159,9 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
       final detail = e.response?.data is Map
           ? (e.response?.data as Map)['detail']
           : null;
-      setState(() => _error = detail is String
-          ? detail
-          : 'Les informations ne correspondent pas. Réessayez.');
+      setState(() => _error = detail is String ? detail : l.verifErrMismatch);
     } catch (_) {
-      setState(() => _error = 'Une erreur est survenue. Réessayez.');
+      setState(() => _error = l.verifErrGeneric);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -199,7 +200,7 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
       });
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Envoi du selfie impossible. Réessayez.');
+        setState(() => _error = AppLocalizations.of(context).verifErrSelfie);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -230,7 +231,7 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
       if (mounted) setState(() => _step = _Step.review);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Envoi de la photo impossible. Réessayez.');
+        setState(() => _error = AppLocalizations.of(context).verifErrDocPhoto);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -249,7 +250,7 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
       _Step.review || _Step.rejected || _Step.done => _totalSteps,
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Vérification d\'identité')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).verifTitle)),
       body: SafeArea(
         child: Column(children: [
           if (_step != _Step.loading && _step != _Step.done)
@@ -331,44 +332,26 @@ class _IntroStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final bullets = switch (level) {
-      1 => const [
+      1 => [
+          _Bullet(icon: Icons.bolt_outlined, text: l.verifL1B1),
           _Bullet(
-              icon: Icons.bolt_outlined,
-              text: 'Vérification rapide : votre nom et votre date de '
-                  'naissance suffisent.'),
+              icon: Icons.lock_outline, text: l.verifBulletConfidential),
           _Bullet(
-              icon: Icons.lock_outline,
-              text: 'Vos réponses sont confidentielles et ne sont jamais '
-                  'partagées.'),
-          _Bullet(
-              icon: Icons.shield_moon_outlined,
-              text: 'C\'est ce qui protège chaque propriétaire sur ReTurn.'),
+              icon: Icons.shield_moon_outlined, text: l.verifBulletProtect),
         ],
-      2 => const [
+      2 => [
+          _Bullet(icon: Icons.fact_check_outlined, text: l.verifL2B1),
+          _Bullet(icon: Icons.lock_outline, text: l.verifL2B2),
           _Bullet(
-              icon: Icons.fact_check_outlined,
-              text: 'Deux étapes rapides : quelques infos du document, puis '
-                  'un selfie.'),
-          _Bullet(
-              icon: Icons.lock_outline,
-              text: 'Vos réponses et votre selfie restent privés.'),
-          _Bullet(
-              icon: Icons.shield_moon_outlined,
-              text: 'C\'est ce qui protège chaque propriétaire sur ReTurn.'),
+              icon: Icons.shield_moon_outlined, text: l.verifBulletProtect),
         ],
-      _ => const [
+      _ => [
+          _Bullet(icon: Icons.fact_check_outlined, text: l.verifL3B1),
           _Bullet(
-              icon: Icons.fact_check_outlined,
-              text: 'Trois étapes : infos du document, un selfie, puis une '
-                  'photo du document.'),
-          _Bullet(
-              icon: Icons.admin_panel_settings_outlined,
-              text: 'Notre équipe valide votre dossier sous 24 h pour une '
-                  'sécurité maximale.'),
-          _Bullet(
-              icon: Icons.lock_outline,
-              text: 'Toutes vos données restent privées et protégées.'),
+              icon: Icons.admin_panel_settings_outlined, text: l.verifL3B2),
+          _Bullet(icon: Icons.lock_outline, text: l.verifL3B3),
         ],
     };
     return Appear(
@@ -389,7 +372,7 @@ class _IntroStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Confirmons que ce document est bien le vôtre',
+          Text(l.verifIntroTitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 20,
@@ -397,9 +380,7 @@ class _IntroStep extends StatelessWidget {
                   color: cs.onSurface)),
           const SizedBox(height: 12),
           Text(
-            'Cette étape sert uniquement à nous assurer que vous êtes réellement '
-            'le titulaire du document, afin d\'éviter les usurpations d\'identité '
-            'et les fraudes. Personne d\'autre n\'y a accès.',
+            l.verifIntroBody,
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 14,
@@ -416,7 +397,7 @@ class _IntroStep extends StatelessWidget {
             },
             style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(52)),
-            child: const Text('Commencer la vérification'),
+            child: Text(l.verifStart),
           ),
         ],
       ),
@@ -474,22 +455,19 @@ class _QuestionsStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Appear(
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Text('Questions de contrôle',
+          Text(l.verifQTitle,
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: cs.onSurface)),
           const SizedBox(height: 6),
           Text(
-            level >= 3
-                ? 'Renseignez votre nom tel qu\'il figure sur le document, '
-                    'votre date de naissance et le numéro du document.'
-                : 'Renseignez votre nom tel qu\'il figure sur le document '
-                    'et votre date de naissance.',
+            level >= 3 ? l.verifQSubtitle3 : l.verifQSubtitle,
             style: TextStyle(
                 fontSize: 13.5,
                 height: 1.4,
@@ -499,10 +477,10 @@ class _QuestionsStep extends StatelessWidget {
           TextField(
             controller: nameCtrl,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Nom complet sur le document',
-              prefixIcon: Icon(Icons.person_outline),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l.verifFieldName,
+              prefixIcon: const Icon(Icons.person_outline),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),
@@ -510,14 +488,15 @@ class _QuestionsStep extends StatelessWidget {
             onTap: onPickDob,
             borderRadius: BorderRadius.circular(8),
             child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Date de naissance',
-                prefixIcon: Icon(Icons.cake_outlined),
-                suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.verifFieldDob,
+                prefixIcon: const Icon(Icons.cake_outlined),
+                suffixIcon:
+                    const Icon(Icons.calendar_today_outlined, size: 18),
+                border: const OutlineInputBorder(),
               ),
               child: Text(
-                dob != null ? _formatDate(dob!) : 'Sélectionner…',
+                dob != null ? _formatDate(dob!) : l.verifDobSelect,
                 style: TextStyle(
                   fontSize: 16,
                   color: dob != null
@@ -532,12 +511,11 @@ class _QuestionsStep extends StatelessWidget {
             TextField(
               controller: docCtrl,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Numéro du document',
-                helperText:
-                    'Requis pour cette vérification renforcée.',
-                prefixIcon: Icon(Icons.numbers),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.verifFieldDocNum,
+                helperText: l.verifFieldDocNumHelper,
+                prefixIcon: const Icon(Icons.numbers),
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -556,7 +534,7 @@ class _QuestionsStep extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Text('Vérifier'),
+                : Text(l.verifSubmit),
           ),
         ],
       ),
@@ -575,6 +553,7 @@ class _SelfieStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Appear(
       child: ListView(
         padding: const EdgeInsets.all(24),
@@ -593,7 +572,7 @@ class _SelfieStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Un dernier pas : votre selfie',
+          Text(l.verifSelfieTitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 19,
@@ -601,8 +580,7 @@ class _SelfieStep extends StatelessWidget {
                   color: cs.onSurface)),
           const SizedBox(height: 12),
           Text(
-            'Bonnes réponses ✓. Prenez un selfie pour confirmer que c\'est bien '
-            'vous. Cette photo sert uniquement à la vérification et reste privée.',
+            l.verifSelfieBody,
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 14,
@@ -625,7 +603,7 @@ class _SelfieStep extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.camera_alt_outlined),
-            label: const Text('Prendre un selfie'),
+            label: Text(l.verifSelfieBtn),
           ),
         ],
       ),
@@ -644,6 +622,7 @@ class _DocPhotoStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Appear(
       child: ListView(
         padding: const EdgeInsets.all(24),
@@ -662,7 +641,7 @@ class _DocPhotoStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Photo d\'un justificatif',
+          Text(l.verifDocTitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 19,
@@ -670,9 +649,7 @@ class _DocPhotoStep extends StatelessWidget {
                   color: cs.onSurface)),
           const SizedBox(height: 12),
           Text(
-            'Photographiez une pièce prouvant votre identité (ancienne CNI, '
-            'récépissé, acte de naissance…). Notre équipe l\'examine sous 24 h — '
-            'elle n\'est jamais partagée avec l\'autre partie.',
+            l.verifDocBody,
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 14,
@@ -695,7 +672,7 @@ class _DocPhotoStep extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.photo_camera_back_outlined),
-            label: const Text('Photographier le justificatif'),
+            label: Text(l.verifDocBtn),
           ),
         ],
       ),
@@ -710,6 +687,7 @@ class _ReviewStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Center(
       child: Appear(
         child: Padding(
@@ -727,16 +705,14 @@ class _ReviewStep extends StatelessWidget {
                     size: 52, color: cs.primary),
               ),
               const SizedBox(height: 20),
-              Text('Dossier en cours de validation',
+              Text(l.verifReviewTitle,
                   style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface)),
               const SizedBox(height: 10),
               Text(
-                'Merci ! Votre dossier est complet. Notre équipe le vérifie '
-                'sous 24 h — vous recevrez une notification dès que c\'est '
-                'validé.',
+                l.verifReviewBody,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14,
@@ -748,7 +724,7 @@ class _ReviewStep extends StatelessWidget {
                 onPressed: onClose,
                 style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52)),
-                child: const Text('Compris'),
+                child: Text(l.verifUnderstood),
               ),
             ],
           ),
@@ -768,6 +744,7 @@ class _RejectedStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Center(
       child: Appear(
         child: Padding(
@@ -785,7 +762,7 @@ class _RejectedStep extends StatelessWidget {
                     Icon(Icons.gpp_bad_outlined, size: 52, color: cs.error),
               ),
               const SizedBox(height: 20),
-              Text('Vérification non validée',
+              Text(l.verifRejectedTitle,
                   style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -793,9 +770,8 @@ class _RejectedStep extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 reason?.isNotEmpty == true
-                    ? 'Motif : $reason'
-                    : 'Les éléments fournis n\'ont pas permis de confirmer '
-                        'votre identité.',
+                    ? l.verifRejectedReason(reason!)
+                    : l.verifRejectedBody,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14,
@@ -807,14 +783,14 @@ class _RejectedStep extends StatelessWidget {
                 onPressed: onRetry,
                 style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52)),
-                child: const Text('Réessayer'),
+                child: Text(l.retry),
               ),
               const SizedBox(height: 10),
               OutlinedButton(
                 onPressed: onClose,
                 style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(50)),
-                child: const Text('Fermer'),
+                child: Text(l.verifClose),
               ),
             ],
           ),
@@ -832,6 +808,7 @@ class _DoneStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Center(
       child: Appear(
         child: Padding(
@@ -848,15 +825,14 @@ class _DoneStep extends StatelessWidget {
                 child: Icon(Icons.verified_rounded, size: 52, color: cs.primary),
               ),
               const SizedBox(height: 20),
-              Text('Identité vérifiée',
+              Text(l.verifDoneTitle,
                   style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface)),
               const SizedBox(height: 10),
               Text(
-                'Merci ! Vous pouvez maintenant organiser la restitution en '
-                'toute confiance.',
+                l.verifDoneBody,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14,
@@ -869,14 +845,14 @@ class _DoneStep extends StatelessWidget {
                 style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52)),
                 icon: const Icon(Icons.handshake_outlined),
-                label: const Text('Organiser la restitution'),
+                label: Text(l.verifDoneRestitution),
               ),
               const SizedBox(height: 10),
               OutlinedButton(
                 onPressed: onClose,
                 style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(50)),
-                child: const Text('Plus tard'),
+                child: Text(l.verifDoneLater),
               ),
             ],
           ),

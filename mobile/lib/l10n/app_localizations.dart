@@ -334,6 +334,72 @@ class AppLocalizations {
       'mdStepDiscovered': 'Découvert',
       'mdStepVerified': 'Vérifié',
       'mdStepReturned': 'Restitué',
+      // Vérification d'identité
+      'verifTitle': 'Vérification d\'identité',
+      'verifDobHelp': 'Votre date de naissance',
+      'verifValidate': 'Valider',
+      'verifErrName': 'Veuillez saisir votre nom complet.',
+      'verifErrDob': 'Veuillez indiquer votre date de naissance.',
+      'verifErrDocNum':
+          'Le numéro du document est requis pour cette vérification.',
+      'verifErrMismatch': 'Les informations ne correspondent pas. Réessayez.',
+      'verifErrGeneric': 'Une erreur est survenue. Réessayez.',
+      'verifErrSelfie': 'Envoi du selfie impossible. Réessayez.',
+      'verifErrDocPhoto': 'Envoi de la photo impossible. Réessayez.',
+      'verifIntroTitle': 'Confirmons que ce document est bien le vôtre',
+      'verifIntroBody': 'Cette étape sert uniquement à nous assurer que vous '
+          'êtes réellement le titulaire du document, afin d\'éviter les '
+          'usurpations d\'identité et les fraudes. Personne d\'autre n\'y a accès.',
+      'verifStart': 'Commencer la vérification',
+      'verifL1B1': 'Vérification rapide : votre nom et votre date de '
+          'naissance suffisent.',
+      'verifBulletConfidential':
+          'Vos réponses sont confidentielles et ne sont jamais partagées.',
+      'verifBulletProtect':
+          'C\'est ce qui protège chaque propriétaire sur ReTurn.',
+      'verifL2B1': 'Deux étapes rapides : quelques infos du document, puis '
+          'un selfie.',
+      'verifL2B2': 'Vos réponses et votre selfie restent privés.',
+      'verifL3B1': 'Trois étapes : infos du document, un selfie, puis une '
+          'photo du document.',
+      'verifL3B2': 'Notre équipe valide votre dossier sous 24 h pour une '
+          'sécurité maximale.',
+      'verifL3B3': 'Toutes vos données restent privées et protégées.',
+      'verifQTitle': 'Questions de contrôle',
+      'verifQSubtitle3': 'Renseignez votre nom tel qu\'il figure sur le '
+          'document, votre date de naissance et le numéro du document.',
+      'verifQSubtitle': 'Renseignez votre nom tel qu\'il figure sur le '
+          'document et votre date de naissance.',
+      'verifFieldName': 'Nom complet sur le document',
+      'verifFieldDob': 'Date de naissance',
+      'verifDobSelect': 'Sélectionner…',
+      'verifFieldDocNum': 'Numéro du document',
+      'verifFieldDocNumHelper': 'Requis pour cette vérification renforcée.',
+      'verifSubmit': 'Vérifier',
+      'verifSelfieTitle': 'Un dernier pas : votre selfie',
+      'verifSelfieBody': 'Bonnes réponses ✓. Prenez un selfie pour confirmer '
+          'que c\'est bien vous. Cette photo sert uniquement à la vérification '
+          'et reste privée.',
+      'verifSelfieBtn': 'Prendre un selfie',
+      'verifDocTitle': 'Photo d\'un justificatif',
+      'verifDocBody': 'Photographiez une pièce prouvant votre identité '
+          '(ancienne CNI, récépissé, acte de naissance…). Notre équipe '
+          'l\'examine sous 24 h — elle n\'est jamais partagée avec l\'autre partie.',
+      'verifDocBtn': 'Photographier le justificatif',
+      'verifReviewTitle': 'Dossier en cours de validation',
+      'verifReviewBody': 'Merci ! Votre dossier est complet. Notre équipe le '
+          'vérifie sous 24 h — vous recevrez une notification dès que c\'est validé.',
+      'verifUnderstood': 'Compris',
+      'verifRejectedTitle': 'Vérification non validée',
+      'verifRejectedReason': 'Motif : {reason}',
+      'verifRejectedBody': 'Les éléments fournis n\'ont pas permis de '
+          'confirmer votre identité.',
+      'verifClose': 'Fermer',
+      'verifDoneTitle': 'Identité vérifiée',
+      'verifDoneBody': 'Merci ! Vous pouvez maintenant organiser la '
+          'restitution en toute confiance.',
+      'verifDoneRestitution': 'Organiser la restitution',
+      'verifDoneLater': 'Plus tard',
     },
     'en': {
       'appName': 'ReTurn',
@@ -642,6 +708,69 @@ class AppLocalizations {
       'mdStepDiscovered': 'Discovered',
       'mdStepVerified': 'Verified',
       'mdStepReturned': 'Returned',
+      // Identity verification
+      'verifTitle': 'Identity verification',
+      'verifDobHelp': 'Your date of birth',
+      'verifValidate': 'Confirm',
+      'verifErrName': 'Please enter your full name.',
+      'verifErrDob': 'Please enter your date of birth.',
+      'verifErrDocNum':
+          'The document number is required for this verification.',
+      'verifErrMismatch': 'The information does not match. Please try again.',
+      'verifErrGeneric': 'Something went wrong. Please try again.',
+      'verifErrSelfie': 'Could not send the selfie. Please try again.',
+      'verifErrDocPhoto': 'Could not send the photo. Please try again.',
+      'verifIntroTitle': 'Let\'s confirm this document is really yours',
+      'verifIntroBody': 'This step only serves to make sure you are truly the '
+          'holder of the document, to prevent identity theft and fraud. '
+          'No one else has access to it.',
+      'verifStart': 'Start verification',
+      'verifL1B1':
+          'Quick check: your name and date of birth are enough.',
+      'verifBulletConfidential':
+          'Your answers are confidential and never shared.',
+      'verifBulletProtect': 'This is what protects every owner on ReTurn.',
+      'verifL2B1':
+          'Two quick steps: a few details from the document, then a selfie.',
+      'verifL2B2': 'Your answers and your selfie stay private.',
+      'verifL3B1': 'Three steps: document details, a selfie, then a photo '
+          'of the document.',
+      'verifL3B2': 'Our team reviews your file within 24 h for maximum security.',
+      'verifL3B3': 'All your data stays private and protected.',
+      'verifQTitle': 'Verification questions',
+      'verifQSubtitle3': 'Enter your name as it appears on the document, your '
+          'date of birth and the document number.',
+      'verifQSubtitle': 'Enter your name as it appears on the document and '
+          'your date of birth.',
+      'verifFieldName': 'Full name on the document',
+      'verifFieldDob': 'Date of birth',
+      'verifDobSelect': 'Select…',
+      'verifFieldDocNum': 'Document number',
+      'verifFieldDocNumHelper': 'Required for this enhanced verification.',
+      'verifSubmit': 'Verify',
+      'verifSelfieTitle': 'One last step: your selfie',
+      'verifSelfieBody': 'Correct answers ✓. Take a selfie to confirm it\'s '
+          'really you. This photo is used only for verification and stays private.',
+      'verifSelfieBtn': 'Take a selfie',
+      'verifDocTitle': 'Photo of a supporting document',
+      'verifDocBody': 'Take a photo of a document proving your identity '
+          '(old ID card, receipt, birth certificate…). Our team reviews it '
+          'within 24 h — it is never shared with the other party.',
+      'verifDocBtn': 'Photograph the document',
+      'verifReviewTitle': 'File under review',
+      'verifReviewBody': 'Thank you! Your file is complete. Our team is '
+          'reviewing it within 24 h — you will be notified once approved.',
+      'verifUnderstood': 'Got it',
+      'verifRejectedTitle': 'Verification not approved',
+      'verifRejectedReason': 'Reason: {reason}',
+      'verifRejectedBody':
+          'The items provided did not confirm your identity.',
+      'verifClose': 'Close',
+      'verifDoneTitle': 'Identity verified',
+      'verifDoneBody': 'Thank you! You can now arrange the return with '
+          'full confidence.',
+      'verifDoneRestitution': 'Arrange the return',
+      'verifDoneLater': 'Later',
     },
   };
 
@@ -834,6 +963,55 @@ class AppLocalizations {
   String get mdStepDiscovered => _t('mdStepDiscovered');
   String get mdStepVerified => _t('mdStepVerified');
   String get mdStepReturned => _t('mdStepReturned');
+  // Vérification d'identité
+  String get verifTitle => _t('verifTitle');
+  String get verifDobHelp => _t('verifDobHelp');
+  String get verifValidate => _t('verifValidate');
+  String get verifErrName => _t('verifErrName');
+  String get verifErrDob => _t('verifErrDob');
+  String get verifErrDocNum => _t('verifErrDocNum');
+  String get verifErrMismatch => _t('verifErrMismatch');
+  String get verifErrGeneric => _t('verifErrGeneric');
+  String get verifErrSelfie => _t('verifErrSelfie');
+  String get verifErrDocPhoto => _t('verifErrDocPhoto');
+  String get verifIntroTitle => _t('verifIntroTitle');
+  String get verifIntroBody => _t('verifIntroBody');
+  String get verifStart => _t('verifStart');
+  String get verifL1B1 => _t('verifL1B1');
+  String get verifBulletConfidential => _t('verifBulletConfidential');
+  String get verifBulletProtect => _t('verifBulletProtect');
+  String get verifL2B1 => _t('verifL2B1');
+  String get verifL2B2 => _t('verifL2B2');
+  String get verifL3B1 => _t('verifL3B1');
+  String get verifL3B2 => _t('verifL3B2');
+  String get verifL3B3 => _t('verifL3B3');
+  String get verifQTitle => _t('verifQTitle');
+  String get verifQSubtitle3 => _t('verifQSubtitle3');
+  String get verifQSubtitle => _t('verifQSubtitle');
+  String get verifFieldName => _t('verifFieldName');
+  String get verifFieldDob => _t('verifFieldDob');
+  String get verifDobSelect => _t('verifDobSelect');
+  String get verifFieldDocNum => _t('verifFieldDocNum');
+  String get verifFieldDocNumHelper => _t('verifFieldDocNumHelper');
+  String get verifSubmit => _t('verifSubmit');
+  String get verifSelfieTitle => _t('verifSelfieTitle');
+  String get verifSelfieBody => _t('verifSelfieBody');
+  String get verifSelfieBtn => _t('verifSelfieBtn');
+  String get verifDocTitle => _t('verifDocTitle');
+  String get verifDocBody => _t('verifDocBody');
+  String get verifDocBtn => _t('verifDocBtn');
+  String get verifReviewTitle => _t('verifReviewTitle');
+  String get verifReviewBody => _t('verifReviewBody');
+  String get verifUnderstood => _t('verifUnderstood');
+  String get verifRejectedTitle => _t('verifRejectedTitle');
+  String verifRejectedReason(String reason) =>
+      _t('verifRejectedReason').replaceAll('{reason}', reason);
+  String get verifRejectedBody => _t('verifRejectedBody');
+  String get verifClose => _t('verifClose');
+  String get verifDoneTitle => _t('verifDoneTitle');
+  String get verifDoneBody => _t('verifDoneBody');
+  String get verifDoneRestitution => _t('verifDoneRestitution');
+  String get verifDoneLater => _t('verifDoneLater');
 
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
