@@ -77,17 +77,26 @@ app.include_router(v1_router)
 
 @app.exception_handler(Exception)
 async def _unhandled_exception_handler(request: Request, exc: Exception):
-    """Renvoie une 500 JSON qui PASSE par le middleware CORS.
+    """Renvoie une 500 JSON AVEC en-têtes CORS.
 
-    Par défaut, une exception non gérée est interceptée hors de la chaîne CORS
-    → la réponse 500 n'a pas d'en-tête Access-Control-Allow-Origin, et le
-    navigateur affiche « CORS missing header » au lieu de la vraie erreur.
-    Ce handler la renvoie proprement (avec CORS) et la loggue côté serveur.
+    Starlette traite le handler d'exception générique dans le
+    ServerErrorMiddleware (le plus externe, HORS de la chaîne CORS) : la
+    réponse ne reçoit donc pas automatiquement d'en-tête CORS et le navigateur
+    affiche « CORS missing header » au lieu de la vraie erreur. On ajoute donc
+    les en-têtes CORS manuellement, et on expose le message pour le diagnostic.
     """
     logger.exception("Erreur non gérée sur %s %s", request.method, request.url.path)
+    origin = request.headers.get("origin")
+    headers: dict[str, str] = {}
+    allowed = _cors_origins if _is_prod else ["*", "null"]
+    if origin and (origin in allowed or "*" in allowed):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Vary"] = "Origin"
     return JSONResponse(
         status_code=500,
-        content={"detail": "Erreur serveur interne."},
+        content={"detail": f"{type(exc).__name__}: {exc}"},
+        headers=headers,
     )
 
 
