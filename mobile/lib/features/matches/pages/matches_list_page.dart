@@ -23,10 +23,11 @@ class _MatchesListPageState extends ConsumerState<MatchesListPage> {
   Widget build(BuildContext context) {
     final async = ref.watch(matchesProvider);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final myId = ref.watch(profileProvider).valueOrNull?.id ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes correspondances')),
+      appBar: AppBar(title: Text(l.matchesTitle2)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
@@ -44,19 +45,19 @@ class _MatchesListPageState extends ConsumerState<MatchesListPage> {
                 child: Row(
                   children: [
                     _FilterChip(
-                      label: 'Tous',
+                      label: l.matchFilterAll,
                       selected: _filter == 'all',
                       onTap: () => setState(() => _filter = 'all'),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                      label: 'En attente',
+                      label: l.matchFilterPending,
                       selected: _filter == 'pending',
                       onTap: () => setState(() => _filter = 'pending'),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                      label: 'Confirmés',
+                      label: l.matchFilterConfirmed,
                       selected: _filter == 'confirmed',
                       onTap: () => setState(() => _filter = 'confirmed'),
                     ),
@@ -71,13 +72,13 @@ class _MatchesListPageState extends ConsumerState<MatchesListPage> {
                             children: [
                               const _ScanningIndicator(),
                               const SizedBox(height: 20),
-                              const Text('Aucun match pour l\'instant',
-                                  style: TextStyle(
+                              Text(l.matchesEmpty,
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 8),
                               Text(
-                                  'Nous cherchons continuellement\npour vous.',
+                                  l.matchesSearching,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       color: cs.onSurface
@@ -88,8 +89,7 @@ class _MatchesListPageState extends ConsumerState<MatchesListPage> {
                                 onPressed: () =>
                                     context.go('/declarations'),
                                 icon: const Icon(Icons.add),
-                                label:
-                                    const Text('Déclarer un document'),
+                                label: Text(l.matchDeclareDoc),
                               ),
                             ]),
                       )
@@ -361,15 +361,13 @@ class _StatusChip extends StatelessWidget {
     // - proprio : il doit vérifier son identité ;
     // - trouveur : il attend simplement cette vérification.
     final isOwner = match.isOwner(myId);
+    final l = AppLocalizations.of(context);
     final (label, color) = switch (match.status) {
-      'pending' when isOwner => (
-          'Vérifiez votre identité',
-          AppColors.secondary
-        ),
-      'pending' => ('En attente du propriétaire', AppColors.onSurfaceVariant),
-      'confirmed' => ('Vérifié — Discutez', AppColors.kGreenDark),
-      'ignored' => ('Ignoré', AppColors.onSurfaceVariant),
-      'closed' => ('Clôturé', AppColors.onSurfaceVariant),
+      'pending' when isOwner => (l.matchVerifyId, AppColors.secondary),
+      'pending' => (l.matchStatusAwaitOwner, AppColors.onSurfaceVariant),
+      'confirmed' => (l.matchStatusVerifiedChat, AppColors.kGreenDark),
+      'ignored' => (l.matchStatusIgnored, AppColors.onSurfaceVariant),
+      'closed' => (l.matchStatusClosed, AppColors.onSurfaceVariant),
       _ => (match.status, AppColors.onSurfaceVariant),
     };
     return Container(

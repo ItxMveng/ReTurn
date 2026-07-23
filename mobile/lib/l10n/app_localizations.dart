@@ -237,6 +237,20 @@ class AppLocalizations {
       'declSaveError': 'Enregistrement impossible. Vérifiez votre connexion et réessayez.',
       'declTakePhoto': 'Prendre une photo',
       'declFromGallery': 'Choisir dans la galerie',
+      // Matchs (liste)
+      'matchesTitle2': 'Mes correspondances',
+      'matchFilterAll': 'Tous',
+      'matchFilterPending': 'En attente',
+      'matchFilterConfirmed': 'Confirmés',
+      'matchesSearching': 'Nous cherchons continuellement\npour vous.',
+      'matchDeclareDoc': 'Déclarer un document',
+      'matchStatusAwaitYou': 'En attente de votre confirmation',
+      'matchStatusAwaitOther': 'En attente de l\'autre partie',
+      'matchStatusConfirmedVerify': 'Confirmé — Vérifiez votre identité',
+      'matchStatusVerifiedChat': 'Vérifié — Discutez',
+      'matchStatusAwaitOwner': 'En attente du propriétaire',
+      'matchStatusIgnored': 'Ignoré',
+      'matchStatusClosed': 'Clôturé',
     },
     'en': {
       'appName': 'ReTurn',
@@ -450,6 +464,20 @@ class AppLocalizations {
       'declSaveError': 'Could not save. Check your connection and try again.',
       'declTakePhoto': 'Take a photo',
       'declFromGallery': 'Choose from gallery',
+      // Matches (list)
+      'matchesTitle2': 'My matches',
+      'matchFilterAll': 'All',
+      'matchFilterPending': 'Pending',
+      'matchFilterConfirmed': 'Confirmed',
+      'matchesSearching': 'We\'re continuously\nsearching for you.',
+      'matchDeclareDoc': 'Declare a document',
+      'matchStatusAwaitYou': 'Awaiting your confirmation',
+      'matchStatusAwaitOther': 'Awaiting the other party',
+      'matchStatusConfirmedVerify': 'Confirmed — Verify your identity',
+      'matchStatusVerifiedChat': 'Verified — Chat',
+      'matchStatusAwaitOwner': 'Awaiting the owner',
+      'matchStatusIgnored': 'Ignored',
+      'matchStatusClosed': 'Closed',
     },
   };
 
@@ -535,6 +563,20 @@ class AppLocalizations {
   String get declSaveError => _t('declSaveError');
   String get declTakePhoto => _t('declTakePhoto');
   String get declFromGallery => _t('declFromGallery');
+  // Matchs (liste)
+  String get matchesTitle2 => _t('matchesTitle2');
+  String get matchFilterAll => _t('matchFilterAll');
+  String get matchFilterPending => _t('matchFilterPending');
+  String get matchFilterConfirmed => _t('matchFilterConfirmed');
+  String get matchesSearching => _t('matchesSearching');
+  String get matchDeclareDoc => _t('matchDeclareDoc');
+  String get matchStatusAwaitYou => _t('matchStatusAwaitYou');
+  String get matchStatusAwaitOther => _t('matchStatusAwaitOther');
+  String get matchStatusConfirmedVerify => _t('matchStatusConfirmedVerify');
+  String get matchStatusVerifiedChat => _t('matchStatusVerifiedChat');
+  String get matchStatusAwaitOwner => _t('matchStatusAwaitOwner');
+  String get matchStatusIgnored => _t('matchStatusIgnored');
+  String get matchStatusClosed => _t('matchStatusClosed');
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');
