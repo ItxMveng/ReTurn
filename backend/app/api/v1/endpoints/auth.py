@@ -1,5 +1,8 @@
 import logging
+import secrets
 import uuid
+
+from pydantic import BaseModel
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError, jwt
@@ -125,6 +128,65 @@ async def verify_firebase_token_endpoint(
     tokens = await issue_tokens(user)
     tokens.is_new_user = is_new
     return tokens
+
+
+class AdminLoginRequest(BaseModel):
+    phone_number: str
+    secret: str
+
+
+@router.post("/admin-login", response_model=TokenResponse)
+async def admin_login(
+    body: AdminLoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Connexion au panneau d'administration sans SMS.
+
+    En production, l'OTP custom n'envoie pas de SMS : le panel admin s'appuie
+    donc sur un secret (ADMIN_BOOTSTRAP_SECRET) + un numéro déclaré admin
+    (ADMIN_PHONE_NUMBERS). Sécurisé par comparaison à temps constant.
+    """
+    configured = settings.ADMIN_BOOTSTRAP_SECRET
+    if not configured:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Connexion admin non configurée sur ce serveur.",
+        )
+    phone = body.phone_number.strip().replace(" ", "")
+    if not (
+        secrets.compare_digest(body.secret, configured)
+        and phone in settings.admin_phone_set
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Numéro ou secret admin invalide.",
+        )
+
+    result = await db.execute(select(User).where(User.phone_number == phone))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Connectez-vous d'abord à l'application mobile avec ce numéro.",
+        )
+    if getattr(user, "is_banned", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Compte suspendu."
+        )
+    if not user.is_admin:
+        user.is_admin = True
+        db.add(user)
+
+    await _log_connection(
+        db, request,
+        status=ConnectionStatus.SUCCESS,
+        user_id=user.id,
+        phone_number=phone,
+        auth_method="admin_secret",
+    )
+    await db.commit()
+    return await issue_tokens(user)
 
 
 @router.post("/otp/request", status_code=status.HTTP_200_OK)

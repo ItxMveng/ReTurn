@@ -146,15 +146,14 @@
       <input class="form-input" id="phone-number" type="tel" placeholder="+237600000000" autocomplete="tel" />
     </div>
     <div class="form-group">
-      <label class="form-label" for="otp-code">Code OTP</label>
-      <input class="form-input" id="otp-code" type="text" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" />
+      <label class="form-label" for="otp-code">Secret administrateur</label>
+      <input class="form-input" id="otp-code" type="password" placeholder="••••••••" autocomplete="off" />
       <div class="form-error" id="login-error">Connexion impossible.</div>
     </div>
     <div class="flex gap-2" style="margin-top:8px">
-      <button class="btn btn-ghost" style="flex:1;justify-content:center;padding:10px" id="request-otp-btn">Recevoir le code</button>
       <button class="btn btn-primary" style="flex:1;justify-content:center;padding:10px" id="login-btn">Se connecter</button>
     </div>
-    <p id="otp-help" style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">Utilisez un numéro déjà promu administrateur dans la base réelle.</p>
+    <p id="otp-help" style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">Numéro promu admin (ADMIN_PHONE_NUMBERS) + secret (ADMIN_BOOTSTRAP_SECRET).</p>
   </div>
 </div>
 
@@ -602,17 +601,10 @@
     return data;
   }
 
-  async function requestOtp(phoneNumber){
-    return await publicApi('/auth/otp/request', {
+  async function adminLogin(phoneNumber, secret){
+    return await publicApi('/auth/admin-login', {
       method:'POST',
-      body: JSON.stringify({phone_number: phoneNumber}),
-    });
-  }
-
-  async function verifyOtp(phoneNumber, otpCode){
-    return await publicApi('/auth/otp/verify', {
-      method:'POST',
-      body: JSON.stringify({phone_number: phoneNumber, otp_code: otpCode}),
+      body: JSON.stringify({phone_number: phoneNumber, secret: secret}),
     });
   }
 
@@ -622,47 +614,28 @@
     saveSession();
   }
 
-  document.getElementById('request-otp-btn').addEventListener('click', async()=>{
-    clearLoginError();
-    const phoneNumber = phoneInput.value.trim();
-    if(!phoneNumber){
-      setLoginError('Saisissez un numéro administrateur.');
-      return;
-    }
-    try{
-      const response = await requestOtp(phoneNumber);
-      if(response?.debug_code){
-        otpInput.value = response.debug_code;
-        setOtpHelp(`Code OTP récupéré depuis l'API locale : ${response.debug_code}`);
-      }else{
-        setOtpHelp('Code OTP demandé. Vérifiez votre canal d’authentification.');
-      }
-      showToast('Code OTP demandé');
-    }catch(error){
-      setLoginError(error.message || 'Impossible de demander le code OTP.');
-    }
-  });
-
   document.getElementById('login-btn').addEventListener('click',async()=>{
     clearLoginError();
     const phoneNumber = phoneInput.value.trim();
-    const otpCode = otpInput.value.trim();
-    if(!phoneNumber || !otpCode){
-      setLoginError('Saisissez le numéro et le code OTP.');
+    const secret = otpInput.value;
+    if(!phoneNumber || !secret){
+      setLoginError('Saisissez le numéro et le secret administrateur.');
       return;
     }
     try{
-      const auth = await verifyOtp(phoneNumber, otpCode);
+      const auth = await adminLogin(phoneNumber, secret);
       token = auth.access_token;
       await ensureAdminSession();
       showApp();
       showToast('Connexion admin réussie');
     }catch(error){
       clearSession();
-      if(error.status===403){
-        setLoginError('Ce compte existe, mais il n’a pas encore le rôle administrateur.');
+      if(error.status===404){
+        setLoginError('Connectez-vous d’abord à l’application mobile avec ce numéro.');
+      }else if(error.status===403){
+        setLoginError('Connexion admin non configurée (ADMIN_BOOTSTRAP_SECRET manquant).');
       }else{
-        setLoginError(error.message || 'Connexion impossible.');
+        setLoginError(error.message || 'Numéro ou secret invalide.');
       }
     }
   });

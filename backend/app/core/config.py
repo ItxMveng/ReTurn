@@ -97,6 +97,9 @@ class Settings(BaseSettings):
     # séparés par des virgules. À chaque connexion, ces numéros sont promus
     # admin automatiquement. Ex. ADMIN_PHONE_NUMBERS="+237690000000,+237680000000"
     ADMIN_PHONE_NUMBERS: str = ""
+    # Secret de connexion au panneau d'admin (numéro + secret, sans SMS).
+    # À définir dans l'environnement de prod ; connu de toi seul.
+    ADMIN_BOOTSTRAP_SECRET: str = ""
 
     @property
     def admin_phone_set(self) -> set[str]:
