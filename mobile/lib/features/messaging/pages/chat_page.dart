@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/utils/media_url.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../matches/providers/matches_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/message.dart';
@@ -27,19 +28,14 @@ bool _sameDay(DateTime a, DateTime b) {
   return la.year == lb.year && la.month == lb.month && la.day == lb.day;
 }
 
-const _months = [
-  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-];
-
-const _reportReasons = <String, String>{
-  'fraud': 'Tentative d\'escroquerie',
-  'harassment': 'Harcèlement / insultes',
-  'fake_document': 'Document falsifié',
-  'identity_theft': 'Usurpation d\'identité',
-  'inappropriate': 'Contenu inapproprié',
-  'other': 'Autre',
-};
+Map<String, String> _reportReasonsFor(AppLocalizations l) => {
+      'fraud': l.reasonFraud,
+      'harassment': l.reasonHarassment,
+      'fake_document': l.reasonFakeDoc,
+      'identity_theft': l.reasonIdentityTheft,
+      'inappropriate': l.reasonInappropriate,
+      'other': l.reasonOther,
+    };
 
 class ChatPage extends ConsumerStatefulWidget {
   final String roomId;
@@ -97,7 +93,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de l\'envoi, réessayez.')),
+          SnackBar(content: Text(AppLocalizations.of(context).chatSendFailed)),
         );
       }
     } finally {
@@ -106,20 +102,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _report() async {
+    final l = AppLocalizations.of(context);
+    final reasons = _reportReasonsFor(l);
     String reason = 'fraud';
     final descCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Signaler cet utilisateur'),
+          title: Text(l.reportUser),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
                 initialValue: reason,
-                decoration: const InputDecoration(labelText: 'Motif'),
-                items: _reportReasons.entries
+                decoration: InputDecoration(labelText: l.reportReason),
+                items: reasons.entries
                     .map((e) =>
                         DropdownMenuItem(value: e.key, child: Text(e.value)))
                     .toList(),
@@ -129,9 +127,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               TextField(
                 controller: descCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Détails (optionnel)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l.reportDetails,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -139,10 +137,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Annuler')),
+                child: Text(l.cancel)),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Envoyer')),
+                child: Text(l.reportSend)),
           ],
         ),
       ),
@@ -156,13 +154,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signalement envoyé. Merci.')),
+          SnackBar(content: Text(AppLocalizations.of(context).reportSent)),
         );
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec du signalement.')),
+          SnackBar(content: Text(AppLocalizations.of(context).reportFailed)),
         );
       }
     }
@@ -172,9 +170,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget build(BuildContext context) {
     final async = ref.watch(_historyProvider(widget.roomId));
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final title = (widget.otherName?.trim().isNotEmpty ?? false)
         ? widget.otherName!.trim()
-        : 'Conversation';
+        : l.chatTitle;
     // Un match ignoré/clôturé ferme la conversation (saisie désactivée).
     final matchStatus =
         ref.watch(matchDetailProvider(widget.roomId)).valueOrNull?.status;
@@ -209,7 +208,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700),
                       overflow: TextOverflow.ellipsis),
-                  Text('Restitution sécurisée',
+                  Text(l.chatSecureHandover,
                       style: TextStyle(
                           fontSize: 11,
                           color: cs.onSurface.withValues(alpha: 0.5))),
@@ -225,13 +224,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             onSelected: (v) {
               if (v == 'report') _report();
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'report',
                 child: Row(children: [
-                  Icon(Icons.flag_outlined, size: 18, color: Colors.red),
-                  SizedBox(width: 10),
-                  Text('Signaler'),
+                  const Icon(Icons.flag_outlined, size: 18, color: Colors.red),
+                  const SizedBox(width: 10),
+                  Text(l.reportUser),
                 ]),
               ),
             ],
@@ -249,8 +248,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Ne partagez pas d\'informations sensibles. Convenez d\'un '
-                'lieu public ou certifié pour la restitution.',
+                l.chatSafetyBanner,
                 style: TextStyle(
                     fontSize: 11,
                     color: cs.onSurface.withValues(alpha: 0.6)),
@@ -270,12 +268,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     Icon(Icons.wifi_off,
                         color: cs.onSurface.withValues(alpha: 0.3), size: 40),
                     const SizedBox(height: 12),
-                    const Text('Impossible de charger la conversation'),
+                    Text(l.chatLoadError),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () =>
                           ref.invalidate(_historyProvider(widget.roomId)),
-                      child: const Text('Réessayer'),
+                      child: Text(l.retry),
                     ),
                   ],
                 ),
@@ -283,7 +281,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ),
             data: (msgs) => msgs.isEmpty
                 ? Center(
-                    child: Text('Démarrez la conversation',
+                    child: Text(l.chatStart,
                         style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.4))))
                 : ListView.builder(
@@ -341,7 +339,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   Icon(Icons.lock_outline,
                       size: 16, color: cs.onSurface.withValues(alpha: 0.5)),
                   const SizedBox(width: 8),
-                  Text('La conversation est fermée',
+                  Text(l.chatClosed,
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -364,8 +362,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Évitez de partager votre numéro : la remise se fait '
-                    'en lieu public via l\'application.',
+                    l.chatPhoneWarning,
                     style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurface.withValues(alpha: 0.65)),
@@ -391,14 +388,15 @@ class _DateChip extends StatelessWidget {
   final DateTime date;
   const _DateChip({required this.date});
 
-  String _label() {
+  String _label(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     final d = date.toLocal();
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(d.year, d.month, d.day);
-    if (day == today) return 'Aujourd\'hui';
-    if (day == today.subtract(const Duration(days: 1))) return 'Hier';
-    return '${d.day} ${_months[d.month - 1]} ${d.year}';
+    if (day == today) return l.chatDateToday;
+    if (day == today.subtract(const Duration(days: 1))) return l.chatDateYesterday;
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 
   @override
@@ -413,7 +411,7 @@ class _DateChip extends StatelessWidget {
             color: cs.onSurface.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(_label(),
+          child: Text(_label(context),
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -468,7 +466,7 @@ class _Bubble extends StatelessWidget {
                           size: 16,
                           color: msg.isMe ? Colors.white : cs.primary),
                       const SizedBox(width: 6),
-                      Text('Position partagée',
+                      Text(AppLocalizations.of(context).chatLocationShared,
                           style: TextStyle(
                               color:
                                   msg.isMe ? Colors.white : cs.onSurface,
@@ -522,6 +520,7 @@ class _InputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 8, 8, 12),
       decoration: BoxDecoration(
@@ -534,7 +533,7 @@ class _InputBar extends StatelessWidget {
         child: Row(children: [
           // Organiser la restitution — à la place habituelle des emojis.
           IconButton(
-            tooltip: 'Organiser la restitution',
+            tooltip: l.chatOrganizeReturn,
             onPressed: onRestitution,
             icon: Icon(Icons.handshake_outlined, color: cs.primary),
           ),
@@ -546,7 +545,7 @@ class _InputBar extends StatelessWidget {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),
               decoration: InputDecoration(
-                hintText: 'Votre message…',
+                hintText: l.chatMessageHint,
                 hintStyle:
                     TextStyle(color: cs.onSurface.withValues(alpha: 0.4)),
                 border: OutlineInputBorder(

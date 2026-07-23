@@ -251,6 +251,33 @@ class AppLocalizations {
       'matchStatusAwaitOwner': 'En attente du propriétaire',
       'matchStatusIgnored': 'Ignoré',
       'matchStatusClosed': 'Clôturé',
+      // Chat
+      'chatTitle': 'Conversation',
+      'chatSecureHandover': 'Restitution sécurisée',
+      'chatOrganizeReturn': 'Organiser la restitution',
+      'chatSafetyBanner': 'Ne partagez pas d\'informations sensibles. Convenez d\'un lieu public ou certifié pour la restitution.',
+      'chatLoadError': 'Impossible de charger la conversation',
+      'chatStart': 'Démarrez la conversation',
+      'chatClosed': 'La conversation est fermée',
+      'chatPhoneWarning': 'Évitez de partager votre numéro : la remise se fait en lieu public via l\'application.',
+      'chatLocationShared': 'Position partagée',
+      'chatSendFailed': 'Échec de l\'envoi, réessayez.',
+      'chatMessageHint': 'Votre message…',
+      'chatDateToday': 'Aujourd\'hui',
+      'chatDateYesterday': 'Hier',
+      // Signalement
+      'reportUser': 'Signaler cet utilisateur',
+      'reportReason': 'Motif',
+      'reportDetails': 'Détails (optionnel)',
+      'reportSend': 'Envoyer',
+      'reportSent': 'Signalement envoyé. Merci.',
+      'reportFailed': 'Échec du signalement.',
+      'reasonFraud': 'Tentative d\'escroquerie',
+      'reasonHarassment': 'Harcèlement / insultes',
+      'reasonFakeDoc': 'Document falsifié',
+      'reasonIdentityTheft': 'Usurpation d\'identité',
+      'reasonInappropriate': 'Contenu inapproprié',
+      'reasonOther': 'Autre',
     },
     'en': {
       'appName': 'ReTurn',
@@ -478,6 +505,33 @@ class AppLocalizations {
       'matchStatusAwaitOwner': 'Awaiting the owner',
       'matchStatusIgnored': 'Ignored',
       'matchStatusClosed': 'Closed',
+      // Chat
+      'chatTitle': 'Conversation',
+      'chatSecureHandover': 'Secure handover',
+      'chatOrganizeReturn': 'Organize the handover',
+      'chatSafetyBanner': 'Do not share sensitive information. Agree on a public or certified place for the handover.',
+      'chatLoadError': 'Unable to load the conversation',
+      'chatStart': 'Start the conversation',
+      'chatClosed': 'This conversation is closed',
+      'chatPhoneWarning': 'Avoid sharing your number: the handover happens in a public place via the app.',
+      'chatLocationShared': 'Location shared',
+      'chatSendFailed': 'Sending failed, try again.',
+      'chatMessageHint': 'Your message…',
+      'chatDateToday': 'Today',
+      'chatDateYesterday': 'Yesterday',
+      // Report
+      'reportUser': 'Report this user',
+      'reportReason': 'Reason',
+      'reportDetails': 'Details (optional)',
+      'reportSend': 'Send',
+      'reportSent': 'Report sent. Thank you.',
+      'reportFailed': 'Report failed.',
+      'reasonFraud': 'Scam attempt',
+      'reasonHarassment': 'Harassment / insults',
+      'reasonFakeDoc': 'Forged document',
+      'reasonIdentityTheft': 'Identity theft',
+      'reasonInappropriate': 'Inappropriate content',
+      'reasonOther': 'Other',
     },
   };
 
@@ -577,6 +631,33 @@ class AppLocalizations {
   String get matchStatusAwaitOwner => _t('matchStatusAwaitOwner');
   String get matchStatusIgnored => _t('matchStatusIgnored');
   String get matchStatusClosed => _t('matchStatusClosed');
+  // Chat
+  String get chatTitle => _t('chatTitle');
+  String get chatSecureHandover => _t('chatSecureHandover');
+  String get chatOrganizeReturn => _t('chatOrganizeReturn');
+  String get chatSafetyBanner => _t('chatSafetyBanner');
+  String get chatLoadError => _t('chatLoadError');
+  String get chatStart => _t('chatStart');
+  String get chatClosed => _t('chatClosed');
+  String get chatPhoneWarning => _t('chatPhoneWarning');
+  String get chatLocationShared => _t('chatLocationShared');
+  String get chatSendFailed => _t('chatSendFailed');
+  String get chatMessageHint => _t('chatMessageHint');
+  String get chatDateToday => _t('chatDateToday');
+  String get chatDateYesterday => _t('chatDateYesterday');
+  // Signalement
+  String get reportUser => _t('reportUser');
+  String get reportReason => _t('reportReason');
+  String get reportDetails => _t('reportDetails');
+  String get reportSend => _t('reportSend');
+  String get reportSent => _t('reportSent');
+  String get reportFailed => _t('reportFailed');
+  String get reasonFraud => _t('reasonFraud');
+  String get reasonHarassment => _t('reasonHarassment');
+  String get reasonFakeDoc => _t('reasonFakeDoc');
+  String get reasonIdentityTheft => _t('reasonIdentityTheft');
+  String get reasonInappropriate => _t('reasonInappropriate');
+  String get reasonOther => _t('reasonOther');
   String get settingsTitle => _t('settingsTitle');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeLight => _t('settingsThemeLight');
