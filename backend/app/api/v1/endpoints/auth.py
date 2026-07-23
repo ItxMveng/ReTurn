@@ -169,10 +169,21 @@ async def admin_login(
         for a in settings.admin_phone_set
         if _digits(a)
     )
-    if not (secret_ok and phone_ok):
+    if not phone_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Numéro ou secret admin invalide.",
+            detail=(
+                "Ce numéro n'est pas déclaré administrateur. Vérifiez "
+                "ADMIN_PHONE_NUMBERS sur Render (format +237…) et le numéro saisi."
+            ),
+        )
+    if not secret_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=(
+                "Secret incorrect. Vérifiez ADMIN_BOOTSTRAP_SECRET sur Render "
+                "(pas d'espace ni de retour à la ligne en trop dans la valeur)."
+            ),
         )
 
     # Retrouve l'utilisateur : correspondance exacte, sinon sur les 9 derniers
