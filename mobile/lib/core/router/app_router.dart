@@ -14,6 +14,7 @@ import '../../features/declarations/pages/declarations_list_page.dart';
 import '../../features/declarations/pages/declaration_form_page.dart';
 import '../../features/declarations/pages/declaration_detail_page.dart';
 import '../../features/declarations/pages/multi_doc_declaration_page.dart';
+import '../../features/declarations/pages/dossier_detail_page.dart';
 import '../../features/matches/pages/matches_list_page.dart';
 import '../../features/matches/pages/match_detail_page.dart';
 import '../../features/messaging/pages/conversations_page.dart';
@@ -80,6 +81,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/declarations/multi',
           builder: (_, __) => const MultiDocDeclarationPage()),
+
+      // ── Détail d'un dossier multi-documents (plein écran) ───────
+      GoRoute(
+        path: '/declarations/dossier/:groupId',
+        builder: (_, state) =>
+            DossierDetailPage(groupId: state.pathParameters['groupId']!),
+      ),
 
       // ── Shell avec NavigationBar ────────────────────────────────
       ShellRoute(

@@ -38,10 +38,10 @@ class DeclarationsListPage extends ConsumerWidget {
               ),
               title: Text(AppLocalizations.of(ctx).declChooseFound,
                   style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(AppLocalizations.of(ctx).declChooseFoundSub),
+              subtitle: Text(AppLocalizations.of(ctx).mdocChooseSub),
               onTap: () {
                 Navigator.pop(ctx);
-                context.go('/declarations/new?type=found');
+                context.push('/declarations/multi');
               },
             ),
             ListTile(
@@ -55,20 +55,6 @@ class DeclarationsListPage extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/declarations/new?type=lost');
-              },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: cs.primary.withValues(alpha: 0.15),
-                child: Icon(Icons.auto_awesome_outlined, color: cs.primary),
-              ),
-              title: Text(AppLocalizations.of(ctx).mdocTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(AppLocalizations.of(ctx).mdocChooseSub),
-              onTap: () {
-                Navigator.pop(ctx);
-                context.push('/declarations/multi');
               },
             ),
             const SizedBox(height: 8),
@@ -116,7 +102,9 @@ class DeclarationsListPage extends ConsumerWidget {
                     ),
                   ),
                 ],
-                data: (items) => [
+                data: (items) {
+                  final grouped = groupDeclarations(items);
+                  return [
                   SliverToBoxAdapter(child: _StatsRow(items: items)),
                   if (items.isEmpty)
                     SliverFillRemaining(
@@ -216,22 +204,32 @@ class DeclarationsListPage extends ConsumerWidget {
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       sliver: SliverList.separated(
-                        itemCount: items.length,
+                        itemCount: grouped.length,
                         separatorBuilder: (_, __) =>
                             const SizedBox(height: 10),
-                        itemBuilder: (_, i) => Appear(
-                          delay:
-                              Duration(milliseconds: (i * 45).clamp(0, 400)),
-                          child: DeclarationCard(
-                            declaration: items[i],
-                            onTap: () =>
-                                context.go('/declarations/${items[i].id}'),
-                          ),
-                        ),
+                        itemBuilder: (_, i) {
+                          final entry = grouped[i];
+                          return Appear(
+                            delay: Duration(
+                                milliseconds: (i * 45).clamp(0, 400)),
+                            child: entry.isDossier
+                                ? _DossierHomeCard(
+                                    docs: entry.docs,
+                                    onTap: () => context.push(
+                                        '/declarations/dossier/${entry.groupId}'),
+                                  )
+                                : DeclarationCard(
+                                    declaration: entry.docs.first,
+                                    onTap: () => context.go(
+                                        '/declarations/${entry.docs.first.id}'),
+                                  ),
+                          );
+                        },
                       ),
                     ),
                   ],
-                ],
+                  ];
+                },
               ),
             ],
           ),
@@ -393,7 +391,7 @@ class _HeroCard extends StatelessWidget {
                   icon: Icons.document_scanner_outlined,
                   background: AppColors.kGreen,
                   foreground: Colors.white,
-                  onTap: () => context.go('/declarations/new?type=found'),
+                  onTap: () => context.push('/declarations/multi'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -590,6 +588,140 @@ class _ProfileBanner extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Une entrée de la liste d'accueil : soit un document seul, soit un dossier
+/// multi-documents (≥ 2 documents partageant le même group_id).
+class DeclarationEntry {
+  final List<Declaration> docs;
+  const DeclarationEntry(this.docs);
+  bool get isDossier => docs.length >= 2;
+  String? get groupId => docs.first.groupId;
+}
+
+/// Regroupe les déclarations par dossier (group_id) en préservant l'ordre
+/// d'apparition. Un group_id présent sur ≥ 2 documents forme un dossier.
+List<DeclarationEntry> groupDeclarations(List<Declaration> decls) {
+  final entries = <DeclarationEntry>[];
+  final seen = <String>{};
+  for (final d in decls) {
+    final g = d.groupId;
+    if (g == null || g.isEmpty) {
+      entries.add(DeclarationEntry([d]));
+      continue;
+    }
+    if (seen.contains(g)) continue;
+    seen.add(g);
+    final members = decls.where((x) => x.groupId == g).toList();
+    entries.add(DeclarationEntry(members));
+  }
+  return entries;
+}
+
+/// Carte « dossier » sur l'accueil : résume plusieurs documents d'un même
+/// propriétaire. Un tap ouvre le détail du dossier (tous les fichiers).
+class _DossierHomeCard extends StatelessWidget {
+  final List<Declaration> docs;
+  final VoidCallback onTap;
+  const _DossierHomeCard({required this.docs, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
+    final owner = docs.first.nomProprietaire;
+    final types = docs.map((d) => d.documentLabel).toSet().join(' · ');
+    final thumb = docs
+        .map((d) => d.allPhotoUrls.isNotEmpty ? d.allPhotoUrls.first : null)
+        .firstWhere((u) => u != null, orElse: () => null);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.25)),
+        ),
+        child: Row(children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: thumb != null
+                    ? Image.network(mediaUrl(thumb),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.folder_shared_outlined, color: cs.primary))
+                    : Icon(Icons.folder_shared_outlined, color: cs.primary),
+              ),
+              Positioned(
+                right: -6,
+                top: -6,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('${docs.length}',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(l.dossierBadge,
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: cs.primary)),
+                ),
+                const SizedBox(height: 6),
+                Text(owner,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('${l.dossierDocsCount(docs.length)} · $types',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurface.withValues(alpha: 0.55))),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: cs.onSurface.withValues(alpha: 0.4)),
+        ]),
       ),
     );
   }

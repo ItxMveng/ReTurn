@@ -64,7 +64,6 @@ class _MultiDocDeclarationPageState
   final _ocr = OcrService();
   final _locationCtrl = TextEditingController();
   final List<_Dossier> _dossiers = [];
-  bool _found = true; // trouvé (par défaut) / perdu
   bool _analyzing = false;
   bool _submitting = false;
 
@@ -178,7 +177,10 @@ class _MultiDocDeclarationPageState
             .toList();
         await repo.createDossierWithPhotos(
           {
-            'declaration_type': _found ? 'found' : 'lost',
+            // Ce parcours concerne les documents TROUVÉS (on a les fichiers en
+            // main → scan/OCR/tri). La perte se déclare via le formulaire
+            // descriptif dédié.
+            'declaration_type': 'found',
             if (location.isNotEmpty) 'location_description': location,
           },
           items,
@@ -221,18 +223,6 @@ class _MultiDocDeclarationPageState
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // Type trouvé / perdu.
-                  SegmentedButton<bool>(
-                    segments: [
-                      ButtonSegment(value: true, label: Text(l.declTagFound)),
-                      ButtonSegment(value: false, label: Text(l.declTagLost)),
-                    ],
-                    selected: {_found},
-                    onSelectionChanged: (s) =>
-                        setState(() => _found = s.first),
-                  ),
-                  const SizedBox(height: 16),
-
                   if (!hasDocs && !_analyzing) ...[
                     _IntroCard(text: l.mdocIntro),
                     const SizedBox(height: 20),

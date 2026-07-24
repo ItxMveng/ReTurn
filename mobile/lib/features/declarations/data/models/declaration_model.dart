@@ -30,6 +30,9 @@ class DeclarationModel with _$DeclarationModel {
     @JsonKey(name: 'status') @Default('active') String status,
     @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'user_id') String? userId,
+    // Dossier multi-documents : plusieurs déclarations d'un même dépôt
+    // (un propriétaire, plusieurs documents) partagent ce group_id.
+    @JsonKey(name: 'group_id') String? groupId,
   }) = _DeclarationModel;
 
   factory DeclarationModel.fromJson(Map<String, dynamic> json) =>

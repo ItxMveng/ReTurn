@@ -574,6 +574,10 @@ class AppLocalizations {
       'mdocError': 'Enregistrement impossible. Réessayez.',
       'mdocOwnerRequired': 'Indiquez le nom du propriétaire pour chaque dossier.',
       'mdocChooseSub': 'Portefeuille, plusieurs personnes — tri automatique',
+      'dossierBadge': 'DOSSIER',
+      'dossierDocsCount': '{n} documents',
+      'dossierTitle': 'Dossier',
+      'dossierEmpty': 'Ce dossier est vide.',
     },
     'en': {
       'appName': 'ReTurn',
@@ -1117,6 +1121,10 @@ class AppLocalizations {
       'mdocError': 'Could not save. Please try again.',
       'mdocOwnerRequired': 'Enter the owner name for each folder.',
       'mdocChooseSub': 'Wallet, several people — automatic sorting',
+      'dossierBadge': 'FOLDER',
+      'dossierDocsCount': '{n} documents',
+      'dossierTitle': 'Folder',
+      'dossierEmpty': 'This folder is empty.',
     },
   };
 
@@ -1525,6 +1533,11 @@ class AppLocalizations {
   String get mdocError => _t('mdocError');
   String get mdocOwnerRequired => _t('mdocOwnerRequired');
   String get mdocChooseSub => _t('mdocChooseSub');
+  String get dossierBadge => _t('dossierBadge');
+  String dossierDocsCount(int n) =>
+      _t('dossierDocsCount').replaceAll('{n}', '$n');
+  String get dossierTitle => _t('dossierTitle');
+  String get dossierEmpty => _t('dossierEmpty');
 
   /// Libellé d'affichage d'un genre (la valeur stockée reste en français).
   String genderLabel(String value) {
