@@ -38,10 +38,10 @@ class DeclarationsListPage extends ConsumerWidget {
               ),
               title: Text(AppLocalizations.of(ctx).declChooseFound,
                   style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(AppLocalizations.of(ctx).mdocChooseSub),
+              subtitle: Text(AppLocalizations.of(ctx).declChooseFoundSub),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/declarations/multi');
+                context.go('/declarations/new?type=found');
               },
             ),
             ListTile(
@@ -55,6 +55,20 @@ class DeclarationsListPage extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/declarations/new?type=lost');
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: cs.primary.withValues(alpha: 0.15),
+                child: Icon(Icons.auto_awesome_outlined, color: cs.primary),
+              ),
+              title: Text(AppLocalizations.of(ctx).mdocTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppLocalizations.of(ctx).mdocChooseSub),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/declarations/multi');
               },
             ),
             const SizedBox(height: 8),
@@ -391,7 +405,7 @@ class _HeroCard extends StatelessWidget {
                   icon: Icons.document_scanner_outlined,
                   background: AppColors.kGreen,
                   foreground: Colors.white,
-                  onTap: () => context.push('/declarations/multi'),
+                  onTap: () => context.go('/declarations/new?type=found'),
                 ),
               ),
               const SizedBox(width: 10),

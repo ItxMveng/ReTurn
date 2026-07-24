@@ -6,10 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/services/media_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../ocr/models/ocr_result.dart';
-import '../../ocr/services/ocr_service.dart';
+import '../../ocr/services/ocr_pipeline.dart';
 import '../providers/declarations_provider.dart';
 import '../repositories/declarations_repository.dart';
 
@@ -61,9 +62,10 @@ class MultiDocDeclarationPage extends ConsumerStatefulWidget {
 
 class _MultiDocDeclarationPageState
     extends ConsumerState<MultiDocDeclarationPage> {
-  final _ocr = OcrService();
+  late final OcrPipeline _ocr = OcrPipeline(ref.read(dioProvider));
   final _locationCtrl = TextEditingController();
   final List<_Dossier> _dossiers = [];
+  bool _found = true; // trouvé (par défaut) / perdu
   bool _analyzing = false;
   bool _submitting = false;
 
@@ -112,7 +114,7 @@ class _MultiDocDeclarationPageState
       String type = 'other';
       String number = '';
       try {
-        final OcrResult r = await _ocr.processImage(File(path));
+        final OcrResult r = await _ocr.analyze(File(path));
         owner = [r.firstName, r.lastName]
             .where((s) => (s ?? '').trim().isNotEmpty)
             .map((s) => s!.trim())
@@ -177,10 +179,7 @@ class _MultiDocDeclarationPageState
             .toList();
         await repo.createDossierWithPhotos(
           {
-            // Ce parcours concerne les documents TROUVÉS (on a les fichiers en
-            // main → scan/OCR/tri). La perte se déclare via le formulaire
-            // descriptif dédié.
-            'declaration_type': 'found',
+            'declaration_type': _found ? 'found' : 'lost',
             if (location.isNotEmpty) 'location_description': location,
           },
           items,
@@ -223,6 +222,18 @@ class _MultiDocDeclarationPageState
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
+                  // Type trouvé / perdu.
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment(value: true, label: Text(l.declTagFound)),
+                      ButtonSegment(value: false, label: Text(l.declTagLost)),
+                    ],
+                    selected: {_found},
+                    onSelectionChanged: (s) =>
+                        setState(() => _found = s.first),
+                  ),
+                  const SizedBox(height: 16),
+
                   if (!hasDocs && !_analyzing) ...[
                     _IntroCard(text: l.mdocIntro),
                     const SizedBox(height: 20),
