@@ -13,6 +13,7 @@ import '../../features/home/home_shell.dart';
 import '../../features/declarations/pages/declarations_list_page.dart';
 import '../../features/declarations/pages/declaration_form_page.dart';
 import '../../features/declarations/pages/declaration_detail_page.dart';
+import '../../features/declarations/pages/multi_doc_declaration_page.dart';
 import '../../features/matches/pages/matches_list_page.dart';
 import '../../features/matches/pages/match_detail_page.dart';
 import '../../features/messaging/pages/conversations_page.dart';
@@ -74,6 +75,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── OCR (hors shell — plein écran) ─────────────────────────
       GoRoute(path: '/ocr/scan', builder: (_, __) => const OcrScanPage()),
       GoRoute(path: '/ocr/review', builder: (_, __) => const OcrReviewPage()),
+
+      // ── Déclaration multi-documents (tri auto — plein écran) ────
+      GoRoute(
+          path: '/declarations/multi',
+          builder: (_, __) => const MultiDocDeclarationPage()),
 
       // ── Shell avec NavigationBar ────────────────────────────────
       ShellRoute(

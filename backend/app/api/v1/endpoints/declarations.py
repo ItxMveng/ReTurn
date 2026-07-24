@@ -93,6 +93,9 @@ async def create_declaration_batch(
     longitude: float | None = Form(None),
     location_description: str | None = Form(None),
     event_date: DateType | None = Form(None),
+    photo_map: str | None = Form(
+        None, description="JSON list[int] : index du document pour chaque photo (une photo par document)."
+    ),
     photos: list[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -156,9 +159,24 @@ async def create_declaration_batch(
             detail=f"Vous ne pouvez pas avoir plus de {limit} déclarations actives simultanément.",
         )
 
+    # Mapping optionnel photo → document (une photo propre par document).
+    parsed_photo_map: list[int] | None = None
+    if photo_map:
+        try:
+            raw_map = json.loads(photo_map)
+            assert isinstance(raw_map, list) and all(
+                isinstance(x, int) for x in raw_map
+            )
+            parsed_photo_map = raw_map
+        except (json.JSONDecodeError, AssertionError):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="photo_map doit être une liste JSON d'entiers.",
+            )
+
     await storage_service.ensure_bucket()
     declarations = await declaration_service.create_declarations_group(
-        db, current_user, parsed, photos
+        db, current_user, parsed, photos, photo_map=parsed_photo_map
     )
     for decl in declarations:
         await run_matching(db, redis, decl)

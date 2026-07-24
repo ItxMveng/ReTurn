@@ -57,6 +57,20 @@ class DeclarationsListPage extends ConsumerWidget {
                 context.go('/declarations/new?type=lost');
               },
             ),
+            const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: cs.primary.withValues(alpha: 0.15),
+                child: Icon(Icons.auto_awesome_outlined, color: cs.primary),
+              ),
+              title: Text(AppLocalizations.of(ctx).mdocTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(AppLocalizations.of(ctx).mdocChooseSub),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/declarations/multi');
+              },
+            ),
             const SizedBox(height: 8),
           ],
         ),

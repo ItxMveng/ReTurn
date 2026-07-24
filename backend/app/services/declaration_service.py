@@ -67,18 +67,25 @@ async def create_declarations_group(
     user: User,
     items: list[DeclarationCreate],
     photos: list[UploadFile],
+    photo_map: list[int] | None = None,
 ) -> list[Declaration]:
     """Dossier multi-documents : crée une déclaration par document, toutes
     reliées par un group_id commun (ex. portefeuille avec CNI + permis).
 
-    Les photos (max 3) sont partagées par toutes les déclarations du dossier ;
-    le matching tourne ensuite individuellement pour chaque document.
+    Attribution des photos :
+      - Si `photo_map` est fourni (même longueur que `photos`), chaque photo est
+        attachée au document d'indice `photo_map[i]` → UNE photo propre par
+        document (flux « déclarer plusieurs documents » avec tri automatique).
+      - Sinon, les photos (max 3) sont partagées par tout le dossier
+        (comportement historique du formulaire manuel).
     """
     group_id = uuid.uuid4()
-    photo_urls: list[str] = []
 
-    for photo in photos[:3]:
+    # Upload de toutes les photos (index conservé pour l'alignement).
+    uploaded: list[str] = []
+    for photo in photos:
         content = await photo.read()
+        url = ""
         if content:
             url = await storage_service.upload_photo(
                 content,
@@ -86,14 +93,24 @@ async def create_declarations_group(
                 f"group_{group_id}",
                 photo.content_type or "image/jpeg",
             )
-            photo_urls.append(url)
+        uploaded.append(url)
+
+    # Répartition photo → document.
+    per_item: list[list[str]] = [[] for _ in items]
+    if photo_map and len(photo_map) == len(uploaded):
+        for photo_idx, item_idx in enumerate(photo_map):
+            if 0 <= item_idx < len(items) and uploaded[photo_idx]:
+                per_item[item_idx].append(uploaded[photo_idx])
+    else:
+        shared = [u for u in uploaded[:3] if u]
+        per_item = [list(shared) for _ in items]
 
     declarations: list[Declaration] = []
-    for item in items:
+    for i, item in enumerate(items):
         decl = Declaration(
             id=uuid.uuid4(),
             user_id=user.id,
-            photo_urls=photo_urls,
+            photo_urls=per_item[i],
             group_id=group_id,
             **item.model_dump(),
         )

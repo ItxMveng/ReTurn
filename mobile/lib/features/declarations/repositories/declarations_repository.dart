@@ -82,6 +82,39 @@ class DeclarationsRepository {
         .toList();
   }
 
+  /// Dossier multi-documents avec UNE photo propre par document (flux « tri
+  /// automatique »). [perItemPhotoPaths] est aligné sur [items] : chaque
+  /// document peut avoir son propre fichier (chaîne vide = aucune photo).
+  Future<List<Declaration>> createDossierWithPhotos(
+    Map<String, dynamic> shared,
+    List<Map<String, dynamic>> items,
+    List<String> perItemPhotoPaths,
+  ) async {
+    final files = <MapEntry<String, MultipartFile>>[];
+    final photoMap = <int>[];
+    for (var i = 0; i < perItemPhotoPaths.length; i++) {
+      final path = perItemPhotoPaths[i];
+      if (path.isEmpty) continue;
+      files.add(MapEntry('photos', await MultipartFile.fromFile(path)));
+      photoMap.add(i);
+    }
+    final form = FormData.fromMap({
+      for (final entry in shared.entries)
+        if (entry.value != null) entry.key: '${entry.value}',
+      'items': jsonEncode(items),
+      if (photoMap.isNotEmpty) 'photo_map': jsonEncode(photoMap),
+    });
+    form.files.addAll(files);
+    final res = await _dio.post(
+      '/declarations/batch',
+      data: form,
+      options: Options(contentType: Headers.multipartFormDataContentType),
+    );
+    return (res.data as List)
+        .map((e) => DeclarationModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Compteur de déclarations actives + limite dynamique (chip UI).
   Future<({int activeCount, int limit})> limits() async {
     final res = await _dio.get('/declarations/limits');

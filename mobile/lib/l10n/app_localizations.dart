@@ -553,6 +553,27 @@ class AppLocalizations {
       'profBiometricReason': 'Activez le verrouillage biométrique',
       'profChangePhoto': 'Changer la photo de profil',
       'errorTitle': 'Oups, un souci',
+      // Déclaration multi-documents (tri automatique)
+      'mdocTitle': 'Déclarer plusieurs documents',
+      'mdocIntro': 'Ajoutez ou photographiez tous les documents. L\'app lit '
+          'chaque fichier et regroupe automatiquement les documents par '
+          'personne — un dossier par propriétaire.',
+      'mdocAddGallery': 'Ajouter depuis la galerie',
+      'mdocTakePhotos': 'Prendre une photo',
+      'mdocAnalyzing': 'Analyse des documents…',
+      'mdocDossierOwner': 'Propriétaire du dossier',
+      'mdocOwnerHint': 'Nom sur les documents',
+      'mdocNoName': 'Sans nom détecté',
+      'mdocRemove': 'Retirer',
+      'mdocAddMore': 'Ajouter d\'autres documents',
+      'mdocLocation': 'Lieu (optionnel, améliore le rapprochement)',
+      'mdocEmpty': 'Aucun document ajouté pour l\'instant.',
+      'mdocDetected': '{n} personne(s) détectée(s)',
+      'mdocSubmit': 'Déclarer {n} dossier(s)',
+      'mdocSuccess': '{n} dossier(s) déclaré(s) ✓',
+      'mdocError': 'Enregistrement impossible. Réessayez.',
+      'mdocOwnerRequired': 'Indiquez le nom du propriétaire pour chaque dossier.',
+      'mdocChooseSub': 'Portefeuille, plusieurs personnes — tri automatique',
     },
     'en': {
       'appName': 'ReTurn',
@@ -1075,6 +1096,27 @@ class AppLocalizations {
       'profBiometricReason': 'Enable biometric lock',
       'profChangePhoto': 'Change profile photo',
       'errorTitle': 'Oops, something went wrong',
+      // Multi-document declaration (auto sorting)
+      'mdocTitle': 'Declare multiple documents',
+      'mdocIntro': 'Add or photograph all the documents. The app reads each '
+          'file and automatically groups documents by person — one folder '
+          'per owner.',
+      'mdocAddGallery': 'Add from gallery',
+      'mdocTakePhotos': 'Take a photo',
+      'mdocAnalyzing': 'Analysing documents…',
+      'mdocDossierOwner': 'Folder owner',
+      'mdocOwnerHint': 'Name on the documents',
+      'mdocNoName': 'No name detected',
+      'mdocRemove': 'Remove',
+      'mdocAddMore': 'Add more documents',
+      'mdocLocation': 'Location (optional, improves matching)',
+      'mdocEmpty': 'No document added yet.',
+      'mdocDetected': '{n} person(s) detected',
+      'mdocSubmit': 'Declare {n} folder(s)',
+      'mdocSuccess': '{n} folder(s) declared ✓',
+      'mdocError': 'Could not save. Please try again.',
+      'mdocOwnerRequired': 'Enter the owner name for each folder.',
+      'mdocChooseSub': 'Wallet, several people — automatic sorting',
     },
   };
 
@@ -1464,6 +1506,25 @@ class AppLocalizations {
   String get profBiometricReason => _t('profBiometricReason');
   String get profChangePhoto => _t('profChangePhoto');
   String get errorTitle => _t('errorTitle');
+  // Déclaration multi-documents
+  String get mdocTitle => _t('mdocTitle');
+  String get mdocIntro => _t('mdocIntro');
+  String get mdocAddGallery => _t('mdocAddGallery');
+  String get mdocTakePhotos => _t('mdocTakePhotos');
+  String get mdocAnalyzing => _t('mdocAnalyzing');
+  String get mdocDossierOwner => _t('mdocDossierOwner');
+  String get mdocOwnerHint => _t('mdocOwnerHint');
+  String get mdocNoName => _t('mdocNoName');
+  String get mdocRemove => _t('mdocRemove');
+  String get mdocAddMore => _t('mdocAddMore');
+  String get mdocLocation => _t('mdocLocation');
+  String get mdocEmpty => _t('mdocEmpty');
+  String mdocDetected(int n) => _t('mdocDetected').replaceAll('{n}', '$n');
+  String mdocSubmit(int n) => _t('mdocSubmit').replaceAll('{n}', '$n');
+  String mdocSuccess(int n) => _t('mdocSuccess').replaceAll('{n}', '$n');
+  String get mdocError => _t('mdocError');
+  String get mdocOwnerRequired => _t('mdocOwnerRequired');
+  String get mdocChooseSub => _t('mdocChooseSub');
 
   /// Libellé d'affichage d'un genre (la valeur stockée reste en français).
   String genderLabel(String value) {
