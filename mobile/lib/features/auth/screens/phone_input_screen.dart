@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/app_localizations.dart';
 import '../application/auth_notifier.dart';
 import '../application/auth_state.dart';
 
@@ -91,7 +92,7 @@ class _GoogleBtn extends StatelessWidget {
             _GoogleLogo(),
             const SizedBox(width: 10),
             Text(
-              'Continuer avec Google',
+              AppLocalizations.of(context).loginGoogle,
               style: TextStyle(
                 color: cs.onSurface,
                 fontWeight: FontWeight.w600,
@@ -152,6 +153,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     });
 
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -162,48 +164,82 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 36),
+                const SizedBox(height: 48),
                 // ── Bloc de marque ─────────────────────────────────────
-                Container(
-                  width: 60,
-                  height: 60,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(16),
+                Center(
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [cs.primary, cs.primary.withValues(alpha: 0.75)],
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.primary.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.assignment_turned_in_outlined,
+                        color: Colors.white, size: 38),
                   ),
-                  child: const Icon(Icons.fact_check_outlined,
-                      color: Colors.white, size: 30),
                 ),
                 const SizedBox(height: 18),
+                Center(
+                  child: Text(
+                    l.appName,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900, color: cs.primary),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    l.splashTagline,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface.withValues(alpha: 0.55)),
+                  ),
+                ),
+                const SizedBox(height: 40),
                 Text(
-                  'Bienvenue sur DocRetour',
+                  l.loginWelcome,
                   style: Theme.of(context)
                       .textTheme
-                      .headlineSmall
+                      .titleLarge
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Connectez-vous avec votre numéro ou votre compte Google.',
+                  l.loginSubtitle,
                   style: TextStyle(
                       color: cs.onSurface.withValues(alpha: 0.55)),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 TextFormField(
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                    labelText: 'Numéro de téléphone',
-                    hintText: '+237 6 XX XX XX XX',
+                    labelText: l.profPhoneLabel,
+                    hintText: l.loginPhoneHint,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.phone),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Numéro requis';
+                    if (v == null || v.trim().isEmpty) {
+                      return l.loginPhoneRequired;
+                    }
                     if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v.trim())) {
-                      return 'Numéro invalide';
+                      return l.loginPhoneInvalid;
                     }
                     return null;
                   },
@@ -230,7 +266,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                           height: 22,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Recevoir le code'),
+                      : Text(l.loginGetCode),
                 ),
                 const SizedBox(height: 20),
                 Row(children: [
@@ -238,7 +274,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      'ou',
+                      l.loginOr,
                       style: TextStyle(
                         color: Theme.of(context)
                             .colorScheme
@@ -259,8 +295,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'En continuant vous acceptez nos conditions d\'utilisation '
-                  'et notre politique de confidentialité (CPDP).',
+                  l.loginTerms,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 11,

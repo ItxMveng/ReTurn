@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../core/widgets/appear.dart';
+import '../../../core/widgets/state_views.dart';
 import '../repositories/messaging_repository.dart';
 import '../models/message.dart';
 import '../utils/chat_format.dart';
@@ -32,7 +33,8 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
       appBar: AppBar(title: const Text('Messages')),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
+        error: (e, _) => AppErrorView(
+            error: e, onRetry: () => ref.invalidate(_conversationsProvider)),
         data: (convs) {
           final filtered = _query.trim().isEmpty
               ? convs

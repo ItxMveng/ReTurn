@@ -51,13 +51,16 @@ async def list_conversations(
     Chaque match auquel l'utilisateur participe devient une conversation, avec
     le nom de l'autre participant, le dernier message et le nombre de non-lus.
     """
+    # Une conversation n'apparaît QU'APRÈS vérification d'identité : le match
+    # passe à "confirmed" uniquement quand le propriétaire a validé son identité
+    # (verification_service._on_approved). Avant cela → aucun chat visible.
     result = await db.execute(
         select(Match).where(
             or_(
                 Match.user_found_id == current_user.id,
                 Match.user_lost_id == current_user.id,
             ),
-            Match.status != "ignored",
+            Match.status == "confirmed",
         )
     )
     matches = list(result.scalars().all())
@@ -156,10 +159,14 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé à ce match"
         )
-    if match.status in ("ignored", "closed"):
+    # La conversation ne s'ouvre qu'après vérification d'identité (match
+    # "confirmed"). Tant que le match est "pending", aucun échange possible.
+    if match.status != "confirmed":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La conversation est fermée.",
+            detail="La conversation n'est pas encore ouverte."
+            if match.status == "pending"
+            else "La conversation est fermée.",
         )
     content = payload.content.strip()
     if not content:
@@ -392,8 +399,9 @@ async def websocket_chat(
         if match is None:
             await ws.close(code=4003)
             return
-        if match.status in ("ignored", "closed"):
-            # Conversation fermée : pas d'échanges sur un match abandonné.
+        if match.status != "confirmed":
+            # Conversation indisponible : soit pas encore ouverte (identité non
+            # vérifiée → "pending"), soit fermée/abandonnée ("closed"/"ignored").
             await ws.close(code=4004)
             return
 

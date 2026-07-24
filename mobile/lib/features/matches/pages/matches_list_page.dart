@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/appear.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/matches_provider.dart';
 import '../repositories/matches_repository.dart';
@@ -30,7 +31,8 @@ class _MatchesListPageState extends ConsumerState<MatchesListPage> {
       appBar: AppBar(title: Text(l.matchesTitle2)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
+        error: (e, _) => AppErrorView(
+            error: e, onRetry: () => ref.invalidate(matchesProvider)),
         data: (items) {
           final filtered = switch (_filter) {
             'pending' => items.where((m) => m.isPending).toList(),

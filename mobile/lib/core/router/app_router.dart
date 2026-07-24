@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/application/auth_notifier.dart';
 import '../../features/auth/application/auth_state.dart';
+import '../../features/declarations/providers/declarations_provider.dart';
+import '../../features/matches/providers/matches_provider.dart';
+import '../../features/profile/providers/profile_provider.dart';
 import '../../features/splash/splash_page.dart';
 import '../../features/auth/screens/phone_input_screen.dart';
 import '../../features/auth/screens/otp_verify_screen.dart';
@@ -31,7 +34,17 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Réévalue les redirections quand l'état d'auth change (session expirée,
   // logout forcé par l'intercepteur réseau, etc.).
   final refresh = ValueNotifier(0);
-  ref.listen(authNotifierProvider, (_, __) => refresh.value++);
+  ref.listen(authNotifierProvider, (prev, next) {
+    refresh.value++;
+    // À la connexion, on force un refetch propre des données : évite qu'un
+    // fetch déclenché trop tôt (token pas encore prêt) laisse une erreur en
+    // cache et oblige l'utilisateur à recharger la page plusieurs fois.
+    if (next is AuthAuthenticated && prev is! AuthAuthenticated) {
+      ref.invalidate(profileProvider);
+      ref.invalidate(declarationsProvider);
+      ref.invalidate(matchesProvider);
+    }
+  });
   ref.onDispose(refresh.dispose);
 
   return GoRouter(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../models/declaration.dart';
 
 class DeclarationCard extends StatelessWidget {
@@ -89,10 +90,12 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final (label, color) = switch (status) {
-      'matched' => ('Matchée', AppColors.secondary),
-      'closed' => ('Restituée', AppColors.onSurfaceVariant),
-      _ => ('Active', AppColors.kGreenDark),
+      'matched' => (l.declStatusMatched, AppColors.secondary),
+      'closed' => (l.declStatusReturned, AppColors.onSurfaceVariant),
+      'cancelled' => (l.declStatusCancelled, AppColors.onSurfaceVariant),
+      _ => (l.declStatusActive, AppColors.kGreenDark),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

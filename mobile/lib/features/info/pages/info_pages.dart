@@ -3,9 +3,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 
-// Coordonnées de support — à adapter à ton organisation.
-const String kSupportEmail = 'support@return-app.cm';
-const String kSupportPhone = '+237600000000'; // WhatsApp / appel
+// Coordonnées de support ReTurn.
+const String kSupportEmail = 'francisitoua05@gmail.com';
+const String kSupportPhone = '+330746533591'; // WhatsApp / appel
 
 /// ── Aide & FAQ ────────────────────────────────────────────────────────────────
 class HelpPage extends StatelessWidget {

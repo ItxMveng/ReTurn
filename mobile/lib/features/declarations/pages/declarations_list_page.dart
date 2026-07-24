@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/appear.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/media_url.dart';
 import '../../matches/providers/matches_provider.dart';
@@ -95,20 +96,9 @@ class DeclarationsListPage extends ConsumerWidget {
                 error: (e, _) => [
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(
-                      child:
-                          Column(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.error_outline, color: cs.error, size: 48),
-                        const SizedBox(height: 12),
-                        Text(e.toString(),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                            onPressed: () =>
-                                ref.invalidate(declarationsProvider),
-                            child: const Text('Réessayer')),
-                      ]),
+                    child: AppErrorView(
+                      error: e,
+                      onRetry: () => ref.invalidate(declarationsProvider),
                     ),
                   ),
                 ],
@@ -278,13 +268,15 @@ class _GreetingHeader extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  firstName == null
-                      ? AppLocalizations.of(context).greetingHello
-                      : '${AppLocalizations.of(context).greetingHello} $firstName',
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w800),
-                ),
+                Builder(builder: (context) {
+                  final greet = AppLocalizations.of(context)
+                      .greeting(DateTime.now().hour);
+                  return Text(
+                    firstName == null ? greet : '$greet $firstName',
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w800),
+                  );
+                }),
                 if (profile?.city?.isNotEmpty ?? false)
                   Text(profile!.city!,
                       style: TextStyle(

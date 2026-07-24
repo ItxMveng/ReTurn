@@ -17,7 +17,7 @@ DOCUMENT_TYPES = [
 ]
 
 DeclarationType = Literal["found", "lost"]
-StatusType = Literal["active", "matched", "closed"]
+StatusType = Literal["active", "matched", "closed", "cancelled"]
 
 
 class DeclarationCreate(BaseModel):

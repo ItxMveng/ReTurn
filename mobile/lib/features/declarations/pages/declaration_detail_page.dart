@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/media_url.dart';
+import '../../../core/widgets/state_views.dart';
+import '../../../l10n/app_localizations.dart';
 import '../models/declaration.dart';
 import '../providers/declarations_provider.dart';
 import '../repositories/declarations_repository.dart';
@@ -137,11 +139,15 @@ class DeclarationDetailPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Détail de la déclaration')),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
+        error: (e, _) => AppErrorView(
+            error: e,
+            onRetry: () => ref.invalidate(declarationDetailProvider(id))),
         data: (d) {
+          final l = AppLocalizations.of(context);
           final isFound = d.type == DeclarationType.found;
           final accent = isFound ? cs.primary : Colors.orange;
-          final closed = d.status == 'closed';
+          final cancelled = d.status == 'cancelled';
+          final closed = d.status == 'closed' || cancelled;
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -182,11 +188,13 @@ class DeclarationDetailPage extends ConsumerWidget {
                             _Pill(text: d.typeLabel, color: accent),
                             const SizedBox(width: 6),
                             _Pill(
-                              text: closed
-                                  ? 'Terminée'
-                                  : d.status == 'matched'
-                                      ? 'Matchée'
-                                      : 'Active',
+                              text: cancelled
+                                  ? l.declStatusCancelled
+                                  : d.status == 'closed'
+                                      ? l.declStatusReturned
+                                      : d.status == 'matched'
+                                          ? l.declStatusMatched
+                                          : l.declStatusActive,
                               color: closed
                                   ? Colors.grey
                                   : d.status == 'matched'

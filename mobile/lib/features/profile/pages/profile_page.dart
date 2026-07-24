@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/providers/settings_provider.dart';
@@ -853,6 +854,58 @@ class _ReadOnlyField extends StatelessWidget {
   }
 }
 
+/// Feuille de choix Caméra/Galerie pour changer la photo de profil, avec
+/// permission runtime (via MediaService) et remontée d'erreur explicite.
+Future<void> _changeAvatar(
+    BuildContext context, WidgetRef ref, AppLocalizations l) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: AppColors.surface,
+    builder: (ctx) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(l.profChangePhoto,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+          title: Text(l.declTakePhoto),
+          onTap: () => Navigator.pop(ctx, ImageSource.camera),
+        ),
+        ListTile(
+          leading: Icon(Icons.photo_library_outlined, color: AppColors.primary),
+          title: Text(l.declFromGallery),
+          onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+        ),
+        const SizedBox(height: 8),
+      ]),
+    ),
+  );
+  if (source == null || !context.mounted) return;
+
+  final error =
+      await ref.read(profileProvider.notifier).pickAndUploadAvatar(source);
+  if (!context.mounted) return;
+  // null = succès, '' = annulé (silencieux), sinon message d'erreur.
+  if (error == null) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(l.profAvatarUpdated),
+      backgroundColor: AppColors.primary,
+    ));
+  } else if (error.isNotEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(error),
+      backgroundColor: AppColors.error,
+    ));
+  }
+}
+
 // ── Header (avatar + identité + complétude) ─────────────────────────────────────
 class _Header extends ConsumerWidget {
   final UserProfile profile;
@@ -894,20 +947,7 @@ class _Header extends ConsumerWidget {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () async {
-                      final ok = await ref
-                          .read(profileProvider.notifier)
-                          .updateAvatar();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(ok
-                              ? l.profAvatarUpdated
-                              : l.profAvatarCancelled),
-                          backgroundColor:
-                              ok ? AppColors.primary : Colors.grey,
-                        ));
-                      }
-                    },
+                    onTap: () => _changeAvatar(context, ref, l),
                     child: Stack(
                       children: [
                         Container(

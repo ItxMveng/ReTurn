@@ -1,14 +1,16 @@
 """Matching service — weighted multi-criteria algorithm.
 
-Score breakdown (max 1.0):
-  - Document number exact match : 0.35 (hard gate if both provided)
-  - Owner name Jaro-Winkler      : 0.35
-  - Geographic proximity         : 0.20  (haversine, 50 km = full score)
-  - Temporal coherence           : 0.10  (found_date >= lost_date)
+Poids relatifs (renormalisés sur les critères RÉELLEMENT présents) :
+  - Numéro de document (match exact) : 0.45  (porte dure si les deux fournis)
+  - Nom du propriétaire (tolérant)   : 0.40  (tokens + accents + noms partiels)
+  - Proximité géographique           : 0.20  (haversine, 50 km = plein score)
+  - Cohérence temporelle             : 0.10  (found_date >= lost_date)
 
-Minimum score to create a Match: 0.45
+Un critère absent (pas de GPS, pas de date, un seul numéro) n'est pas compté
+et ne pénalise pas le score. Score minimum pour créer un Match : 0.45.
 """
 import math
+import unicodedata
 import uuid
 from datetime import date
 
@@ -42,13 +44,48 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
+def _normalize_name(s: str) -> str:
+    """Majuscules + suppression des accents/ponctuation → comparaison robuste
+    à la casse et aux variantes ('Mbárga' == 'MBARGA')."""
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    # Ne garder que lettres/chiffres/espaces
+    s = "".join(c if c.isalnum() or c.isspace() else " " for c in s)
+    return " ".join(s.upper().split())
+
+
 def _name_score(name_a: str | None, name_b: str | None) -> float:
-    """Jaro-Winkler similarity between two names, normalised to [0, 1]."""
+    """Similarité de noms dans [0, 1], tolérante à la casse, aux accents et
+    aux noms PARTIELS ('Jean' vs 'Jean Mbarga' → score élevé).
+
+    On combine deux mesures et on garde la meilleure :
+      - Jaro-Winkler sur la chaîne complète (ordre des mots).
+      - Score par tokens : chaque mot du nom le plus court est apparié au
+        meilleur mot de l'autre nom (gère prénom seul, mots manquants,
+        ordre inversé).
+    """
     if not name_a or not name_b:
         return 0.0
-    a = name_a.upper().strip()
-    b = name_b.upper().strip()
-    return jellyfish.jaro_winkler_similarity(a, b)
+    a = _normalize_name(name_a)
+    b = _normalize_name(name_b)
+    if not a or not b:
+        return 0.0
+
+    full = jellyfish.jaro_winkler_similarity(a, b)
+
+    ta = a.split()
+    tb = b.split()
+    if ta and tb:
+        small, large = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
+        per_token = [
+            max(jellyfish.jaro_winkler_similarity(t, u) for u in large)
+            for t in small
+        ]
+        token_score = sum(per_token) / len(per_token)
+    else:
+        token_score = full
+
+    return max(full, token_score)
 
 
 def _geo_score(d: Declaration, c: Declaration, geo_max_km: float = _GEO_MAX_KM) -> float:
@@ -75,8 +112,13 @@ def _compute_score(
     geo_max_km: float = _GEO_MAX_KM,
 ) -> float:
     """
-    Weighted multi-criteria score.
-    Returns 0.0 immediately when a hard gate fails.
+    Score multi-critères pondéré, ROBUSTE aux signaux manquants.
+
+    Chaque critère n'est compté que s'il est réellement disponible, et le score
+    final est renormalisé sur la somme des poids présents. Ainsi un nom très
+    concordant n'est pas pénalisé par l'absence de GPS ou de date — ce qui
+    évitait injustement des matchs (ex : deux CNI au même nom sans coordonnées).
+    Retourne 0.0 immédiatement si une porte dure échoue.
     """
     # Determine which declaration is found/lost for temporal check
     if new.declaration_type == "found":
@@ -84,33 +126,35 @@ def _compute_score(
     else:
         decl_found, decl_lost = candidate, new
 
-    # -- (1) Document number: hard gate + 0.35 weight ----------------------
-    doc_num_score = 0.0
+    # (poids, score) accumulés uniquement pour les critères disponibles.
+    parts: list[tuple[float, float]] = []
+
+    # -- (1) Numéro de document : porte dure + poids fort ------------------
     if new.document_number and candidate.document_number:
         n1 = new.document_number.upper().strip()
         n2 = candidate.document_number.upper().strip()
         if n1 != n2:
-            return 0.0  # hard disqualification
-        doc_num_score = 1.0
-    # If only one side has a document number, give partial credit
-    elif new.document_number or candidate.document_number:
-        doc_num_score = 0.3
+            return 0.0  # disqualification dure : deux numéros différents
+        parts.append((0.45, 1.0))  # match exact = très fort signal
+    # Un seul côté a un numéro → signal faible, on ne pénalise pas l'absence.
 
-    # -- (2) Owner name: Jaro-Winkler, 0.35 weight -------------------------
-    name_sim = _name_score(new.owner_name, candidate.owner_name)
+    # -- (2) Nom du propriétaire : tolérant (tokens + accents) -------------
+    if new.owner_name and candidate.owner_name:
+        parts.append((0.40, _name_score(new.owner_name, candidate.owner_name)))
 
-    # -- (3) Geographic proximity: haversine, 0.20 weight ------------------
-    geo_sim = _geo_score(new, candidate, geo_max_km)
+    # -- (3) Proximité géographique : seulement si coords des deux côtés ---
+    if None not in (new.latitude, new.longitude,
+                    candidate.latitude, candidate.longitude):
+        parts.append((0.20, _geo_score(new, candidate, geo_max_km)))
 
-    # -- (4) Temporal coherence: 0.10 weight --------------------------------
-    temporal_sim = _temporal_score(decl_found, decl_lost)
+    # -- (4) Cohérence temporelle : seulement si les deux dates existent ---
+    if decl_found.event_date is not None and decl_lost.event_date is not None:
+        parts.append((0.10, _temporal_score(decl_found, decl_lost)))
 
-    score = (
-        doc_num_score * 0.35
-        + name_sim * 0.35
-        + geo_sim * 0.20
-        + temporal_sim * 0.10
-    )
+    if not parts:
+        return 0.0
+    total_weight = sum(w for w, _ in parts)
+    score = sum(w * s for w, s in parts) / total_weight
     return round(score, 4)
 
 

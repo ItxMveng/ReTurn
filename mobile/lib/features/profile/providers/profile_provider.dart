@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:return_mobile/core/network/dio_provider.dart';
+import 'package:return_mobile/core/services/media_service.dart';
 import 'package:return_mobile/core/services/notification_service.dart';
 import 'package:return_mobile/core/utils/token_storage.dart';
 
@@ -117,11 +118,27 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     }
   }
 
-  /// Upload avatar depuis un XFile (image_picker)
-  Future<bool> updateAvatarFromFile(XFile xFile) async {
+  /// Prend une photo (caméra ou galerie) avec permission runtime, l'upload
+  /// et met à jour l'état. Retourne :
+  ///   - `null` si succès,
+  ///   - `''` (chaîne vide) si l'utilisateur a annulé (pas une erreur),
+  ///   - un message d'erreur lisible sinon.
+  Future<String?> pickAndUploadAvatar(ImageSource source) async {
+    final picked = await MediaService.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 512,
+    );
+    if (picked.error != null) return picked.error;
+    final file = picked.file;
+    if (file == null) return ''; // annulé
+    return _uploadAvatar(file);
+  }
+
+  Future<String?> _uploadAvatar(XFile xFile) async {
     try {
       final token = await getAccessToken();
-      if (token == null) return false;
+      if (token == null) return 'Session expirée, reconnectez-vous.';
       final formData = FormData.fromMap({
         'avatar': await MultipartFile.fromFile(
           xFile.path,
@@ -135,22 +152,14 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       );
       final updated = UserProfile.fromJson(res.data as Map<String, dynamic>);
       state = AsyncData(updated);
-      return true;
+      return null;
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      final detail = body is Map ? body['detail'] : null;
+      if (detail is String) return detail;
+      return 'Envoi de la photo impossible. Réessayez.';
     } catch (_) {
-      return false;
-    }
-  }
-
-  /// Méthode legacy (garde la compatibilité avec le code existant)
-  Future<bool> updateAvatar() async {
-    try {
-      final picker = ImagePicker();
-      final xFile = await picker.pickImage(
-          source: ImageSource.gallery, imageQuality: 80, maxWidth: 512);
-      if (xFile == null) return false;
-      return updateAvatarFromFile(xFile);
-    } catch (_) {
-      return false;
+      return 'Envoi de la photo impossible. Réessayez.';
     }
   }
 

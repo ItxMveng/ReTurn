@@ -3,10 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/services/location_service.dart';
-import '../../../core/services/media_service.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../matches/providers/matches_provider.dart';
@@ -31,52 +29,11 @@ class _RestitutionPageState extends ConsumerState<RestitutionPage> {
   bool _wasCompleted = false;
   bool _showConfetti = false;
 
-  /// Confirme la remise — exige une photo de preuve au préalable.
+  /// Confirme la remise (double validation — sans photo de preuve).
   Future<void> _confirm(Restitution r) async {
     final l = AppLocalizations.of(context);
     HapticFeedback.lightImpact();
-    // Photo de preuve requise avant la validation (anti-litige).
-    if (r.proofPhotos.isEmpty) {
-      final take = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l.restProofTitle),
-          content: Text(l.restProofBody),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l.cancel)),
-            FilledButton.icon(
-              onPressed: () => Navigator.pop(ctx, true),
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: Text(l.restTakePhoto),
-            ),
-          ],
-        ),
-      );
-      if (take != true || !mounted) return;
-      final picked = await MediaService.pickImage(
-          source: ImageSource.camera, imageQuality: 75, maxWidth: 1200);
-      if (!mounted) return;
-      if (picked.error != null) {
-        _toast(picked.error!);
-        return;
-      }
-      final shot = picked.file;
-      if (shot == null) return;
-      setState(() => _busy = true);
-      try {
-        await ref
-            .read(restitutionRepositoryProvider)
-            .uploadProof(r.id, shot.path);
-      } catch (_) {
-        _toast(l.verifErrDocPhoto);
-        if (mounted) setState(() => _busy = false);
-        return;
-      }
-    } else {
-      setState(() => _busy = true);
-    }
+    setState(() => _busy = true);
 
     try {
       final updated =
@@ -437,14 +394,6 @@ class _Content extends StatelessWidget {
                 '${l.restRoleOwner} : ${r.handoffConfirmedByOwner ? l.restConfirmed : l.restPending}\n'
                 '${l.restRoleFinder} : ${r.handoffConfirmedByFinder ? l.restConfirmed : l.restPending}',
           ),
-        if (r.proofPhotos.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _Card(
-            icon: Icons.photo_camera_outlined,
-            title: l.restProofCardTitle,
-            subtitle: l.restProofCardSub(r.proofPhotos.length),
-          ),
-        ],
         const SizedBox(height: 20),
 
         // ── CTA guidé selon l'étape ──

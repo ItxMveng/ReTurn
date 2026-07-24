@@ -94,7 +94,8 @@ class DeclarationsRepository {
 
   /// Annule une déclaration (statut → closed) sans la supprimer.
   Future<Declaration> cancel(String id) async {
-    final res = await _dio.patch('/declarations/$id', data: {'status': 'closed'});
+    final res =
+        await _dio.patch('/declarations/$id', data: {'status': 'cancelled'});
     return DeclarationModel.fromJson(res.data as Map<String, dynamic>);
   }
 

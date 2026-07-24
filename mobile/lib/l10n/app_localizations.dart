@@ -167,6 +167,26 @@ class AppLocalizations {
       'navProfile': 'Profil',
       // Accueil / déclarations
       'greetingHello': 'Bonjour',
+      'greetingMorning': 'Bonjour',
+      'greetingAfternoon': 'Bon après-midi',
+      'greetingEvening': 'Bonsoir',
+      // Connexion
+      'loginWelcome': 'Bienvenue sur ReTurn',
+      'loginSubtitle':
+          'Connectez-vous avec votre numéro ou votre compte Google.',
+      'loginPhoneHint': '+237 6 XX XX XX XX',
+      'loginPhoneRequired': 'Numéro requis',
+      'loginPhoneInvalid': 'Numéro invalide',
+      'loginGetCode': 'Recevoir le code',
+      'loginOr': 'ou',
+      'loginGoogle': 'Continuer avec Google',
+      'loginTerms': 'En continuant, vous acceptez nos conditions '
+          'd\'utilisation et notre politique de confidentialité (CPDP).',
+      // Statut de déclaration
+      'declStatusActive': 'Active',
+      'declStatusMatched': 'Matchée',
+      'declStatusReturned': 'Restituée',
+      'declStatusCancelled': 'Annulée',
       'homeHeroTitle': 'Un document entre vos mains ?',
       'homeHeroSubtitle': 'Déclarez-le, on s\'occupe du rapprochement.',
       'homeFound': 'J\'ai trouvé',
@@ -531,6 +551,8 @@ class AppLocalizations {
       'profBiometricSub': 'Empreinte ou visage à l\'ouverture',
       'profBiometricNone': 'Aucune biométrie configurée sur cet appareil.',
       'profBiometricReason': 'Activez le verrouillage biométrique',
+      'profChangePhoto': 'Changer la photo de profil',
+      'errorTitle': 'Oups, un souci',
     },
     'en': {
       'appName': 'ReTurn',
@@ -674,6 +696,25 @@ class AppLocalizations {
       'navProfile': 'Profile',
       // Home / declarations
       'greetingHello': 'Hello',
+      'greetingMorning': 'Good morning',
+      'greetingAfternoon': 'Good afternoon',
+      'greetingEvening': 'Good evening',
+      // Sign in
+      'loginWelcome': 'Welcome to ReTurn',
+      'loginSubtitle': 'Sign in with your number or your Google account.',
+      'loginPhoneHint': '+237 6 XX XX XX XX',
+      'loginPhoneRequired': 'Number required',
+      'loginPhoneInvalid': 'Invalid number',
+      'loginGetCode': 'Get the code',
+      'loginOr': 'or',
+      'loginGoogle': 'Continue with Google',
+      'loginTerms': 'By continuing, you accept our terms of use and our '
+          'privacy policy (CPDP).',
+      // Declaration status
+      'declStatusActive': 'Active',
+      'declStatusMatched': 'Matched',
+      'declStatusReturned': 'Returned',
+      'declStatusCancelled': 'Cancelled',
       'homeHeroTitle': 'A document in your hands?',
       'homeHeroSubtitle': 'Report it, we\'ll handle the matching.',
       'homeFound': 'I found one',
@@ -1032,6 +1073,8 @@ class AppLocalizations {
       'profBiometricSub': 'Fingerprint or face on open',
       'profBiometricNone': 'No biometrics set up on this device.',
       'profBiometricReason': 'Enable biometric lock',
+      'profChangePhoto': 'Change profile photo',
+      'errorTitle': 'Oops, something went wrong',
     },
   };
 
@@ -1048,6 +1091,28 @@ class AppLocalizations {
   String get navProfile => _t('navProfile');
   // Accueil / déclarations
   String get greetingHello => _t('greetingHello');
+
+  // Connexion
+  String get loginWelcome => _t('loginWelcome');
+  String get loginSubtitle => _t('loginSubtitle');
+  String get loginPhoneHint => _t('loginPhoneHint');
+  String get loginPhoneRequired => _t('loginPhoneRequired');
+  String get loginPhoneInvalid => _t('loginPhoneInvalid');
+  String get loginGetCode => _t('loginGetCode');
+  String get loginOr => _t('loginOr');
+  String get loginGoogle => _t('loginGoogle');
+  String get loginTerms => _t('loginTerms');
+  String get declStatusActive => _t('declStatusActive');
+  String get declStatusMatched => _t('declStatusMatched');
+  String get declStatusReturned => _t('declStatusReturned');
+  String get declStatusCancelled => _t('declStatusCancelled');
+
+  /// Salutation adaptée à l'heure locale (matin / après-midi / soir).
+  String greeting(int hour) {
+    if (hour >= 5 && hour < 12) return _t('greetingMorning');
+    if (hour >= 12 && hour < 18) return _t('greetingAfternoon');
+    return _t('greetingEvening');
+  }
   String get homeHeroTitle => _t('homeHeroTitle');
   String get homeHeroSubtitle => _t('homeHeroSubtitle');
   String get homeFound => _t('homeFound');
@@ -1397,6 +1462,8 @@ class AppLocalizations {
   String get profBiometricSub => _t('profBiometricSub');
   String get profBiometricNone => _t('profBiometricNone');
   String get profBiometricReason => _t('profBiometricReason');
+  String get profChangePhoto => _t('profChangePhoto');
+  String get errorTitle => _t('errorTitle');
 
   /// Libellé d'affichage d'un genre (la valeur stockée reste en français).
   String genderLabel(String value) {

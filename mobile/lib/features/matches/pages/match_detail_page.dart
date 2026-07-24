@@ -1,11 +1,9 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../core/utils/media_url.dart';
+import '../../../core/widgets/redacted_image.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../restitution/repositories/restitution_repository.dart';
 import '../../verification/repositories/verification_repository.dart';
@@ -443,52 +441,11 @@ class _MaskedPhotos extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: urls.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (_, i) => ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(children: [
-                ImageFiltered(
-                  imageFilter: revealed
-                      ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-                      : ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: Image.network(
-                    mediaUrl(urls[i]),
-                    height: 150,
-                    width: 220,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 150,
-                      width: 220,
-                      color: cs.primary.withValues(alpha: 0.08),
-                      child: Icon(Icons.broken_image_outlined,
-                          color: cs.onSurface.withValues(alpha: 0.3)),
-                    ),
-                  ),
-                ),
-                if (!revealed)
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.lock_outline,
-                                size: 12, color: Colors.white),
-                            const SizedBox(width: 4),
-                            Text(l.mdProtectedData,
-                                style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600)),
-                          ]),
-                    ),
-                  ),
-              ]),
+            itemBuilder: (_, i) => RedactedImage(
+              url: urls[i],
+              revealed: revealed,
+              width: 220,
+              height: 150,
             ),
           ),
         ),
