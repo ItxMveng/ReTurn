@@ -45,6 +45,22 @@ jobs:
             echo "::warning::Aucune Release APK trouvée — la page sera publiée sans le fichier (le bouton renverra une 404 jusqu'à la 1re release)."
           fi
 
+      # Injecte la version de la dernière Release dans la landing : affiche le
+      # numéro ET ajoute ?v=<version> au lien de téléchargement → casse le cache
+      # navigateur/CDN à chaque release (fini le « je télécharge mais rien ne change »).
+      - name: Injecter la version dans la landing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>/dev/null || echo "")
+          fi
+          VER="${TAG#v}"
+          [ -z "$VER" ] && VER="beta"
+          sed -i "s/__APP_VERSION__/${VER}/g" landing/index.html
+          echo "✓ Version injectée dans la landing : $VER"
+
       # Héberge aussi le panneau d'administration sous /admin (auth API requise).
       - name: Inclure le panel admin
         run: |
