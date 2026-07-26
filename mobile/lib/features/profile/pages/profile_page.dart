@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -356,7 +357,7 @@ class _ProfileBody extends ConsumerWidget {
                   leading: Icon(Icons.info_outline,
                       color: AppColors.onSurfaceVariant),
                   title: Text(l.profVersion),
-                  trailing: Text('1.3.1',
+                  trailing: Text('1.3.2',
                       style: TextStyle(color: AppColors.onSurfaceVariant)),
                 ),
               ]),
@@ -960,9 +961,10 @@ class _Header extends ConsumerWidget {
                           ),
                           child: ClipOval(
                             child: profile.avatarUrl != null
-                                ? Image.network(mediaUrl(profile.avatarUrl),
+                                ? CachedNetworkImage(
+                                    imageUrl: mediaUrl(profile.avatarUrl),
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
+                                    errorWidget: (_, __, ___) =>
                                         _defaultAvatar())
                                 : _defaultAvatar(),
                           ),

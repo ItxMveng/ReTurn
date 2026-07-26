@@ -1,0 +1,22 @@
+name: Keep-alive Render
+
+# Empêche le backend Render (free tier) de s'endormir : un ping toutes les
+# ~10 min garde le serveur éveillé → fini les cold starts de 30-50 s et les
+# erreurs de reconnexion au premier appel. Sert aussi de moniteur d'uptime.
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # toutes les 10 minutes (l'ordonnanceur GitHub peut décaler un peu)
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
+            https://docretour-api.onrender.com/health || echo "000")
+          echo "HTTP $code"
+          # On ne fait pas échouer le job sur un réveil lent : l'objectif est
+          # juste de solliciter le serveur régulièrement.
+          if [ "$code" = "200" ]; then echo "✓ backend éveillé"; else echo "::warning::réponse $code (réveil en cours ?)"; fi

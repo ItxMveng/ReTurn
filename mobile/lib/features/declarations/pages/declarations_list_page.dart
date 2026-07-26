@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -280,7 +281,7 @@ class _GreetingHeader extends ConsumerWidget {
               radius: 21,
               backgroundColor: AppColors.primaryContainer,
               foregroundImage: (profile?.avatarUrl?.isNotEmpty ?? false)
-                  ? NetworkImage(mediaUrl(profile!.avatarUrl))
+                  ? CachedNetworkImageProvider(mediaUrl(profile!.avatarUrl))
                   : null,
               child: Text(initials,
                   style: TextStyle(
@@ -675,9 +676,10 @@ class _DossierHomeCard extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: thumb != null
-                    ? Image.network(mediaUrl(thumb),
+                    ? CachedNetworkImage(
+                        imageUrl: mediaUrl(thumb),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
+                        errorWidget: (_, __, ___) => Icon(
                             Icons.folder_shared_outlined, color: cs.primary))
                     : Icon(Icons.folder_shared_outlined, color: cs.primary),
               ),

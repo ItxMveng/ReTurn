@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -224,7 +225,8 @@ class DeclarationDetailPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         child: Stack(
                           children: [
-                            Image.network(mediaUrl(d.allPhotoUrls[i]),
+                            CachedNetworkImage(
+                                imageUrl: mediaUrl(d.allPhotoUrls[i]),
                                 width: 220, height: 160, fit: BoxFit.cover),
                             const Positioned(
                               right: 8,

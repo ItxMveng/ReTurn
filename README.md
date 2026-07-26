@@ -1,436 +1,325 @@
-# ReTurn — DocRetour 🇨🇲
+<div align="center">
 
-> Plateforme de restitution sécurisée de documents perdus au Cameroun.
+# ReTurn 🇨🇲
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi)](https://fastapi.tiangolo.com)
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://docs.docker.com/compose)
+### Retrouver. Restituer. Confiance.
+
+**Plateforme mobile de restitution sécurisée des documents perdus, propulsée par l'IA.**
+Quand un document officiel est perdu au Cameroun, ReTurn met en relation — en toute sécurité — la personne qui l'a perdu et celle qui l'a retrouvé.
+
+<br/>
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=white)](https://render.com)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![Version](https://img.shields.io/badge/version-1.3.1-01696F)](#)
+[![License](https://img.shields.io/badge/license-MIT-black)](#-licence)
+
+**[🌐 Démo & téléchargement](https://itxmveng.github.io/ReTurn/)** · **[📖 API (Swagger)](https://docretour-api.onrender.com/docs)** · **[🩺 Statut backend](https://docretour-api.onrender.com/health)**
+
+</div>
 
 ---
 
-## 📁 Structure du projet
+## Sommaire
+
+1. [À propos](#-à-propos)
+2. [Fonctionnalités clés](#-fonctionnalités-clés)
+3. [Stack technique](#-stack-technique)
+4. [Architecture](#-architecture)
+5. [Structure du monorepo](#-structure-du-monorepo)
+6. [Démarrage rapide](#-démarrage-rapide)
+7. [Configuration](#-configuration)
+8. [CI/CD & déploiement](#-cicd--déploiement)
+9. [Aperçu de l'API](#-aperçu-de-lapi)
+10. [Sécurité & confidentialité](#-sécurité--confidentialité)
+11. [Performance](#-performance)
+12. [Roadmap](#-roadmap)
+13. [Auteur](#-auteur)
+14. [Licence](#-licence)
+
+---
+
+## 🎯 À propos
+
+**Le constat.** Perdre une CNI, un passeport ou un permis au Cameroun, c'est le début d'un parcours administratif long et coûteux. Or dans la majorité des cas, le document *existe toujours* : quelqu'un l'a ramassé mais n'a aucun moyen fiable et sûr de le rendre.
+
+**La solution.** ReTurn est le **pont de confiance** entre les deux. On déclare un document (perdu ou trouvé), une **IA lit et structure** automatiquement les informations, un **algorithme de rapprochement** associe perdu ↔ trouvé, puis une **vérification d'identité** débloque une **messagerie sécurisée** pour organiser la restitution — sans jamais exposer les données personnelles avant confirmation.
+
+> Projet full-stack conçu et développé de bout en bout : application mobile, API, intelligence artificielle appliquée, et industrialisation cloud (CI/CD, déploiement continu, monitoring).
+
+---
+
+## ✨ Fonctionnalités clés
+
+### 🤖 Intelligence artificielle
+- **OCR IA** — lecture automatique des documents (imprimé **et** manuscrit) via **Mistral Vision**, avec repli **ML Kit** on-device en cas d'indisponibilité réseau.
+- **Rapprochement tolérant** — matching insensible à la casse et aux accents, gérant les noms partiels (« Jean » ↔ « Jean Mbarga »), pondéré et renormalisé sur les signaux réellement disponibles (nom, numéro, géolocalisation, cohérence temporelle).
+- **Tri automatique multi-documents** — on scanne plusieurs documents d'un coup, l'app les **regroupe seule par propriétaire détecté** (un dossier = une personne).
+- **Redaction intelligente des images** — les photos restent reconnaissables mais les informations personnelles sont **masquées par bandeaux** tant que l'identité n'est pas vérifiée.
+
+### 🔐 Sécurité & confiance
+- **Vérification d'identité adaptative** (questions de contrôle → selfie → pièce justificative selon le niveau de risque).
+- **Messagerie débloquée uniquement après vérification** — aucun échange possible avant confirmation d'identité.
+- **Masquage des données sensibles** jusqu'à confirmation mutuelle (RGPD / droit à l'effacement).
+- **Authentification** par OTP SMS (Firebase) ou Google.
+
+### 📱 Expérience produit
+- Application **Flutter** cross-platform, **bilingue FR/EN** (langue système par défaut, changement en un tap).
+- Restitution guidée (lieu de rendez-vous, double confirmation, évaluation & réputation).
+- **Zones certifiées** (commissariat, mairie, campus) pour des remises sécurisées.
+- Notifications push (FCM), thème clair/sombre, déverrouillage biométrique.
+
+### 🛠️ Back-office
+- **Dashboard admin** web (statique, sans build) : KPIs temps réel, modération, gestion des utilisateurs, zones, signalements et **journaux d'audit**.
+
+---
+
+## 🧱 Stack technique
+
+| Couche | Technologies |
+|---|---|
+| **Mobile** | Flutter · Riverpod · Freezed · GoRouter · Dio · ML Kit · Firebase Auth/FCM |
+| **Backend** | FastAPI · SQLAlchemy (async / asyncpg) · Alembic · Pydantic · WebSockets |
+| **Données** | PostgreSQL · Redis |
+| **IA / OCR** | Mistral Vision (proxy backend) · Google ML Kit (on-device) |
+| **Stockage** | Cloudflare R2 (S3-compatible) via proxy média |
+| **Cloud & CI/CD** | Render · GitHub Actions · GitHub Pages · Docker |
+| **Auth & Push** | Firebase (Phone Auth, Cloud Messaging) |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client
+      M["📱 App Flutter<br/>(Riverpod · Dio)"]
+      A["🖥️ Admin Web<br/>(statique)"]
+      L["🌐 Landing<br/>(GitHub Pages)"]
+    end
+
+    subgraph Cloud["☁️ Render"]
+      API["⚙️ API FastAPI<br/>REST + WebSocket"]
+    end
+
+    subgraph Data["Données & stockage"]
+      PG[("🐘 PostgreSQL")]
+      RD[("⚡ Redis")]
+      R2[("🗄️ Cloudflare R2")]
+    end
+
+    subgraph Ext["Services externes"]
+      FB["🔥 Firebase<br/>Auth · FCM"]
+      AI["🤖 Mistral Vision<br/>OCR"]
+    end
+
+    M -->|HTTPS / WSS| API
+    A -->|HTTPS| API
+    M -->|OTP / Push| FB
+    API --> PG
+    API --> RD
+    API -->|proxy média| R2
+    API -->|OCR| AI
+    M -.télécharge l'APK.-> L
+
+    GH["🔄 GitHub Actions"] -->|build & deploy| API
+    GH -->|APK + Release| L
+```
+
+**Flux principal :** déclaration → OCR IA → rapprochement automatique → vérification d'identité → messagerie sécurisée → restitution guidée & évaluation.
+
+---
+
+## 📁 Structure du monorepo
 
 ```
 ReTurn/
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/
-│   │   │   ├── endpoints/
-│   │   │   │   ├── admin.py          # Backoffice — 27 routes (F-40→F-44)
-│   │   │   │   ├── auth.py           # Inscription, connexion, refresh JWT
-│   │   │   │   ├── declarations.py   # CRUD déclarations (trouvé / perdu)
-│   │   │   │   ├── matches.py        # Matchs automatiques
-│   │   │   │   ├── messaging.py      # Messagerie WebSocket + REST
-│   │   │   │   ├── profile.py        # Profil utilisateur
-│   │   │   │   ├── reports.py        # Signalements utilisateurs
-│   │   │   │   └── restitutions.py   # Processus de restitution
-│   │   │   └── router.py
-│   │   ├── core/
-│   │   │   ├── config.py
-│   │   │   ├── database.py
-│   │   │   ├── dependencies.py
-│   │   │   ├── firebase_admin.py
-│   │   │   ├── redis_client.py
-│   │   │   ├── security.py
-│   │   │   └── ws_manager.py
-│   │   ├── models/
-│   │   │   ├── audit_log.py
-│   │   │   ├── connection_log.py
-│   │   │   ├── declaration.py
-│   │   │   ├── match.py
-│   │   │   ├── message.py
-│   │   │   ├── report.py
-│   │   │   ├── restitution.py
-│   │   │   ├── user.py
-│   │   │   ├── verification.py
-│   │   │   └── zone.py
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   ├── workers/
-│   │   └── main.py
-│   ├── alembic/versions/
-│   │   ├── 001_initial_schema.py
-│   │   ├── 002_add_event_date_reputation.py
-│   │   ├── 003_add_restitutions_table.py
-│   │   └── 004_add_admin_tables.py
-│   ├── tests/
-│   │   ├── conftest.py
-│   │   ├── test_auth.py
-│   │   ├── test_declarations.py
-│   │   ├── test_matching.py
-│   │   └── test_restitution.py
-│   ├── Dockerfile
-│   ├── pytest.ini
-│   └── requirements.txt
-├── mobile/
+├── backend/                 # API FastAPI
+│   └── app/
+│       ├── api/v1/endpoints # auth, declarations, matches, messaging,
+│       │                    # profile, restitutions, reports, admin, media, ocr
+│       ├── core/            # config, database, sécurité, redis, firebase
+│       ├── models/          # SQLAlchemy (user, declaration, match, message…)
+│       ├── schemas/         # Pydantic
+│       ├── services/        # matching, verification, storage, ocr, notifications
+│       └── main.py
+├── mobile/                  # Application Flutter
 │   └── lib/
-│       ├── core/
-│       │   ├── network/
-│       │   │   ├── api_client.dart
-│       │   │   ├── auth_interceptor.dart
-│       │   │   ├── dio_provider.dart
-│       │   │   └── interceptors.dart
-│       │   ├── errors/
-│       │   │   ├── app_exception.dart
-│       │   │   └── error_handler.dart
-│       │   ├── providers/
-│       │   │   ├── app_providers.dart
-│       │   │   └── settings_provider.dart
-│       │   ├── router/
-│       │   │   └── app_router.dart
-│       │   ├── services/
-│       │   │   ├── biometric_service.dart
-│       │   │   └── notification_service.dart
-│       │   └── widgets/
-│       │       ├── app_button.dart
-│       │       ├── app_empty_state.dart
-│       │       ├── app_error_widget.dart
-│       │       ├── app_loader.dart
-│       │       ├── app_text_field.dart
-│       │       ├── error_view.dart
-│       │       └── scaffold_with_nav_bar.dart
-│       └── features/
-│           ├── auth/
-│           ├── declarations/
-│           │   ├── models/declaration.dart
-│           │   ├── pages/
-│           │   │   ├── declarations_list_page.dart
-│           │   │   ├── declaration_form_page.dart
-│           │   │   └── declaration_detail_page.dart
-│           │   ├── providers/
-│           │   │   ├── declaration_provider.dart
-│           │   │   └── declarations_provider.dart
-│           │   └── widgets/declaration_card.dart
-│           ├── matches/
-│           │   ├── models/match.dart
-│           │   ├── pages/
-│           │   │   ├── matches_list_page.dart
-│           │   │   └── match_detail_page.dart
-│           │   ├── providers/matches_provider.dart
-│           │   └── repositories/matches_repository.dart
-│           ├── matching/
-│           │   ├── providers/matching_provider.dart
-│           │   ├── repositories/matching_repository.dart
-│           │   └── screens/matching_screen.dart
-│           ├── messaging/pages/
-│           │   ├── conversations_page.dart
-│           │   └── chat_page.dart
-│           ├── ocr/pages/
-│           │   ├── ocr_scan_page.dart
-│           │   └── ocr_review_page.dart
-│           ├── profile/pages/profile_page.dart
-│           ├── restitution/pages/restitution_page.dart
-│           ├── settings/pages/settings_page.dart
-│           ├── splash/
-│           └── support/support_screen.dart
-├── admin/
-│   └── index.html                    # Dashboard admin web (standalone)
-├── infra/
-└── docs/
-```
-
----
-
-## 🖥️ Dashboard Admin Web
-
-Interface d'administration **100 % statique** (`admin/index.html`) — aucun build, aucune dépendance Node.js.
-
-### Fonctionnalités
-
-| Section | Capacités |
-|---------|----------|
-| **Vue d'ensemble** | KPIs en temps réel (utilisateurs, déclarations, matchs, restitutions, signalements, délai moyen de résolution), graphique activité 30 j dynamique, synthèse du flux récent, tableau activité récente |
-| **Utilisateurs** | Liste paginable, recherche, filtre (actif / banni / admin), **vue détail complète** (historique, stats), bannir / rétablir, **promouvoir admin** |
-| **Déclarations** | Liste, recherche, filtre type, flag suspect, suppression, export CSV |
-| **Matchs** | Score coloré (vert ≥80 %, orange ≥50 %, rouge <50 %), statut, liens déclarations |
-| **Restitutions** | Statut, note, dates d'initiation et de complétion |
-| **Signalements** | Résolution en 1 clic |
-| **Zones certifiées** | Création et suppression de zones réelles (nom, type, adresse, latitude, longitude, certification) |
-| **Audit Logs** | Historique chronologique des actions admin |
-| **Mode sombre** | Bascule clair/sombre intégrée |
-
-### Important
-
-- Le backoffice admin n'utilise plus de données fictives.
-- Il n'y a plus de connexion email/mot de passe locale.
-- La connexion admin passe par le **même backend réel** que le mobile, via **OTP**.
-- Le numéro utilisé dans l'écran admin doit exister en base et avoir `is_admin = true`.
-
-### Lancement complet en données réelles
-
-#### 1. Démarrer Docker proprement
-
-Depuis la racine du projet :
-
-```bash
-docker compose --env-file infra/.env -f infra/docker-compose.yml up -d postgres redis minio
-```
-
-Si Docker retourne une erreur du type :
-
-```text
-dockerDesktopLinuxEngine ... request returned 500 Internal Server Error
-```
-
-faites ceci avant de relancer :
-
-```bash
-docker compose --env-file infra/.env -f infra/docker-compose.yml down
-docker compose --env-file infra/.env -f infra/docker-compose.yml pull
-docker compose --env-file infra/.env -f infra/docker-compose.yml up -d postgres redis minio
-```
-
-Si l'erreur persiste, le problème vient de Docker Desktop et non du projet :
-- redémarrer Docker Desktop
-- vérifier que Docker Desktop est bien en mode conteneurs Linux
-- relancer ensuite la commande `docker compose ... up -d`
-
-#### 2. Appliquer les migrations backend
-
-Le backend lit maintenant automatiquement `infra/.env`, donc il n'est plus nécessaire de dupliquer la configuration dans `backend/.env`.
-
-```bash
-cd backend
-alembic upgrade head
-```
-
-Si vous voyez encore `ModuleNotFoundError: No module named 'app'`, assurez-vous simplement d'être bien dans le dossier `backend` avant d'exécuter la commande.
-
-#### 3. Démarrer l'API
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-API disponible sur `http://localhost:8000`
-
-#### 4. Créer ou activer le compte administrateur
-
-Le compte admin est un **vrai utilisateur** de la plateforme, promu côté base.
-
-Étape A : créez le compte utilisateur avec le flux OTP réel.
-
-PowerShell :
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8000/api/v1/auth/otp/request `
-  -ContentType 'application/json' `
-  -Body '{"phone_number":"+237600000000"}'
-```
-
-En environnement local avec `DEBUG=true`, l'API renvoie aussi `debug_code`. Utilisez ce code pour vérifier l'OTP :
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8000/api/v1/auth/otp/verify `
-  -ContentType 'application/json' `
-  -Body '{"phone_number":"+237600000000","otp_code":"123456"}'
-```
-
-Cette vérification crée l'utilisateur en base s'il n'existe pas encore.
-
-Étape B : promouvez ensuite ce compte en administrateur.
-
-Exemple avec les valeurs par défaut de `infra/.env` :
-
-```bash
-docker compose --env-file infra/.env -f infra/docker-compose.yml exec postgres psql -U docretour_user -d docretour_db -c "UPDATE docretour.users SET is_admin = true WHERE phone_number = '+237600000000';"
-```
-
-Si vous avez changé `POSTGRES_USER` ou `POSTGRES_DB` dans `infra/.env`, remplacez ces valeurs dans la commande ci-dessus.
-
-Vous pouvez vérifier :
-
-```bash
-docker compose --env-file infra/.env -f infra/docker-compose.yml exec postgres psql -U docretour_user -d docretour_db -c "SELECT phone_number, is_admin FROM docretour.users ORDER BY created_at DESC;"
-```
-
-#### 5. Lancer le backoffice admin
-
-Option recommandée :
-
-```bash
-cd admin
-python -m http.server 3000
-```
-
-Ouvrir ensuite `http://localhost:3000`
-
-#### 6. Connexion au panneau admin
-
-1. Saisir le **numéro de téléphone** du compte promu administrateur.
-2. Cliquer sur `Recevoir le code`.
-3. En local, si `DEBUG=true`, le code renvoyé par l'API est automatiquement injecté dans le champ OTP.
-4. Cliquer sur `Se connecter`.
-
-Si la connexion retourne `403`, cela signifie généralement :
-- que le compte existe mais n'a pas encore `is_admin = true`
-- ou que l'OTP a bien été validé mais avec le mauvais numéro
-
-### Configurer l'URL de l'API
-
-Par défaut le dashboard pointe vers `http://localhost:8000`. Pour changer :
-
-```html
-<!-- Ajouter avant </body> dans admin/index.html -->
-<script>window.RETURN_API_URL = 'https://api.return.cm';</script>
-```
-
-Ou via Nginx en production :
-
-```nginx
-location /admin {
-  root /var/www/return;
-  try_files $uri $uri/ /admin/index.html;
-  add_header Content-Security-Policy
-    "default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net";
-}
-```
-
----
-
-## 🔌 API Endpoints `/api/v1`
-
-### Auth
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `POST` | `/auth/otp/request` | Demande un code OTP |
-| `POST` | `/auth/otp/verify` | Vérifie l'OTP et retourne les JWT |
-| `POST` | `/auth/verify-firebase-token` | Connexion via token Firebase |
-| `POST` | `/auth/refresh` | Renouvelle les tokens |
-| `GET` | `/auth/me` | Retourne l'utilisateur connecté |
-
-### Profil
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `GET` | `/profile/me` | Mon profil |
-| `PATCH` | `/profile/me` | Mettre à jour mon profil |
-| `POST` | `/profile/me/fcm-token` | Enregistrer token FCM |
-
-### Déclarations
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `POST` | `/declarations` | Créer une déclaration |
-| `GET` | `/declarations` | Lister mes déclarations |
-| `GET` | `/declarations/{id}` | Détail d'une déclaration |
-| `PATCH` | `/declarations/{id}` | Modifier une déclaration |
-| `DELETE` | `/declarations/{id}` | Supprimer |
-
-### Matchs
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `GET` | `/matches` | Mes matchs |
-| `GET` | `/matches/{id}` | Détail d'un match |
-| `PATCH` | `/matches/{id}/confirm` | Confirmer un match |
-
-### Restitutions
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `POST` | `/restitutions` | Initier une restitution |
-| `GET` | `/restitutions/{id}` | Détail |
-| `PATCH` | `/restitutions/{id}/complete` | Marquer comme terminée |
-| `POST` | `/restitutions/{id}/rate` | Laisser une note |
-
-### Messagerie
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `GET` | `/messaging/conversations` | Liste des conversations |
-| `GET` | `/messaging/conversations/{id}/messages` | Messages d'une conversation |
-| `POST` | `/messaging/conversations/{id}/messages` | Envoyer un message |
-| `WS` | `/messaging/ws/{conversation_id}` | WebSocket temps réel |
-
-### Admin (F-40 → F-44)
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `GET` | `/admin/stats` | KPIs globaux |
-| `GET` | `/admin/export/declarations` | Export CSV |
-| `GET/PATCH/DELETE` | `/admin/users/{id}` | Gestion utilisateurs |
-| `PATCH` | `/admin/users/{id}/ban` | Bannir |
-| `PATCH` | `/admin/users/{id}/unban` | Rétablir |
-| `PATCH` | `/admin/users/{id}/promote` | Promouvoir admin |
-| `GET/DELETE/PATCH` | `/admin/declarations/{id}` | Modération déclarations |
-| `GET` | `/admin/matches` | Tous les matchs |
-| `GET` | `/admin/restitutions` | Toutes les restitutions |
-| `GET/POST/PATCH/DELETE` | `/admin/zones` | Zones certifiées |
-| `GET` | `/admin/audit-logs` | Historique actions |
-| `PATCH` | `/admin/reports/{id}` | Résoudre signalement |
-
----
-
-## 🗄️ Migrations Alembic
-
-| # | Fichier | Contenu |
-|---|---------|----------|
-| 001 | `001_initial_schema.py` | Tables : `users`, `declarations`, `matches`, `messages`, `verifications` |
-| 002 | `002_add_event_date_reputation.py` | Colonnes `event_date`, `score_reputation` |
-| 003 | `003_add_restitutions_table.py` | Table `restitutions` |
-| 004 | `004_add_admin_tables.py` | Tables : `zones`, `reports`, `audit_logs`, `connection_logs` |
-
-```bash
-cd backend && alembic upgrade head
-```
-
----
-
-## 🧪 Tests
-
-| Fichier | Couvre |
-|---------|--------|
-| `tests/test_auth.py` | Inscription, login, JWT |
-| `tests/test_declarations.py` | CRUD, pagination cursor |
-| `tests/test_matching.py` | Jaro-Winkler, Haversine, scoring |
-| `tests/test_restitution.py` | Idempotence, rating, réputation |
-
-```bash
-cd backend
-pip install -r requirements.txt
-pytest -v
+│       ├── core/            # network (Dio), router, services, widgets, l10n
+│       └── features/        # auth, declarations, matches, messaging, ocr,
+│                            # profile, restitution, verification, zones…
+├── admin/                   # Dashboard admin web (HTML/JS statique)
+├── landing/                 # Landing page (GitHub Pages) + APK
+├── infra/                   # docker-compose (Postgres, Redis, MinIO)
+├── docs/                    # Cahier des charges, wireframes, docs API
+└── .github/workflows/       # CI/CD (backend, mobile, landing, keep-alive)
 ```
 
 ---
 
 ## 🚀 Démarrage rapide
 
+### Prérequis
+Docker · Python 3.11+ · Flutter 3.x
+
+### 1 · Backend + infrastructure
+
 ```bash
-# 1. Variables d'environnement
-cp backend/.env.example backend/.env
+# Infrastructure locale (PostgreSQL, Redis, MinIO)
+docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
 
-# 2. Infrastructure (PostgreSQL, Redis, MinIO)
-docker compose -f infra/docker-compose.yml up -d
-
-# 3. Migrations
-cd backend && alembic upgrade head
-
-# 4. API FastAPI
-uvicorn app.main:app --reload
-
-# 5. Dashboard Admin
-cd ../admin && python3 -m http.server 3000
+# API
+cd backend
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 | Service | URL |
-|---------|-----|
-| API FastAPI | http://localhost:8000 |
-| Swagger UI | http://localhost:8000/docs |
-| Dashboard Admin | http://localhost:3000 |
-| MinIO Console | http://localhost:9001 |
+|---|---|
+| API FastAPI | `http://localhost:8000` |
+| Swagger UI | `http://localhost:8000/docs` |
+| Console MinIO | `http://localhost:9001` |
+
+### 2 · Application mobile
+
+```bash
+cd mobile
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs   # génère freezed/json
+flutter run \
+  --dart-define=API_BASE_URL=http://10.0.2.2:8000 \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=<votre_client_id>
+```
+
+### 3 · Dashboard admin
+
+```bash
+cd admin && python -m http.server 3000   # → http://localhost:3000
+```
+
+> Le déploiement en production (Render + R2 + GitHub Pages) est détaillé dans **[`DEPLOYMENT.md`](DEPLOYMENT.md)**.
 
 ---
 
-## 📋 Sprints
+## ⚙️ Configuration
 
-| Sprint | Objectif | Statut |
-|--------|----------|--------|
-| S0 | Structure monorepo, Docker, squelette API | ✅ |
-| S1 | Auth JWT (OTP, inscription, connexion, refresh) | ✅ |
-| S2 | Déclarations (CRUD, upload photo, géolocalisation) | ✅ |
-| S3 | Matching automatique (Jaro-Winkler + Haversine) | ✅ |
-| S4 | Messagerie temps réel (WebSocket + profil) | ✅ |
-| S5 | Restitutions, signalements, réputation | ✅ |
-| S6 | Backoffice admin (F-40→F-44, audit, zones, stats) | ✅ |
-| S7 | Application mobile Flutter | ✅ |
-| S8 | Dashboard admin web — complet (modal zone, détail user, promouvoir, graphiques dynamiques) | ✅ |
+Toutes les valeurs sensibles passent par des variables d'environnement (jamais dans le code ni dans l'APK).
+
+**Backend** (`infra/.env`)
+
+| Variable | Rôle |
+|---|---|
+| `DATABASE_URL` | Connexion PostgreSQL (async, `postgresql+asyncpg://…`) |
+| `REDIS_URL` | Connexion Redis |
+| `SECRET_KEY` | Signature des JWT |
+| `MINIO_*` / `R2_*` | Stockage objet (endpoint, clés, bucket) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Compte de service Firebase (Auth/FCM) |
+| `MISTRAL_API_KEY` | Clé OCR IA (serveur uniquement) |
+| `ADMIN_PHONE_NUMBERS` | Numéros promus administrateurs |
+
+**Mobile** (via `--dart-define` / GitHub Secrets)
+
+| Variable | Rôle |
+|---|---|
+| `API_BASE_URL` | URL de l'API |
+| `GOOGLE_SERVER_CLIENT_ID` | Sign-in Google |
+
+---
+
+## 🔄 CI/CD & déploiement
+
+Quatre workflows GitHub Actions industrialisent la livraison :
+
+| Workflow | Déclencheur | Rôle |
+|---|---|---|
+| **Backend deploy** | push `main` | Déploie l'API sur Render (deploy hook) |
+| **Mobile release** | tag `v*` | Build APK (`--split-per-abi`, arm64 léger) + GitHub Release |
+| **Landing** | release publiée | Publie la landing + APK sur GitHub Pages (lien anti-cache versionné) |
+| **Keep-alive** | cron / 10 min | Ping `/health` pour éviter la mise en veille (free tier) |
+
+**Publier une nouvelle version :** bump du `version` dans `pubspec.yaml`, puis :
+
+```bash
+git tag v1.3.1 && git push origin v1.3.1
+```
+
+→ build automatique de l'APK, création de la Release, et mise à jour de la page de téléchargement.
+
+---
+
+## 🔌 Aperçu de l'API
+
+Base : `/api/v1` · Documentation interactive : `/docs`
+
+| Domaine | Endpoints principaux |
+|---|---|
+| **Auth** | `POST /auth/otp/request` · `/auth/otp/verify` · `/auth/refresh` · `/auth/verify-firebase-token` |
+| **Profil** | `GET·PATCH /profile/` · `PATCH /profile/avatar` |
+| **Déclarations** | `POST·GET /declarations/` · `POST /declarations/batch` (dossier) · `GET·PATCH·DELETE /declarations/{id}` |
+| **Matchs** | `GET /matches` · `GET /matches/{id}` · confirmation via vérification |
+| **Vérification** | `POST /messaging/{id}/verify/answers` · `submit_selfie` · `submit_doc_photo` |
+| **Messagerie** | `GET /messaging/conversations` · `POST /messaging/{id}` · `WS /messaging/{id}/ws` |
+| **Restitutions** | `POST /restitutions` · `POST /restitutions/{id}/confirm` · `/rate` |
+| **Média** | `GET /media/{bucket}/{path}` (proxy public en lecture) |
+| **Admin** | `/admin/stats` · `/admin/users` · `/admin/zones` · `/admin/audit-logs` … |
+
+---
+
+## 🔒 Sécurité & confidentialité
+
+- **Aucune donnée personnelle exposée** avant vérification et confirmation mutuelle (numéros et noms masqués, images redactées).
+- **JWT** courts + refresh token avec intercepteur mutex (pas de boucle 401).
+- **Secrets côté serveur uniquement** (clé OCR, comptes de service) — jamais embarqués dans l'APK.
+- **Messagerie fermée** tant que l'identité n'est pas vérifiée (contrôlé côté REST **et** WebSocket).
+- **CORS durci** (y compris sur les erreurs 500) et journaux d'audit des actions admin.
+- **RGPD / droit à l'effacement** : suppression définitive du compte et des données.
+
+---
+
+## ⚡ Performance
+
+- **APK léger** — build `--split-per-abi` (arm64) : ~1/3 du poids d'un APK universel.
+- **Zéro cold start perçu** — keep-alive qui maintient le backend éveillé (free tier).
+- **Images en cache disque** (`cached_network_image`) : chargées une fois, plus de re-téléchargement au scroll.
+- **Réseau résilient** — timeouts adaptés et retry sur erreurs transitoires ; refetch propre des données à la connexion.
+- **Pagination cursor**, `reconcile_schema` au démarrage (auto-réparation du schéma), Redis pour le cache et le temps réel.
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Auth OTP / Google · profil · déclarations
+- [x] OCR IA · rapprochement automatique · vérification d'identité
+- [x] Messagerie temps réel · restitution guidée · réputation
+- [x] Back-office admin · zones certifiées · audit
+- [x] Multi-documents (tri automatique) · dossiers groupés
+- [x] i18n FR/EN · redaction images · CI/CD complet
+- [ ] Redaction précise pilotée par bounding-boxes serveur
+- [ ] Notifications in-app enrichies · statistiques utilisateur
+- [ ] Publication sur les stores (Play Store / App Store)
+
+---
+
+## 👤 Auteur
+
+**François Itoua** — élève-ingénieur (5ᵉ année), passionné de Cloud, IA et développement.
+
+[![Email](https://img.shields.io/badge/Email-francisitoua05@gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:francisitoua05@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-ItxMveng-181717?logo=github&logoColor=white)](https://github.com/ItxMveng)
+
+> 🎓 À la recherche d'un **stage puis d'un CDI** en Cloud / IA / Développement. N'hésitez pas à tester l'app et à me faire vos retours !
+
+---
+
+## 📄 Licence
+
+Distribué sous licence **MIT**. Voir le fichier `LICENSE` pour plus d'informations.
+
+<div align="center">
+<br/>
+<sub>Construit avec ❤️ pour le Cameroun · <a href="https://itxmveng.github.io/ReTurn/">itxmveng.github.io/ReTurn</a></sub>
+</div>

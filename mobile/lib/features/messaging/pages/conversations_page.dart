@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../core/widgets/appear.dart';
@@ -152,7 +153,7 @@ class _ConvTile extends StatelessWidget {
             radius: 22,
             backgroundColor: cs.primary.withValues(alpha: 0.12),
             foregroundImage: (conv.otherUserAvatar?.isNotEmpty ?? false)
-                ? NetworkImage(mediaUrl(conv.otherUserAvatar))
+                ? CachedNetworkImageProvider(mediaUrl(conv.otherUserAvatar))
                 : null,
             child: Text(
                 conv.otherUserName.isNotEmpty

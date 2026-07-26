@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -462,7 +463,7 @@ class _Content extends StatelessWidget {
               radius: 20,
               backgroundColor: cs.primary.withValues(alpha: 0.15),
               foregroundImage: (otherAvatar?.isNotEmpty ?? false)
-                  ? NetworkImage(mediaUrl(otherAvatar))
+                  ? CachedNetworkImageProvider(mediaUrl(otherAvatar))
                   : null,
               child: Text(
                 (otherName?.trim().isNotEmpty ?? false)

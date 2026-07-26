@@ -77,15 +77,25 @@ jobs:
           API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
-          flutter build apk --release \
+          # --split-per-abi : un APK par architecture (au lieu d'un gros APK
+          # universel). L'arm64-v8a couvre ~99% des appareils récents et pèse
+          # ~1/3 du poids. On garde aussi l'armeabi-v7a comme repli 32 bits.
+          flutter build apk --release --split-per-abi \
             --dart-define=API_BASE_URL="$API_BASE_URL" \
             --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
-          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/return.apk
+          out=build/app/outputs/flutter-apk
+          # return.apk (téléchargement par défaut de la landing) = arm64, léger.
+          cp "$out/app-arm64-v8a-release.apk" "$out/return.apk"
+          # Repli pour vieux téléphones 32 bits (dispo dans la Release).
+          cp "$out/app-armeabi-v7a-release.apk" "$out/ReTurn-32bit.apk"
+          ls -lh "$out"/*.apk
 
       - name: Publier la Release + APK
         uses: softprops/action-gh-release@v2
         with:
-          files: mobile/build/app/outputs/flutter-apk/return.apk
+          files: |
+            mobile/build/app/outputs/flutter-apk/return.apk
+            mobile/build/app/outputs/flutter-apk/ReTurn-32bit.apk
           name: ReTurn ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
