@@ -88,3 +88,6 @@ mobile/lib/firebase_options.dart
 *.log
 *.bak
 *.tmp
+
+# Fichiers temporaires Microsoft Office (verrous)
+~$*
