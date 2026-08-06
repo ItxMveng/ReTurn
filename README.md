@@ -306,7 +306,7 @@ Base : `/api/v1` · Documentation interactive : `/docs`
 
 ## 👤 Auteur
 
-**François Itoua** — élève-ingénieur (5ᵉ année), passionné de Cloud, IA et développement.
+**Francis Itoua** — élève-ingénieur (5ᵉ année), passionné de Cloud, IA et développement.
 
 [![Email](https://img.shields.io/badge/Email-francisitoua05@gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:francisitoua05@gmail.com)
 [![GitHub](https://img.shields.io/badge/GitHub-ItxMveng-181717?logo=github&logoColor=white)](https://github.com/ItxMveng)
