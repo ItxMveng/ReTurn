@@ -14,7 +14,7 @@ Quand un document officiel est perdu au Cameroun, ReTurn met en relation — en 
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=white)](https://render.com)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
-[![Version](https://img.shields.io/badge/version-1.3.1-01696F)](#)
+[![Version](https://img.shields.io/badge/version-1.4.0-01696F)](#)
 [![License](https://img.shields.io/badge/license-MIT-black)](#-licence)
 
 **[🌐 Démo & téléchargement](https://itxmveng.github.io/ReTurn/)** · **[📖 API (Swagger)](https://docretour-api.onrender.com/docs)** · **[🩺 Statut backend](https://docretour-api.onrender.com/health)**
@@ -64,7 +64,7 @@ Quand un document officiel est perdu au Cameroun, ReTurn met en relation — en 
 - **Vérification d'identité adaptative** (questions de contrôle → selfie → pièce justificative selon le niveau de risque).
 - **Messagerie débloquée uniquement après vérification** — aucun échange possible avant confirmation d'identité.
 - **Masquage des données sensibles** jusqu'à confirmation mutuelle (RGPD / droit à l'effacement).
-- **Authentification** par OTP SMS (Firebase) ou Google.
+- **Authentification** par email/mot de passe ou Google (Firebase — **sans SMS**, coûts maîtrisés).
 
 ### 📱 Expérience produit
 - Application **Flutter** cross-platform, **bilingue FR/EN** (langue système par défaut, changement en un tap).
@@ -87,7 +87,7 @@ Quand un document officiel est perdu au Cameroun, ReTurn met en relation — en 
 | **IA / OCR** | Mistral Vision (proxy backend) · Google ML Kit (on-device) |
 | **Stockage** | Cloudflare R2 (S3-compatible) via proxy média |
 | **Cloud & CI/CD** | Render · GitHub Actions · GitHub Pages · Docker |
-| **Auth & Push** | Firebase (Phone Auth, Cloud Messaging) |
+| **Auth & Push** | Firebase (Email/Google Auth, Cloud Messaging) |
 
 ---
 
@@ -118,7 +118,7 @@ flowchart LR
 
     M -->|HTTPS / WSS| API
     A -->|HTTPS| API
-    M -->|OTP / Push| FB
+    M -->|Auth / Push| FB
     API --> PG
     API --> RD
     API -->|proxy média| R2
@@ -257,7 +257,7 @@ Base : `/api/v1` · Documentation interactive : `/docs`
 
 | Domaine | Endpoints principaux |
 |---|---|
-| **Auth** | `POST /auth/otp/request` · `/auth/otp/verify` · `/auth/refresh` · `/auth/verify-firebase-token` |
+| **Auth** | `POST /auth/verify-firebase-token` (email/Google) · `/auth/refresh` · `/auth/admin-login` |
 | **Profil** | `GET·PATCH /profile/` · `PATCH /profile/avatar` |
 | **Déclarations** | `POST·GET /declarations/` · `POST /declarations/batch` (dossier) · `GET·PATCH·DELETE /declarations/{id}` |
 | **Matchs** | `GET /matches` · `GET /matches/{id}` · confirmation via vérification |
@@ -292,7 +292,7 @@ Base : `/api/v1` · Documentation interactive : `/docs`
 
 ## 🗺️ Roadmap
 
-- [x] Auth OTP / Google · profil · déclarations
+- [x] Auth email/mot de passe & Google (sans SMS) · profil · déclarations
 - [x] OCR IA · rapprochement automatique · vérification d'identité
 - [x] Messagerie temps réel · restitution guidée · réputation
 - [x] Back-office admin · zones certifiées · audit
