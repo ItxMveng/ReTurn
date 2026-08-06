@@ -8,7 +8,6 @@ import '../../features/matches/providers/matches_provider.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/splash/splash_page.dart';
 import '../../features/auth/screens/phone_input_screen.dart';
-import '../../features/auth/screens/otp_verify_screen.dart';
 import '../../features/home/home_shell.dart';
 import '../../features/declarations/pages/declarations_list_page.dart';
 import '../../features/declarations/pages/declaration_form_page.dart';
@@ -67,11 +66,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
       GoRoute(path: '/auth/phone', builder: (_, __) => const PhoneInputScreen()),
-      GoRoute(
-        path: '/auth/otp',
-        builder: (_, state) =>
-            OtpVerifyScreen(phoneNumber: state.extra as String),
-      ),
 
       // ── OCR (hors shell — plein écran) ─────────────────────────
       GoRoute(path: '/ocr/scan', builder: (_, __) => const OcrScanPage()),

@@ -115,30 +115,77 @@ class PhoneInputScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
-  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isSignUp = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
+  }
+
+  void _submitEmail() {
+    if (!_formKey.currentState!.validate()) return;
+    final notifier = ref.read(authNotifierProvider.notifier);
+    final email = _emailCtrl.text.trim();
+    final pass = _passwordCtrl.text;
+    if (_isSignUp) {
+      notifier.signUpWithEmail(email, pass);
+    } else {
+      notifier.signInWithEmail(email, pass);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    final l = AppLocalizations.of(context);
+    final ctrl = TextEditingController(text: _emailCtrl.text.trim());
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.loginResetTitle),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(l.loginResetBody),
+          const SizedBox(height: 12),
+          TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: l.loginEmailLabel,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel)),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.loginResetSend)),
+        ],
+      ),
+    );
+    if (send != true || !mounted) return;
+    final error =
+        await ref.read(authNotifierProvider.notifier).sendPasswordReset(ctrl.text);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(error ?? l.loginResetSent),
+      backgroundColor: error != null
+          ? Theme.of(context).colorScheme.error
+          : Colors.green.shade700,
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final otpState = ref.watch(otpNotifierProvider);
     final authState = ref.watch(authNotifierProvider);
-    final isOtpLoading = otpState.maybeWhen(sending: () => true, orElse: () => false);
-    final isGoogleLoading = authState.maybeWhen(loading: () => true, orElse: () => false);
-    final isLoading = isOtpLoading || isGoogleLoading;
-
-    ref.listen<OtpState>(otpNotifierProvider, (_, next) {
-      next.whenOrNull(
-        sent: (phone) => context.go('/auth/otp', extra: phone),
-        error: (msg) => ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(msg))),
-      );
-    });
+    final isLoading =
+        authState.maybeWhen(loading: () => true, orElse: () => false);
 
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       next.whenOrNull(
@@ -225,50 +272,79 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ),
                 const SizedBox(height: 28),
                 TextFormField(
-                  controller: _phoneCtrl,
-                  keyboardType: TextInputType.phone,
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
                   decoration: InputDecoration(
-                    labelText: l.profPhoneLabel,
-                    hintText: l.loginPhoneHint,
+                    labelText: l.loginEmailLabel,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.phone),
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return l.loginPhoneRequired;
-                    }
-                    if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v.trim())) {
-                      return l.loginPhoneInvalid;
+                    final s = v?.trim() ?? '';
+                    if (s.isEmpty) return l.loginEmailRequired;
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s)) {
+                      return l.loginEmailInvalid;
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _passwordCtrl,
+                  obscureText: _obscure,
+                  decoration: InputDecoration(
+                    labelText: l.loginPasswordLabel,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                  onFieldSubmitted: (_) => isLoading ? null : _submitEmail(),
+                  validator: (v) {
+                    if ((v ?? '').isEmpty) return l.loginPasswordRequired;
+                    if (_isSignUp && v!.length < 6) return l.loginPasswordShort;
+                    return null;
+                  },
+                ),
+                if (!_isSignUp)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: isLoading ? null : _forgotPassword,
+                      child: Text(l.loginForgot),
+                    ),
+                  ),
+                SizedBox(height: _isSignUp ? 20 : 6),
                 ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          if (_formKey.currentState!.validate()) {
-                            ref
-                                .read(otpNotifierProvider.notifier)
-                                .requestOtp(_phoneCtrl.text.trim());
-                          }
-                        },
+                  onPressed: isLoading ? null : _submitEmail,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: isOtpLoading
+                  child: isLoading
                       ? const SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2.5))
-                      : Text(l.loginGetCode),
+                      : Text(_isSignUp ? l.loginCreateAccount : l.loginSignIn),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () => setState(() => _isSignUp = !_isSignUp),
+                  child: Text(_isSignUp ? l.loginHaveAccount : l.loginNoAccount),
+                ),
+                const SizedBox(height: 12),
                 Row(children: [
                   const Expanded(child: Divider()),
                   Padding(

@@ -173,13 +173,26 @@ class AppLocalizations {
       // Connexion
       'loginWelcome': 'Bienvenue sur ReTurn',
       'loginSubtitle':
-          'Connectez-vous avec votre numéro ou votre compte Google.',
-      'loginPhoneHint': '+237 6 XX XX XX XX',
-      'loginPhoneRequired': 'Numéro requis',
-      'loginPhoneInvalid': 'Numéro invalide',
-      'loginGetCode': 'Recevoir le code',
+          'Connectez-vous par email ou avec votre compte Google.',
       'loginOr': 'ou',
       'loginGoogle': 'Continuer avec Google',
+      'loginEmailLabel': 'Adresse email',
+      'loginPasswordLabel': 'Mot de passe',
+      'loginSignIn': 'Se connecter',
+      'loginCreateAccount': 'Créer un compte',
+      'loginNoAccount': 'Pas encore de compte ? Créer un compte',
+      'loginHaveAccount': 'Déjà un compte ? Se connecter',
+      'loginForgot': 'Mot de passe oublié ?',
+      'loginEmailRequired': 'Email requis',
+      'loginEmailInvalid': 'Adresse email invalide',
+      'loginPasswordRequired': 'Mot de passe requis',
+      'loginPasswordShort': 'Au moins 6 caractères',
+      'loginResetTitle': 'Réinitialiser le mot de passe',
+      'loginResetBody':
+          'Entrez votre email, nous vous enverrons un lien de réinitialisation.',
+      'loginResetSend': 'Envoyer le lien',
+      'loginResetSent':
+          'Email de réinitialisation envoyé. Vérifiez votre boîte mail.',
       'loginTerms': 'En continuant, vous acceptez nos conditions '
           'd\'utilisation et notre politique de confidentialité (CPDP).',
       // Statut de déclaration
@@ -726,13 +739,26 @@ class AppLocalizations {
       'greetingEvening': 'Good evening',
       // Sign in
       'loginWelcome': 'Welcome to ReTurn',
-      'loginSubtitle': 'Sign in with your number or your Google account.',
-      'loginPhoneHint': '+237 6 XX XX XX XX',
-      'loginPhoneRequired': 'Number required',
-      'loginPhoneInvalid': 'Invalid number',
-      'loginGetCode': 'Get the code',
+      'loginSubtitle': 'Sign in with your email or your Google account.',
       'loginOr': 'or',
       'loginGoogle': 'Continue with Google',
+      'loginEmailLabel': 'Email address',
+      'loginPasswordLabel': 'Password',
+      'loginSignIn': 'Sign in',
+      'loginCreateAccount': 'Create account',
+      'loginNoAccount': "No account yet? Create one",
+      'loginHaveAccount': 'Already have an account? Sign in',
+      'loginForgot': 'Forgot password?',
+      'loginEmailRequired': 'Email required',
+      'loginEmailInvalid': 'Invalid email address',
+      'loginPasswordRequired': 'Password required',
+      'loginPasswordShort': 'At least 6 characters',
+      'loginResetTitle': 'Reset password',
+      'loginResetBody':
+          'Enter your email and we will send you a reset link.',
+      'loginResetSend': 'Send link',
+      'loginResetSent':
+          'Reset email sent. Check your inbox.',
       'loginTerms': 'By continuing, you accept our terms of use and our '
           'privacy policy (CPDP).',
       // Declaration status
@@ -1145,12 +1171,23 @@ class AppLocalizations {
   // Connexion
   String get loginWelcome => _t('loginWelcome');
   String get loginSubtitle => _t('loginSubtitle');
-  String get loginPhoneHint => _t('loginPhoneHint');
-  String get loginPhoneRequired => _t('loginPhoneRequired');
-  String get loginPhoneInvalid => _t('loginPhoneInvalid');
-  String get loginGetCode => _t('loginGetCode');
   String get loginOr => _t('loginOr');
   String get loginGoogle => _t('loginGoogle');
+  String get loginEmailLabel => _t('loginEmailLabel');
+  String get loginPasswordLabel => _t('loginPasswordLabel');
+  String get loginSignIn => _t('loginSignIn');
+  String get loginCreateAccount => _t('loginCreateAccount');
+  String get loginNoAccount => _t('loginNoAccount');
+  String get loginHaveAccount => _t('loginHaveAccount');
+  String get loginForgot => _t('loginForgot');
+  String get loginEmailRequired => _t('loginEmailRequired');
+  String get loginEmailInvalid => _t('loginEmailInvalid');
+  String get loginPasswordRequired => _t('loginPasswordRequired');
+  String get loginPasswordShort => _t('loginPasswordShort');
+  String get loginResetTitle => _t('loginResetTitle');
+  String get loginResetBody => _t('loginResetBody');
+  String get loginResetSend => _t('loginResetSend');
+  String get loginResetSent => _t('loginResetSent');
   String get loginTerms => _t('loginTerms');
   String get declStatusActive => _t('declStatusActive');
   String get declStatusMatched => _t('declStatusMatched');
