@@ -10,9 +10,13 @@ on:
     tags: ["v*"]
   workflow_dispatch: {}
 
-# Autorise le token GitHub Actions à créer la Release et y attacher l'APK.
+# Autorise le token à créer la Release (contents) ET à déclencher le workflow
+# landing (actions) — car un event `release: published` créé par le GITHUB_TOKEN
+# ne déclenche PAS d'autre workflow (anti-récursion GitHub). On dispatch donc
+# la landing explicitement après la publication.
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -101,3 +105,10 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Redéploie la landing avec le nouvel APK. Indispensable : sans ce dispatch
+      # explicite, la landing ne se met jamais à jour après un build CI.
+      - name: Redéployer la landing (nouvel APK)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run landing.yml --ref main

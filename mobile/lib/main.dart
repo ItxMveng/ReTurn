@@ -47,7 +47,17 @@ class ReTurnApp extends ConsumerWidget {
       // Verrou biométrique (F-03) superposé à toutes les pages.
       builder: (context, child) =>
           BiometricLock(child: child ?? const SizedBox.shrink()),
+      // Choix explicite de l'utilisateur (Profil) prioritaire ; sinon règle
+      // par défaut ci-dessous.
       locale: settings.locale,
+      // Par défaut : langue du système si anglais, sinon FRANÇAIS (y compris
+      // pour toute autre langue non supportée).
+      localeResolutionCallback: (device, supported) {
+        if (settings.localeCode != null) return Locale(settings.localeCode!);
+        return device?.languageCode == 'en'
+            ? const Locale('en')
+            : const Locale('fr');
+      },
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
