@@ -111,4 +111,5 @@ jobs:
       - name: Redéployer la landing (nouvel APK)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: gh workflow run landing.yml --ref main
