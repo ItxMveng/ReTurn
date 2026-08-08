@@ -200,6 +200,12 @@ class AuthNotifier extends _$AuthNotifier {
           email: email.trim(), password: password);
       await _finishFirebaseLogin(cred);
     } on FirebaseAuthException catch (e) {
+      // Le compte a pu être créé lors d'une tentative précédente dont
+      // l'échange serveur avait échoué → on connecte simplement l'utilisateur.
+      if (e.code == 'email-already-in-use') {
+        await signInWithEmail(email, password);
+        return;
+      }
       state = AuthState.error(_mapAuthError(e));
     } catch (_) {
       state = const AuthState.error('Création du compte impossible. Réessayez.');
@@ -225,8 +231,20 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> _finishFirebaseLogin(UserCredential cred) async {
     final idToken = await cred.user?.getIdToken();
     if (idToken == null) throw Exception('Token Firebase introuvable');
-    await ref.read(authRepositoryProvider).loginWithFirebase(idToken);
-    await checkAuth();
+    // Retry : absorbe un réveil du serveur (cold start Render) pour éviter
+    // qu'une inscription réussie côté Firebase échoue à l'échange serveur.
+    Object? lastError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        await ref.read(authRepositoryProvider).loginWithFirebase(idToken);
+        await checkAuth();
+        return;
+      } catch (e) {
+        lastError = e;
+        await Future.delayed(Duration(milliseconds: 900 * (attempt + 1)));
+      }
+    }
+    throw lastError ?? Exception('Connexion au serveur impossible.');
   }
 
   String _mapAuthError(FirebaseAuthException e) {

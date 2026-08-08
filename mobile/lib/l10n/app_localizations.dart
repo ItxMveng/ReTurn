@@ -193,6 +193,10 @@ class AppLocalizations {
       'loginResetSend': 'Envoyer le lien',
       'loginResetSent':
           'Email de réinitialisation envoyé. Vérifiez votre boîte mail.',
+      'loginSignUpTitle': 'Créer votre compte',
+      'loginSignUpSubtitle': 'Rejoignez ReTurn en quelques secondes.',
+      'loginConfirmPassword': 'Confirmer le mot de passe',
+      'loginPasswordMismatch': 'Les mots de passe ne correspondent pas',
       'loginTerms': 'En continuant, vous acceptez nos conditions '
           'd\'utilisation et notre politique de confidentialité (CPDP).',
       // Statut de déclaration
@@ -759,6 +763,10 @@ class AppLocalizations {
       'loginResetSend': 'Send link',
       'loginResetSent':
           'Reset email sent. Check your inbox.',
+      'loginSignUpTitle': 'Create your account',
+      'loginSignUpSubtitle': 'Join ReTurn in seconds.',
+      'loginConfirmPassword': 'Confirm password',
+      'loginPasswordMismatch': 'Passwords do not match',
       'loginTerms': 'By continuing, you accept our terms of use and our '
           'privacy policy (CPDP).',
       // Declaration status
@@ -1188,6 +1196,10 @@ class AppLocalizations {
   String get loginResetBody => _t('loginResetBody');
   String get loginResetSend => _t('loginResetSend');
   String get loginResetSent => _t('loginResetSent');
+  String get loginSignUpTitle => _t('loginSignUpTitle');
+  String get loginSignUpSubtitle => _t('loginSignUpSubtitle');
+  String get loginConfirmPassword => _t('loginConfirmPassword');
+  String get loginPasswordMismatch => _t('loginPasswordMismatch');
   String get loginTerms => _t('loginTerms');
   String get declStatusActive => _t('declStatusActive');
   String get declStatusMatched => _t('declStatusMatched');

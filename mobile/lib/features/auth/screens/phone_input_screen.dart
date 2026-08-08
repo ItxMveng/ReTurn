@@ -117,16 +117,24 @@ class PhoneInputScreen extends ConsumerStatefulWidget {
 class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isSignUp = false;
   bool _obscure = true;
+  String? _error;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
+
+  void _switchMode() => setState(() {
+        _isSignUp = !_isSignUp;
+        _error = null;
+      });
 
   void _submitEmail() {
     if (!_formKey.currentState!.validate()) return;
@@ -190,12 +198,10 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       next.whenOrNull(
         authenticated: (_) => context.go('/declarations'),
-        error: (msg) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        ),
+        loading: () {
+          if (_error != null) setState(() => _error = null);
+        },
+        error: (msg) => setState(() => _error = msg),
       );
     });
 
@@ -258,7 +264,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ),
                 const SizedBox(height: 40),
                 Text(
-                  l.loginWelcome,
+                  _isSignUp ? l.loginSignUpTitle : l.loginWelcome,
                   style: Theme.of(context)
                       .textTheme
                       .titleLarge
@@ -266,7 +272,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  l.loginSubtitle,
+                  _isSignUp ? l.loginSignUpSubtitle : l.loginSubtitle,
                   style: TextStyle(
                       color: cs.onSurface.withValues(alpha: 0.55)),
                 ),
@@ -306,13 +312,35 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  onFieldSubmitted: (_) => isLoading ? null : _submitEmail(),
+                  onFieldSubmitted: (_) =>
+                      (isLoading || _isSignUp) ? null : _submitEmail(),
                   validator: (v) {
                     if ((v ?? '').isEmpty) return l.loginPasswordRequired;
                     if (_isSignUp && v!.length < 6) return l.loginPasswordShort;
                     return null;
                   },
                 ),
+                // ── Confirmation du mot de passe (inscription uniquement) ──
+                if (_isSignUp) ...[
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _confirmCtrl,
+                    obscureText: _obscure,
+                    decoration: InputDecoration(
+                      labelText: l.loginConfirmPassword,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                    ),
+                    onFieldSubmitted: (_) => isLoading ? null : _submitEmail(),
+                    validator: (v) {
+                      if ((v ?? '') != _passwordCtrl.text) {
+                        return l.loginPasswordMismatch;
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 if (!_isSignUp)
                   Align(
                     alignment: Alignment.centerRight,
@@ -321,7 +349,30 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                       child: Text(l.loginForgot),
                     ),
                   ),
-                SizedBox(height: _isSignUp ? 20 : 6),
+                // ── Alerte d'erreur stylée (fini le texte brut) ──
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: cs.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: cs.error.withValues(alpha: 0.35)),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.error_outline, size: 18, color: cs.error),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(_error!,
+                            style: TextStyle(
+                                fontSize: 13, color: cs.onSurface)),
+                      ),
+                    ]),
+                  ),
+                ],
+                SizedBox(height: _isSignUp || _error != null ? 20 : 6),
                 ElevatedButton(
                   onPressed: isLoading ? null : _submitEmail,
                   style: ElevatedButton.styleFrom(
@@ -339,9 +390,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => setState(() => _isSignUp = !_isSignUp),
+                  onPressed: isLoading ? null : _switchMode,
                   child: Text(_isSignUp ? l.loginHaveAccount : l.loginNoAccount),
                 ),
                 const SizedBox(height: 12),

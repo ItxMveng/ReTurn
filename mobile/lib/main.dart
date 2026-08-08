@@ -51,7 +51,14 @@ class ReTurnApp extends ConsumerWidget {
       // par défaut ci-dessous.
       locale: settings.locale,
       // Par défaut : langue du système si anglais, sinon FRANÇAIS (y compris
-      // pour toute autre langue non supportée).
+      // pour toute autre langue non supportée). `localeListResolutionCallback`
+      // est appelé en premier par Flutter (liste complète des langues du tel).
+      localeListResolutionCallback: (devices, supported) {
+        if (settings.localeCode != null) return Locale(settings.localeCode!);
+        final code =
+            (devices != null && devices.isNotEmpty) ? devices.first.languageCode : 'fr';
+        return code == 'en' ? const Locale('en') : const Locale('fr');
+      },
       localeResolutionCallback: (device, supported) {
         if (settings.localeCode != null) return Locale(settings.localeCode!);
         return device?.languageCode == 'en'

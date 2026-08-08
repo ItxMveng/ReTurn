@@ -357,7 +357,7 @@ class _ProfileBody extends ConsumerWidget {
                   leading: Icon(Icons.info_outline,
                       color: AppColors.onSurfaceVariant),
                   title: Text(l.profVersion),
-                  trailing: Text('1.4.1',
+                  trailing: Text('1.4.2',
                       style: TextStyle(color: AppColors.onSurfaceVariant)),
                 ),
               ]),
