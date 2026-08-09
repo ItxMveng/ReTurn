@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -31,27 +32,33 @@ const _docTypes = <String>[
 String _normalizeName(String s) =>
     s.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
 
-/// Un document (un fichier) dans un dossier.
-class _DocRow {
+/// Un document scanné : son fichier + ses champs éditables (remplis par l'IA
+/// puis corrigeables par l'utilisateur).
+class _DocEntry {
   final String path;
-  String type;
-  final TextEditingController numberCtrl;
-  _DocRow(this.path, {required this.type, String number = ''})
-      : numberCtrl = TextEditingController(text: number);
-}
-
-/// Un dossier = une personne identifiée + ses documents.
-class _Dossier {
   final TextEditingController ownerCtrl;
-  final List<_DocRow> docs;
-  _Dossier({String owner = '', required this.docs})
-      : ownerCtrl = TextEditingController(text: owner);
+  final TextEditingController numberCtrl;
+  String type;
+  bool analyzing;
+  _DocEntry(this.path)
+      : ownerCtrl = TextEditingController(),
+        numberCtrl = TextEditingController(),
+        type = 'other',
+        analyzing = true;
+
+  void dispose() {
+    ownerCtrl.dispose();
+    numberCtrl.dispose();
+  }
 }
 
-/// Déclaration « plusieurs documents » avec tri automatique par IA (OCR) :
-/// on ajoute/photographie plusieurs fichiers, l'app lit chacun, regroupe les
-/// documents par propriétaire détecté (un dossier par personne), puis on
-/// confirme/corrige avant d'enregistrer.
+/// Déclaration de PLUSIEURS documents avec tri automatique par IA.
+///
+/// Principe : on ajoute/scanne plusieurs fichiers → chacun apparaît
+/// **immédiatement** (la photo), l'OCR remplit les champs **en arrière-plan**
+/// (nom, type, numéro), et l'utilisateur **vérifie/corrige** avant d'enregistrer.
+/// Les documents sont **regroupés par propriétaire** (nom éditable) : un dossier
+/// = une personne. Corriger un nom regroupe automatiquement les documents.
 class MultiDocDeclarationPage extends ConsumerStatefulWidget {
   const MultiDocDeclarationPage({super.key});
 
@@ -64,31 +71,30 @@ class _MultiDocDeclarationPageState
     extends ConsumerState<MultiDocDeclarationPage> {
   late final OcrPipeline _ocr = OcrPipeline(ref.read(dioProvider));
   final _locationCtrl = TextEditingController();
-  final List<_Dossier> _dossiers = [];
+  final List<_DocEntry> _docs = [];
+  final List<_DocEntry> _ocrQueue = [];
+  bool _draining = false;
   bool _found = true; // trouvé (par défaut) / perdu
-  bool _analyzing = false;
   bool _submitting = false;
 
   @override
   void dispose() {
     _ocr.dispose();
     _locationCtrl.dispose();
-    for (final d in _dossiers) {
-      d.ownerCtrl.dispose();
-      for (final doc in d.docs) {
-        doc.numberCtrl.dispose();
-      }
+    for (final d in _docs) {
+      d.dispose();
     }
     super.dispose();
   }
 
+  // ── Ajout de documents ────────────────────────────────────────────────────
   Future<void> _addFromGallery() async {
     final errorMsg = AppLocalizations.of(context).mdocError;
     try {
-      final files = await ImagePicker()
-          .pickMultiImage(imageQuality: 85, maxWidth: 1600);
+      final files =
+          await ImagePicker().pickMultiImage(imageQuality: 85, maxWidth: 1600);
       if (files.isEmpty) return;
-      await _analyze(files.map((f) => f.path).toList());
+      _addEntries(files.map((f) => f.path).toList());
     } catch (_) {
       _toast(errorMsg);
     }
@@ -103,77 +109,96 @@ class _MultiDocDeclarationPageState
     }
     final file = picked.file;
     if (file == null) return;
-    await _analyze([file.path]);
+    _addEntries([file.path]);
   }
 
-  /// OCR chaque fichier puis fusionne dans les dossiers existants par nom.
-  Future<void> _analyze(List<String> paths) async {
-    setState(() => _analyzing = true);
-    for (final path in paths) {
-      String owner = '';
-      String type = 'other';
-      String number = '';
+  /// Ajoute immédiatement les documents (photos visibles tout de suite), puis
+  /// lance l'OCR en arrière-plan pour remplir les champs.
+  void _addEntries(List<String> paths) {
+    setState(() {
+      for (final p in paths) {
+        final e = _DocEntry(p);
+        _docs.add(e);
+        _ocrQueue.add(e);
+      }
+    });
+    _drainQueue();
+  }
+
+  /// Traite la file OCR un document à la fois (le TextRecognizer ML Kit n'aime
+  /// pas les appels concurrents), avec un timeout pour ne jamais rester bloqué.
+  Future<void> _drainQueue() async {
+    if (_draining) return;
+    _draining = true;
+    while (_ocrQueue.isNotEmpty) {
+      final e = _ocrQueue.removeAt(0);
       try {
-        final OcrResult r = await _ocr.analyze(File(path));
-        owner = [r.firstName, r.lastName]
+        final OcrResult r = await _ocr
+            .analyze(File(e.path))
+            .timeout(const Duration(seconds: 25));
+        final owner = [r.firstName, r.lastName]
             .where((s) => (s ?? '').trim().isNotEmpty)
             .map((s) => s!.trim())
             .join(' ');
-        type = r.kind.backendType;
-        number = r.documentNumber?.trim() ?? '';
+        if (!mounted) return;
+        setState(() {
+          if (owner.isNotEmpty && e.ownerCtrl.text.trim().isEmpty) {
+            e.ownerCtrl.text = owner;
+          }
+          if (r.kind.backendType != 'other') e.type = r.kind.backendType;
+          final num = r.documentNumber?.trim() ?? '';
+          if (num.isNotEmpty && e.numberCtrl.text.trim().isEmpty) {
+            e.numberCtrl.text = num;
+          }
+          e.analyzing = false;
+        });
       } catch (_) {
-        // OCR raté : document ajouté sans nom, l'utilisateur complètera.
-      }
-      _mergeIntoDossier(path, owner: owner, type: type, number: number);
-    }
-    if (mounted) setState(() => _analyzing = false);
-  }
-
-  void _mergeIntoDossier(String path,
-      {required String owner, required String type, required String number}) {
-    final key = _normalizeName(owner);
-    final doc = _DocRow(path, type: type, number: number);
-    if (key.isNotEmpty) {
-      for (final d in _dossiers) {
-        if (_normalizeName(d.ownerCtrl.text) == key) {
-          d.docs.add(doc);
-          return;
-        }
+        if (!mounted) return;
+        setState(() => e.analyzing = false);
       }
     }
-    _dossiers.add(_Dossier(owner: owner, docs: [doc]));
+    _draining = false;
   }
 
-  void _removeDoc(_Dossier d, _DocRow doc) {
+  void _removeDoc(_DocEntry e) {
     setState(() {
-      doc.numberCtrl.dispose();
-      d.docs.remove(doc);
-      if (d.docs.isEmpty) {
-        d.ownerCtrl.dispose();
-        _dossiers.remove(d);
-      }
+      _ocrQueue.remove(e);
+      _docs.remove(e);
+      e.dispose();
     });
   }
 
+  /// Nombre de personnes distinctes détectées (par nom normalisé).
+  int get _peopleCount =>
+      _docs.map((d) => _normalizeName(d.ownerCtrl.text)).where((k) => k.isNotEmpty).toSet().length;
+
   Future<void> _submit() async {
     final l = AppLocalizations.of(context);
-    if (_dossiers.any((d) => d.ownerCtrl.text.trim().isEmpty)) {
+    if (_docs.isEmpty) return;
+    if (_docs.any((d) => d.ownerCtrl.text.trim().isEmpty)) {
       _toast(l.mdocOwnerRequired);
       return;
     }
     HapticFeedback.lightImpact();
     setState(() => _submitting = true);
+
+    // Regroupement par propriétaire (nom normalisé) → un dossier par personne.
+    final groups = <String, List<_DocEntry>>{};
+    for (final d in _docs) {
+      groups.putIfAbsent(_normalizeName(d.ownerCtrl.text), () => []).add(d);
+    }
+
     final repo = ref.read(declarationsRepositoryProvider);
     final location = _locationCtrl.text.trim();
     try {
-      for (final d in _dossiers) {
-        final owner = d.ownerCtrl.text.trim();
-        final items = d.docs
-            .map((doc) => <String, dynamic>{
-                  'document_type': doc.type,
-                  'document_number': doc.numberCtrl.text.trim().isEmpty
+      for (final entry in groups.values) {
+        final owner = entry.first.ownerCtrl.text.trim();
+        final items = entry
+            .map((d) => <String, dynamic>{
+                  'document_type': d.type,
+                  'document_number': d.numberCtrl.text.trim().isEmpty
                       ? null
-                      : doc.numberCtrl.text.trim(),
+                      : d.numberCtrl.text.trim(),
                   'owner_name': owner,
                 })
             .toList();
@@ -183,16 +208,15 @@ class _MultiDocDeclarationPageState
             if (location.isNotEmpty) 'location_description': location,
           },
           items,
-          d.docs.map((doc) => doc.path).toList(),
+          entry.map((d) => d.path).toList(),
         );
       }
       ref.invalidate(declarationsProvider);
       if (!mounted) return;
-      final count = _dossiers.length;
+      final count = groups.length;
       context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.mdocSuccess(count))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l.mdocSuccess(count))));
     } catch (_) {
       if (mounted) {
         setState(() => _submitting = false);
@@ -203,15 +227,14 @@ class _MultiDocDeclarationPageState
 
   void _toast(String m) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(m)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
-    final hasDocs = _dossiers.isNotEmpty;
+    final hasDocs = _docs.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.mdocTitle)),
@@ -229,39 +252,32 @@ class _MultiDocDeclarationPageState
                       ButtonSegment(value: false, label: Text(l.declTagLost)),
                     ],
                     selected: {_found},
-                    onSelectionChanged: (s) =>
-                        setState(() => _found = s.first),
+                    onSelectionChanged: (s) => setState(() => _found = s.first),
                   ),
                   const SizedBox(height: 16),
 
-                  if (!hasDocs && !_analyzing) ...[
+                  if (!hasDocs) ...[
                     _IntroCard(text: l.mdocIntro),
                     const SizedBox(height: 20),
-                  ],
-
-                  if (_analyzing) ...[
-                    Row(children: [
-                      const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(l.mdocAnalyzing),
-                    ]),
+                    Center(
+                      child: Text(l.mdocEmpty,
+                          style: TextStyle(
+                              color: cs.onSurface.withValues(alpha: 0.5))),
+                    ),
                     const SizedBox(height: 16),
-                  ],
-
-                  if (hasDocs) ...[
-                    Text(l.mdocDetected(_dossiers.length),
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: cs.primary)),
-                    const SizedBox(height: 12),
-                    ..._dossiers.map((d) => _DossierCard(
-                          dossier: d,
-                          onRemoveDoc: (doc) => _removeDoc(d, doc),
+                  ] else ...[
+                    if (_peopleCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(l.mdocDetected(_peopleCount),
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: cs.primary)),
+                      ),
+                    ..._docs.map((d) => _DocCard(
+                          entry: d,
+                          onRemove: () => _removeDoc(d),
                           onChanged: () => setState(() {}),
                         )),
                     const SizedBox(height: 4),
@@ -274,22 +290,13 @@ class _MultiDocDeclarationPageState
                       ),
                     ),
                     const SizedBox(height: 12),
-                  ] else if (!_analyzing)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(l.mdocEmpty,
-                            style: TextStyle(
-                                color:
-                                    cs.onSurface.withValues(alpha: 0.5))),
-                      ),
-                    ),
+                  ],
 
-                  // Boutons d'ajout.
+                  // Boutons d'ajout — toujours actifs (chaque ajout est indépendant).
                   Row(children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _analyzing ? null : _addFromGallery,
+                        onPressed: _addFromGallery,
                         icon: const Icon(Icons.photo_library_outlined),
                         label: Text(l.mdocAddGallery),
                       ),
@@ -297,7 +304,7 @@ class _MultiDocDeclarationPageState
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _analyzing ? null : _addFromCamera,
+                        onPressed: _addFromCamera,
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: Text(l.mdocTakePhotos),
                       ),
@@ -306,8 +313,6 @@ class _MultiDocDeclarationPageState
                 ],
               ),
             ),
-
-            // CTA final.
             if (hasDocs)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -321,7 +326,8 @@ class _MultiDocDeclarationPageState
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : Text(l.mdocSubmit(_dossiers.length)),
+                      : Text(l.mdocSubmit(
+                          _peopleCount == 0 ? 1 : _peopleCount)),
                 ),
               ),
           ],
@@ -359,13 +365,14 @@ class _IntroCard extends StatelessWidget {
   }
 }
 
-class _DossierCard extends StatelessWidget {
-  final _Dossier dossier;
-  final void Function(_DocRow) onRemoveDoc;
+/// Carte d'un document scanné : photo + champs éditables (nom, type, numéro).
+class _DocCard extends StatelessWidget {
+  final _DocEntry entry;
+  final VoidCallback onRemove;
   final VoidCallback onChanged;
-  const _DossierCard({
-    required this.dossier,
-    required this.onRemoveDoc,
+  const _DocCard({
+    required this.entry,
+    required this.onRemove,
     required this.onChanged,
   });
 
@@ -374,97 +381,114 @@ class _DossierCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(Icons.folder_shared_outlined, size: 18, color: cs.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: dossier.ownerCtrl,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  isDense: true,
-                  labelText: l.mdocDossierOwner,
-                  hintText: l.mdocOwnerHint,
-                  border: const OutlineInputBorder(),
+      child: Column(children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Vignette + indicateur d'analyse.
+          Stack(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(
+                File(entry.path),
+                width: 58,
+                height: 58,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 58,
+                  height: 58,
+                  color: cs.primary.withValues(alpha: 0.08),
+                  child: Icon(Icons.image_outlined,
+                      color: cs.onSurface.withValues(alpha: 0.3)),
                 ),
               ),
             ),
+            if (entry.analyzing)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white)),
+                  ),
+                ),
+              ),
           ]),
-          const SizedBox(height: 12),
-          ...dossier.docs.map((doc) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(doc.path),
-                      width: 46,
-                      height: 46,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 46,
-                        height: 46,
-                        color: cs.primary.withValues(alpha: 0.08),
-                        child: Icon(Icons.image_outlined,
-                            size: 20,
-                            color: cs.onSurface.withValues(alpha: 0.3)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: doc.type,
-                        isDense: true,
-                        decoration: const InputDecoration(
-                            isDense: true, border: OutlineInputBorder()),
-                        items: _docTypes
-                            .map((t) => DropdownMenuItem(
-                                value: t,
-                                child: Text(l.docType(t),
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13))))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) {
-                            doc.type = v;
-                            onChanged();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: doc.numberCtrl,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: l.declDocNumber,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                    ]),
-                  ),
-                  IconButton(
-                    tooltip: l.mdocRemove,
-                    onPressed: () => onRemoveDoc(doc),
-                    icon: Icon(Icons.close,
-                        size: 20, color: cs.onSurface.withValues(alpha: 0.5)),
-                  ),
-                ]),
-              )),
-        ],
-      ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: entry.ownerCtrl,
+              textCapitalization: TextCapitalization.words,
+              onChanged: (_) => onChanged(),
+              decoration: InputDecoration(
+                isDense: true,
+                labelText: l.mdocDossierOwner,
+                hintText:
+                    entry.analyzing ? l.mdocAnalyzing : l.mdocOwnerHint,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: l.mdocRemove,
+            onPressed: onRemove,
+            icon: Icon(Icons.close,
+                size: 20, color: cs.onSurface.withValues(alpha: 0.5)),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+            flex: 3,
+            child: DropdownButtonFormField<String>(
+              // La clé change quand l'OCR met à jour le type → le menu reflète
+              // bien le type détecté après l'analyse.
+              key: ValueKey('${entry.path}#${entry.type}'),
+              initialValue: entry.type,
+              isDense: true,
+              decoration: const InputDecoration(
+                  isDense: true, border: OutlineInputBorder()),
+              items: _docTypes
+                  .map((t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(l.docType(t),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13))))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) {
+                  entry.type = v;
+                  onChanged();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 2,
+            child: TextField(
+              controller: entry.numberCtrl,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                isDense: true,
+                labelText: l.declDocNumber,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
+        ]),
+      ]),
     );
   }
 }
