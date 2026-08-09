@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReTurn — Compte</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2301696F'/%3E%3Cpath d='M11 16l3.5 3.5L22 12' stroke='white' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --teal: #01696F;
+      --teal-dark: #01474C;
+      --teal-bright: #0C8A92;
+      --ink: #0F1C1D;
+      --muted: #5E7274;
+      --line: #E2EAEA;
+      --bg: #F3F7F7;
+      --surface: #FFFFFF;
+      --ok: #1B7F4B;
+      --ok-bg: #E6F4EC;
+      --err: #C0392B;
+      --err-bg: #FBEBE9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink); background:
+        radial-gradient(60% 50% at 50% 0%, rgba(12,138,146,.14), transparent 70%),
+        var(--bg);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 420px; background: var(--surface);
+      border: 1px solid var(--line); border-radius: 22px; padding: 34px 28px 30px;
+      box-shadow: 0 1px 2px rgba(15,28,29,.04), 0 20px 50px rgba(1,105,111,.10);
+    }
+    .brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .logo {
+      width: 62px; height: 62px; border-radius: 18px; display: grid; place-items: center;
+      background: linear-gradient(140deg, var(--teal), var(--teal-bright));
+      box-shadow: 0 8px 20px rgba(1,105,111,.30);
+    }
+    .wordmark { font-weight: 900; font-size: 22px; letter-spacing: -.02em; color: var(--teal); }
+    h1 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 6px; text-align: center; }
+    .sub { color: var(--muted); font-size: 14.5px; text-align: center; margin: 0 0 22px; line-height: 1.5; }
+    .email-chip {
+      display: inline-block; font-weight: 600; color: var(--teal-dark);
+      background: rgba(12,138,146,.10); padding: 2px 10px; border-radius: 999px;
+    }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+    .field { position: relative; margin-bottom: 16px; }
+    input {
+      width: 100%; height: 52px; border: 1.5px solid var(--line); border-radius: 13px;
+      padding: 0 46px 0 16px; font-size: 16px; font-family: inherit; color: var(--ink);
+      background: #FBFDFD; transition: border-color .15s, box-shadow .15s; outline: none;
+    }
+    input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(1,105,111,.12); }
+    .toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      border: 0; background: none; cursor: pointer; padding: 8px; color: var(--muted); border-radius: 8px;
+    }
+    .toggle:hover { color: var(--teal); }
+    .hint { font-size: 12.5px; color: var(--muted); margin: -8px 0 14px; }
+    button.primary {
+      width: 100%; height: 52px; border: 0; border-radius: 13px; cursor: pointer;
+      background: linear-gradient(135deg, var(--teal), var(--teal-bright)); color: #fff;
+      font-size: 16px; font-weight: 700; font-family: inherit; letter-spacing: .01em;
+      box-shadow: 0 8px 18px rgba(1,105,111,.28); transition: transform .06s, opacity .15s;
+    }
+    button.primary:active { transform: translateY(1px); }
+    button.primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
+    .msg { font-size: 13.5px; padding: 11px 14px; border-radius: 12px; margin-bottom: 16px; display: none; align-items: center; gap: 8px; }
+    .msg.err { display: flex; color: var(--err); background: var(--err-bg); }
+    .center { text-align: center; }
+    .icon-badge { width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 16px; }
+    .icon-badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .icon-badge.err { background: var(--err-bg); color: var(--err); }
+    .link-btn {
+      display: inline-block; margin-top: 18px; color: var(--teal); font-weight: 700;
+      text-decoration: none; font-size: 14.5px;
+    }
+    .spinner {
+      width: 34px; height: 34px; border: 3.5px solid rgba(1,105,111,.18); border-top-color: var(--teal);
+      border-radius: 50%; animation: spin .8s linear infinite; margin: 6px auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .foot { margin-top: 22px; text-align: center; font-size: 12px; color: var(--muted); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <div class="logo">
+        <svg width="34" height="34" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M11 16l3.5 3.5L22 12" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="wordmark">ReTurn</div>
+    </div>
+
+    <!-- État : chargement -->
+    <section id="state-loading">
+      <div class="spinner"></div>
+      <p class="sub" id="loadingText">Vérification du lien…</p>
+    </section>
+
+    <!-- État : formulaire de réinitialisation -->
+    <section id="state-reset" hidden>
+      <h1 id="resetTitle">Réinitialiser le mot de passe</h1>
+      <p class="sub" id="resetSub"></p>
+      <div class="msg err" id="resetError" role="alert"></div>
+      <form id="resetForm" novalidate>
+        <label id="lblNew" for="pw">Nouveau mot de passe</label>
+        <div class="field">
+          <input id="pw" type="password" autocomplete="new-password" required />
+          <button type="button" class="toggle" data-target="pw" aria-label="Afficher">👁</button>
+        </div>
+        <label id="lblConfirm" for="pw2">Confirmer le mot de passe</label>
+        <div class="field">
+          <input id="pw2" type="password" autocomplete="new-password" required />
+          <button type="button" class="toggle" data-target="pw2" aria-label="Afficher">👁</button>
+        </div>
+        <p class="hint" id="pwHint">Au moins 6 caractères.</p>
+        <button type="submit" class="primary" id="submitBtn">Modifier le mot de passe</button>
+      </form>
+    </section>
+
+    <!-- État : succès -->
+    <section id="state-success" hidden class="center">
+      <div class="icon-badge ok">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 id="successTitle">Mot de passe modifié</h1>
+      <p class="sub" id="successSub">Vous pouvez maintenant vous connecter dans l'application ReTurn.</p>
+      <a class="link-btn" id="successLink" href="https://itxmveng.github.io/ReTurn/">Ouvrir ReTurn →</a>
+    </section>
+
+    <!-- État : erreur -->
+    <section id="state-error" hidden class="center">
+      <div class="icon-badge err">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5v.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <h1 id="errorTitle">Lien invalide ou expiré</h1>
+      <p class="sub" id="errorSub">Ce lien n'est plus valide. Redemandez un email de réinitialisation depuis l'application.</p>
+      <a class="link-btn" href="https://itxmveng.github.io/ReTurn/">Retour à ReTurn →</a>
+    </section>
+
+    <div class="foot">ReTurn · Retrouver. Restituer. Confiance.</div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, verifyPasswordResetCode, confirmPasswordReset,
+      applyActionCode, checkActionCode
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // ── Paramètres passés par Firebase dans l'URL ──────────────────────────
+    const params = new URLSearchParams(location.search);
+    const mode = params.get("mode");
+    const oobCode = params.get("oobCode");
+    const apiKey = params.get("apiKey");
+    const continueUrl = params.get("continueUrl");
+    const lang = (params.get("lang") || "fr").startsWith("en") ? "en" : "fr";
+
+    // ── Traductions ────────────────────────────────────────────────────────
+    const T = {
+      fr: {
+        loading: "Vérification du lien…",
+        resetTitle: "Réinitialiser le mot de passe",
+        resetSubFor: (e) => `Choisissez un nouveau mot de passe pour <span class="email-chip">${e}</span>.`,
+        lblNew: "Nouveau mot de passe", lblConfirm: "Confirmer le mot de passe",
+        pwHint: "Au moins 6 caractères.", submit: "Modifier le mot de passe",
+        short: "Le mot de passe doit contenir au moins 6 caractères.",
+        mismatch: "Les mots de passe ne correspondent pas.",
+        successTitle: "Mot de passe modifié",
+        successSub: "Vous pouvez maintenant vous connecter dans l'application ReTurn.",
+        successLink: "Ouvrir ReTurn →",
+        verifiedTitle: "Adresse email vérifiée",
+        verifiedSub: "Votre email est confirmé. Vous pouvez utiliser ReTurn normalement.",
+        errorTitle: "Lien invalide ou expiré",
+        errorSub: "Ce lien n'est plus valide. Redemandez un email depuis l'application.",
+        working: "Modification…",
+      },
+      en: {
+        loading: "Checking the link…",
+        resetTitle: "Reset your password",
+        resetSubFor: (e) => `Choose a new password for <span class="email-chip">${e}</span>.`,
+        lblNew: "New password", lblConfirm: "Confirm password",
+        pwHint: "At least 6 characters.", submit: "Update password",
+        short: "Password must be at least 6 characters.",
+        mismatch: "Passwords do not match.",
+        successTitle: "Password updated",
+        successSub: "You can now sign in to the ReTurn app.",
+        successLink: "Open ReTurn →",
+        verifiedTitle: "Email verified",
+        verifiedSub: "Your email is confirmed. You can use ReTurn normally.",
+        errorTitle: "Invalid or expired link",
+        errorSub: "This link is no longer valid. Request a new email from the app.",
+        working: "Updating…",
+      },
+    }[lang];
+
+    const $ = (id) => document.getElementById(id);
+    const show = (id) => {
+      ["state-loading", "state-reset", "state-success", "state-error"]
+        .forEach((s) => $(s).hidden = s !== id);
+    };
+    const applyStaticText = () => {
+      document.documentElement.lang = lang;
+      $("loadingText").textContent = T.loading;
+      $("resetTitle").textContent = T.resetTitle;
+      $("lblNew").textContent = T.lblNew;
+      $("lblConfirm").textContent = T.lblConfirm;
+      $("pwHint").textContent = T.pwHint;
+      $("submitBtn").textContent = T.submit;
+      $("successLink").textContent = T.successLink;
+      if (continueUrl) $("successLink").href = continueUrl;
+    };
+    applyStaticText();
+
+    // Afficher / masquer les mots de passe.
+    document.querySelectorAll(".toggle").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const input = $(btn.dataset.target);
+        input.type = input.type === "password" ? "text" : "password";
+      });
+    });
+
+    function fail() {
+      $("errorTitle").textContent = T.errorTitle;
+      $("errorSub").textContent = T.errorSub;
+      show("state-error");
+    }
+
+    if (!mode || !oobCode || !apiKey) { fail(); throw new Error("params manquants"); }
+
+    // Init Firebase (apiKey fourni dans l'URL par Firebase ; domaine du projet).
+    const app = initializeApp({ apiKey, authDomain: "docretour.firebaseapp.com" });
+    const auth = getAuth(app);
+
+    async function handleResetPassword() {
+      let email;
+      try {
+        email = await verifyPasswordResetCode(auth, oobCode);
+      } catch (e) { fail(); return; }
+
+      $("resetSub").innerHTML = T.resetSubFor(email);
+      show("state-reset");
+
+      const form = $("resetForm"), err = $("resetError"), btn = $("submitBtn");
+      form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        err.style.display = "none";
+        const pw = $("pw").value, pw2 = $("pw2").value;
+        if (pw.length < 6) { err.textContent = T.short; err.style.display = "flex"; return; }
+        if (pw !== pw2) { err.textContent = T.mismatch; err.style.display = "flex"; return; }
+        btn.disabled = true; btn.textContent = T.working;
+        try {
+          await confirmPasswordReset(auth, oobCode, pw);
+          $("successTitle").textContent = T.successTitle;
+          $("successSub").textContent = T.successSub;
+          show("state-success");
+        } catch (e) {
+          btn.disabled = false; btn.textContent = T.submit;
+          err.textContent = (e && e.code === "auth/weak-password") ? T.short : T.errorSub;
+          err.style.display = "flex";
+        }
+      });
+    }
+
+    async function handleVerifyEmail() {
+      try {
+        await applyActionCode(auth, oobCode);
+        $("successTitle").textContent = T.verifiedTitle;
+        $("successSub").textContent = T.verifiedSub;
+        show("state-success");
+      } catch (e) { fail(); }
+    }
+
+    async function handleRecoverEmail() {
+      try {
+        await checkActionCode(auth, oobCode);
+        await applyActionCode(auth, oobCode);
+        $("successTitle").textContent = T.verifiedTitle;
+        $("successSub").textContent = T.verifiedSub;
+        show("state-success");
+      } catch (e) { fail(); }
+    }
+
+    if (mode === "resetPassword") handleResetPassword();
+    else if (mode === "verifyEmail") handleVerifyEmail();
+    else if (mode === "recoverEmail") handleRecoverEmail();
+    else fail();
+  </script>
+</body>
+</html>
