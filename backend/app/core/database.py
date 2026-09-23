@@ -8,10 +8,15 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# pool_pre_ping : Neon suspend son compute après quelques minutes d'inactivité
+# et coupe les connexions ; on teste chaque connexion avant usage plutôt que
+# de servir une erreur sur la première requête après le réveil.
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 AsyncSessionLocal = sessionmaker(

@@ -1,9 +1,32 @@
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Paramètres de connexion libpq qu'asyncpg ne supporte pas.
+_LIBPQ_ONLY_PARAMS = {"channel_binding", "gssencmode", "target_session_attrs"}
+
+
+def normalize_database_url(url: str) -> str:
+    """postgres(ql)://…?sslmode=require → postgresql+asyncpg://…?ssl=require."""
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+    if not url.startswith("postgresql+asyncpg://"):
+        return url
+
+    parts = urlsplit(url)
+    query = []
+    for key, val in parse_qsl(parts.query, keep_blank_values=True):
+        if key in _LIBPQ_ONLY_PARAMS:
+            continue
+        query.append(("ssl" if key == "sslmode" else key, val))
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_DIR.parent
@@ -42,18 +65,16 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _force_asyncpg_driver(cls, value: Any) -> Any:
-        """Force le driver asyncpg.
+        """Force le driver asyncpg et adapte les paramètres libpq.
 
-        Render (et d'autres hébergeurs) injectent l'URL au format
-        `postgres://…` ou `postgresql://…`, que SQLAlchemy async ne sait pas
-        piloter (il faut `postgresql+asyncpg://…`). On réécrit le schéma pour
-        que l'app ET Alembic fonctionnent sans dépendre du format fourni.
+        Les hébergeurs (Render, Neon…) fournissent l'URL au format
+        `postgres://…` ou `postgresql://…` avec des paramètres libpq
+        (`sslmode`, `channel_binding`) que SQLAlchemy async / asyncpg ne
+        comprennent pas. On normalise pour que l'app ET Alembic fonctionnent
+        avec l'URL collée telle quelle depuis la console de l'hébergeur.
         """
         if isinstance(value, str):
-            if value.startswith("postgres://"):
-                return "postgresql+asyncpg://" + value[len("postgres://"):]
-            if value.startswith("postgresql://"):
-                return "postgresql+asyncpg://" + value[len("postgresql://"):]
+            return normalize_database_url(value)
         return value
 
     # Redis

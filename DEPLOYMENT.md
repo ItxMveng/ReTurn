@@ -22,7 +22,8 @@ Pipeline complète, 100 % gratuit, sans carte bancaire obligatoire.
 | Brique | Service | Gratuit | Carte requise |
 |--------|---------|---------|---------------|
 | Code, CI/CD, APK, Landing | GitHub | ✅ | non |
-| API + PostgreSQL + Redis | Render | ✅ | non |
+| API + Redis | Render | ✅ | non |
+| PostgreSQL | Neon | ✅ 512 Mo, données conservées | non |
 | Stockage images | Cloudflare R2 | ✅ 10 Go | oui (non débitée sous 10 Go) |
 
 > 💡 **Alternative sans carte pour le stockage** : Backblaze B2 (10 Go gratuits, pas de carte). Mêmes réglages, `MINIO_REGION` = la région B2 (ex. `us-east-005`) et `MINIO_ENDPOINT` = `s3.us-east-005.backblazeb2.com`.
@@ -42,11 +43,13 @@ Pipeline complète, 100 % gratuit, sans carte bancaire obligatoire.
 ## Étape 2 — Backend (Render)
 
 1. Compte sur https://render.com → **New** → **Blueprint** → connecte le dépôt `ItxMveng/ReTurn`.
-2. Render lit `render.yaml` et propose de créer **l'API + PostgreSQL + Redis**. Valide.
-3. Ouvre le service **docretour-api** → **Environment** → renseigne les secrets `sync: false` :
+2. Render lit `render.yaml` et propose de créer **l'API + Redis**. Valide. (La base PostgreSQL est chez Neon, voir ci-dessous.)
+3. **Base de données (Neon)** : crée un compte sur https://neon.tech → nouveau projet (région Frankfurt) → bouton **Connect** → copie la connection string (`postgresql://…?sslmode=require&channel_binding=require`). Elle se colle **telle quelle** dans `DATABASE_URL` : le backend adapte le driver et les paramètres SSL. Les tables sont créées au démarrage par `alembic upgrade head`.
+4. Ouvre le service **docretour-api** → **Environment** → renseigne les secrets `sync: false` :
 
    | Variable | Valeur |
    |----------|--------|
+   | `DATABASE_URL` | connection string Neon (étape 3) |
    | `MINIO_ENDPOINT` | `<ACCOUNT_ID>.r2.cloudflarestorage.com` |
    | `MINIO_ROOT_USER` | Access Key ID R2 |
    | `MINIO_ROOT_PASSWORD` | Secret Access Key R2 |
@@ -57,8 +60,8 @@ Pipeline complète, 100 % gratuit, sans carte bancaire obligatoire.
    > Base64 du compte Firebase (PowerShell) :
    > `[Convert]::ToBase64String([IO.File]::ReadAllBytes("firebase-service-account.json"))`
 
-4. Premier déploiement : Render build l'image (`backend/Dockerfile.prod`), applique les migrations (`alembic upgrade head`) et démarre. Vérifie `https://docretour-api.onrender.com/health`.
-5. **Deploy Hook** : service → **Settings** → **Deploy Hook** → copie l'URL (elle contient un secret).
+5. Premier déploiement : Render build l'image (`backend/Dockerfile.prod`), applique les migrations (`alembic upgrade head`) et démarre. Vérifie `https://docretour-api.onrender.com/health`.
+6. **Deploy Hook** : service → **Settings** → **Deploy Hook** → copie l'URL (elle contient un secret).
 
 ## Étape 3 — Déploiement automatique gated (GitHub → Render)
 
@@ -128,7 +131,7 @@ git tag v1.0.1 && git push origin v1.0.1   # → nouvel APK sur la Release + lan
 | API « spin down » lente au 1ᵉʳ appel | plan gratuit Render dort après 15 min | normal ; 1ᵉʳ appel ~30 s puis rapide. Passe au plan payant pour éviter. |
 | Déploiement non déclenché | secret `RENDER_DEPLOY_HOOK_URL` absent | l'ajouter dans Actions secrets |
 | APK ne s'installe pas en MAJ | keystore différent | toujours réutiliser le même keystore |
-| PostgreSQL Render expiré (90 j) | limite plan gratuit | migrer vers Neon (gratuit, permanent) : changer `DATABASE_URL` |
+| API en crash-loop (« Exited with status 3 ») | base injoignable | vérifier `DATABASE_URL` (Neon) et que le projet Neon existe. (Le PostgreSQL gratuit de Render est supprimé après ~30 j : c'est pourquoi la base est chez Neon.) |
 
 ## 🔐 Rappels sécurité
 - Aucun secret n'est commité : tout vit dans Render Environment ou GitHub Actions Secrets.

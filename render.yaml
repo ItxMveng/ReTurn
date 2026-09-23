@@ -1,17 +1,14 @@
 # Blueprint Render — Infrastructure as Code.
-# Crée d'un coup : l'API (Docker), PostgreSQL et Redis.
+# Crée d'un coup : l'API (Docker) et Redis.
+# PostgreSQL n'est PLUS hébergé sur Render : le plan gratuit Render supprime la
+# base après ~30 jours. La base est chez Neon (gratuit, données conservées) ;
+# l'URL se saisit dans DATABASE_URL (dashboard Render → Environment).
 # Doc : https://render.com/docs/blueprint-spec
 #
 # Déploiement GATED : autoDeploy=false → Render ne déploie PAS à chaque push.
 # C'est le workflow GitHub Actions (.github/workflows/backend-deploy.yml) qui,
 # APRÈS des tests réussis, appelle le Deploy Hook. La prod ne casse jamais sur
 # un push qui échoue aux tests.
-
-databases:
-  - name: docretour-db
-    databaseName: docretour
-    user: docretour
-    plan: free
 
 services:
   # ── Redis (cache + pub/sub WebSocket) ────────────────────────────────────
@@ -35,11 +32,11 @@ services:
         value: production
       - key: DEBUG
         value: "false"
-      # Connexions internes injectées automatiquement par Render
+      # Base Neon : URL de connexion copiée depuis console.neon.tech (Connect).
+      # Collée telle quelle — le backend adapte sslmode/channel_binding/driver.
       - key: DATABASE_URL
-        fromDatabase:
-          name: docretour-db
-          property: connectionString
+        sync: false
+      # Connexion interne injectée automatiquement par Render
       - key: REDIS_URL
         fromService:
           type: keyvalue
