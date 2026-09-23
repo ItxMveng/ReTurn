@@ -15,12 +15,11 @@ class DeclarationDetailPage extends ConsumerWidget {
   const DeclarationDetailPage({super.key, required this.id});
 
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final ok = await _confirm(context,
-        title: 'Annuler la déclaration',
-        message:
-            'Elle ne sera plus active pour le matching, mais restera dans votre '
-            'historique. Continuer ?',
-        confirmLabel: 'Annuler la déclaration');
+        title: l.cancelDeclaration,
+        message: l.cancelDeclarationConfirmMsg,
+        confirmLabel: l.cancelDeclaration);
     if (ok != true) return;
     try {
       await ref.read(declarationsRepositoryProvider).cancel(id);
@@ -28,7 +27,7 @@ class DeclarationDetailPage extends ConsumerWidget {
       ref.invalidate(declarationDetailProvider(id));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Déclaration annulée.')),
+          SnackBar(content: Text(AppLocalizations.of(context).declarationCancelled)),
         );
       }
     } catch (_) {
@@ -37,12 +36,11 @@ class DeclarationDetailPage extends ConsumerWidget {
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final ok = await _confirm(context,
-        title: 'Supprimer la déclaration',
-        message:
-            'Cette action est définitive. La déclaration et ses photos seront '
-            'supprimées. Continuer ?',
-        confirmLabel: 'Supprimer',
+        title: l.deleteDeclarationTitle,
+        message: l.deleteDeclarationConfirmMsg,
+        confirmLabel: l.delete,
         danger: true);
     if (ok != true) return;
     try {
@@ -50,7 +48,7 @@ class DeclarationDetailPage extends ConsumerWidget {
       ref.invalidate(declarationsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Déclaration supprimée.')),
+          SnackBar(content: Text(AppLocalizations.of(context).declarationDeleted)),
         );
         context.pop();
       }
@@ -63,7 +61,7 @@ class DeclarationDetailPage extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Action impossible, réessayez.'),
+        content: Text(AppLocalizations.of(context).actionImpossible),
         backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
@@ -84,7 +82,7 @@ class DeclarationDetailPage extends ConsumerWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Retour')),
+              child: Text(AppLocalizations.of(ctx).back)),
           FilledButton(
             style: danger
                 ? FilledButton.styleFrom(
@@ -110,7 +108,7 @@ class DeclarationDetailPage extends ConsumerWidget {
           foregroundColor: Colors.white,
           actions: [
             IconButton(
-              tooltip: 'Télécharger / Ouvrir',
+              tooltip: AppLocalizations.of(ctx).downloadOrOpen,
               icon: const Icon(Icons.download_rounded),
               onPressed: () async {
                 final uri = Uri.parse(mediaUrl(url));
@@ -137,7 +135,7 @@ class DeclarationDetailPage extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Détail de la déclaration')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).declarationDetailTitle)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => AppErrorView(
@@ -294,11 +292,11 @@ class DeclarationDetailPage extends ConsumerWidget {
                   _InfoRow(Icons.location_on_outlined,
                       isFound ? 'Lieu de découverte' : 'Lieu de perte', d.lieu!),
                 if (d.description != null && d.description!.isNotEmpty)
-                  _InfoRow(Icons.notes, 'Description', d.description!),
+                  _InfoRow(Icons.notes, l.descriptionLabel, d.description!),
                 if (d.createdAtDate != null)
                   _InfoRow(
                       Icons.event_outlined,
-                      'Déclaré le',
+                      l.declaredOnLabel,
                       '${d.createdAtDate!.day}/${d.createdAtDate!.month}/${d.createdAtDate!.year}'),
               ]),
               const SizedBox(height: 28),
@@ -308,7 +306,7 @@ class DeclarationDetailPage extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () => _cancel(context, ref),
                   icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Annuler la déclaration'),
+                  label: Text(l.cancelDeclaration),
                   style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(50)),
                 ),

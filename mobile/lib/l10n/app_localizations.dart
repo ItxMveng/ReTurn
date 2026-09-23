@@ -595,6 +595,67 @@ class AppLocalizations {
       'dossierDocsCount': '{n} documents',
       'dossierTitle': 'Dossier',
       'dossierEmpty': 'Ce dossier est vide.',
+      // i18n completion pass (declarations/messaging/restitution/ocr/zones/biometric)
+      'declarationCancelled': 'Déclaration annulée.',
+      'declarationDeleted': 'Déclaration supprimée.',
+      'actionImpossible': 'Action impossible, réessayez.',
+      'back': 'Retour',
+      'declarationDetailTitle': 'Détail de la déclaration',
+      'cancelDeclaration': 'Annuler la déclaration',
+      'prefilledInfoNotice': 'Informations pré-remplies — vérifiez puis validez.',
+      'messagesTitle': 'Messages',
+      'viewMyMatches': 'Voir mes matchs',
+      'ocrVerifyInfoTitle': 'Vérifier les informations',
+      'ocrTakePhoto': 'Prendre une photo',
+      'ocrUseBackCamera': 'Utilisez la caméra arrière',
+      'ocrChooseGallery': 'Choisir dans la galerie',
+      'ocrExistingPhoto': 'Une photo déjà prise du document',
+      'myRestitutions': 'Mes restitutions',
+      'errorPrefix': 'Erreur : ',
+      'recoveryZonesTitle': 'Zones de récupération',
+      'unlock': 'Déverrouiller',
+      'cancelDeclarationConfirmMsg': 'Elle ne sera plus active pour le matching, mais restera dans votre historique. Continuer ?',
+      'deleteDeclarationTitle': 'Supprimer la déclaration',
+      'deleteDeclarationConfirmMsg': 'Cette action est définitive. La déclaration et ses photos seront supprimées. Continuer ?',
+      'searchConversationHint': 'Rechercher une conversation',
+      'ocrNameLabel': 'Nom',
+      'ocrFirstNameLabel': 'Prénom',
+      'ocrDocumentNumberLabel': 'Numéro du document',
+      'ocrConfirmInfo': 'Confirmer les informations',
+      'ocrRetakePhoto': 'Reprendre la photo',
+      'galleryLabel': 'Galerie',
+      'cameraLabel': 'Caméra',
+      'statusCompleted': 'Terminée',
+      'statusCancelled': 'Annulée',
+      'statusInProgress': 'En cours',
+      'downloadOrOpen': 'Télécharger / Ouvrir',
+      'descriptionLabel': 'Description',
+      'declaredOnLabel': 'Déclaré le',
+      'noConversations': 'Aucune conversation',
+      'noResults': 'Aucun résultat',
+      'conversationsOpenAfterMatch': 'Les conversations s\'ouvrent\naprès confirmation d\'un match',
+      'documentTypeUndetected': 'Type non détecté',
+      'toVerifyBadge': 'À vérifier',
+      'detectedBadge': 'Détecté',
+      'exampleLastName': 'Ex: MBARGA',
+      'exampleFirstName': 'Ex: Jean-Pierre',
+      'exampleDocNumber': 'Ex: CM-123456789',
+      'publicDisplayLabel': 'Affichage public : ',
+      'dobHint': 'JJ/MM/AAAA',
+      'scanDocumentTitle': 'Scanner le document',
+      'analyzingLabel': 'Analyse…',
+      'analyzeLabel': 'Analyser',
+      'noRestitutions': 'Aucune restitution',
+      'restitutionsWillAppearHere': 'Vos restitutions apparaîtront ici.',
+      'completedStat': 'Réussies',
+      'averageRatingStat': 'Note moyenne',
+      'restitutionPrefix': 'Restitution ',
+      'chooseCertifiedZone': 'Choisir une zone certifiée',
+      'noCertifiedZonesYet': 'Aucune zone certifiée pour le moment',
+      'certifiedBadge': 'Certifiée',
+      'partnerBadge': 'Partenaire',
+      'appLockedTitle': 'ReTurn est verrouillé',
+      'unlockWithBiometrics': 'Déverrouillez avec votre empreinte ou votre visage.',
     },
     'en': {
       'appName': 'ReTurn',
@@ -1159,6 +1220,67 @@ class AppLocalizations {
       'dossierDocsCount': '{n} documents',
       'dossierTitle': 'Folder',
       'dossierEmpty': 'This folder is empty.',
+      // i18n completion pass (declarations/messaging/restitution/ocr/zones/biometric)
+      'declarationCancelled': 'Declaration cancelled.',
+      'declarationDeleted': 'Declaration deleted.',
+      'actionImpossible': 'Action not possible, please try again.',
+      'back': 'Back',
+      'declarationDetailTitle': 'Declaration details',
+      'cancelDeclaration': 'Cancel declaration',
+      'prefilledInfoNotice': 'Pre-filled information — check, then confirm.',
+      'messagesTitle': 'Messages',
+      'viewMyMatches': 'View my matches',
+      'ocrVerifyInfoTitle': 'Verify information',
+      'ocrTakePhoto': 'Take a photo',
+      'ocrUseBackCamera': 'Use the back camera',
+      'ocrChooseGallery': 'Choose from gallery',
+      'ocrExistingPhoto': 'An existing photo of the document',
+      'myRestitutions': 'My handovers',
+      'errorPrefix': 'Error: ',
+      'recoveryZonesTitle': 'Recovery zones',
+      'unlock': 'Unlock',
+      'cancelDeclarationConfirmMsg': 'It will no longer be active for matching, but will remain in your history. Continue?',
+      'deleteDeclarationTitle': 'Delete declaration',
+      'deleteDeclarationConfirmMsg': 'This action is permanent. The declaration and its photos will be deleted. Continue?',
+      'searchConversationHint': 'Search a conversation',
+      'ocrNameLabel': 'Last name',
+      'ocrFirstNameLabel': 'First name',
+      'ocrDocumentNumberLabel': 'Document number',
+      'ocrConfirmInfo': 'Confirm information',
+      'ocrRetakePhoto': 'Retake photo',
+      'galleryLabel': 'Gallery',
+      'cameraLabel': 'Camera',
+      'statusCompleted': 'Completed',
+      'statusCancelled': 'Cancelled',
+      'statusInProgress': 'In progress',
+      'downloadOrOpen': 'Download / Open',
+      'descriptionLabel': 'Description',
+      'declaredOnLabel': 'Declared on',
+      'noConversations': 'No conversations',
+      'noResults': 'No results',
+      'conversationsOpenAfterMatch': 'Conversations open\nafter a match is confirmed',
+      'documentTypeUndetected': 'Type not detected',
+      'toVerifyBadge': 'To verify',
+      'detectedBadge': 'Detected',
+      'exampleLastName': 'E.g.: MBARGA',
+      'exampleFirstName': 'E.g.: Jean-Pierre',
+      'exampleDocNumber': 'E.g.: CM-123456789',
+      'publicDisplayLabel': 'Public display: ',
+      'dobHint': 'DD/MM/YYYY',
+      'scanDocumentTitle': 'Scan the document',
+      'analyzingLabel': 'Analyzing…',
+      'analyzeLabel': 'Analyze',
+      'noRestitutions': 'No handovers yet',
+      'restitutionsWillAppearHere': 'Your handovers will appear here.',
+      'completedStat': 'Completed',
+      'averageRatingStat': 'Average rating',
+      'restitutionPrefix': 'Handover ',
+      'chooseCertifiedZone': 'Choose a certified zone',
+      'noCertifiedZonesYet': 'No certified zones yet',
+      'certifiedBadge': 'Certified',
+      'partnerBadge': 'Partner',
+      'appLockedTitle': 'ReTurn is locked',
+      'unlockWithBiometrics': 'Unlock with your fingerprint or face.',
     },
   };
 
@@ -1739,6 +1861,68 @@ class AppLocalizations {
   String get tourStep4Body => _t('tourStep4Body');
   String get tourStep5Title => _t('tourStep5Title');
   String get tourStep5Body => _t('tourStep5Body');
+
+  // i18n completion pass
+  String get declarationCancelled => _t('declarationCancelled');
+  String get declarationDeleted => _t('declarationDeleted');
+  String get actionImpossible => _t('actionImpossible');
+  String get back => _t('back');
+  String get declarationDetailTitle => _t('declarationDetailTitle');
+  String get cancelDeclaration => _t('cancelDeclaration');
+  String get prefilledInfoNotice => _t('prefilledInfoNotice');
+  String get messagesTitle => _t('messagesTitle');
+  String get viewMyMatches => _t('viewMyMatches');
+  String get ocrVerifyInfoTitle => _t('ocrVerifyInfoTitle');
+  String get ocrTakePhoto => _t('ocrTakePhoto');
+  String get ocrUseBackCamera => _t('ocrUseBackCamera');
+  String get ocrChooseGallery => _t('ocrChooseGallery');
+  String get ocrExistingPhoto => _t('ocrExistingPhoto');
+  String get myRestitutions => _t('myRestitutions');
+  String get errorPrefix => _t('errorPrefix');
+  String get recoveryZonesTitle => _t('recoveryZonesTitle');
+  String get unlock => _t('unlock');
+  String get cancelDeclarationConfirmMsg => _t('cancelDeclarationConfirmMsg');
+  String get deleteDeclarationTitle => _t('deleteDeclarationTitle');
+  String get deleteDeclarationConfirmMsg => _t('deleteDeclarationConfirmMsg');
+  String get searchConversationHint => _t('searchConversationHint');
+  String get ocrNameLabel => _t('ocrNameLabel');
+  String get ocrFirstNameLabel => _t('ocrFirstNameLabel');
+  String get ocrDocumentNumberLabel => _t('ocrDocumentNumberLabel');
+  String get ocrConfirmInfo => _t('ocrConfirmInfo');
+  String get ocrRetakePhoto => _t('ocrRetakePhoto');
+  String get galleryLabel => _t('galleryLabel');
+  String get cameraLabel => _t('cameraLabel');
+  String get statusCompleted => _t('statusCompleted');
+  String get statusCancelled => _t('statusCancelled');
+  String get statusInProgress => _t('statusInProgress');
+  String get downloadOrOpen => _t('downloadOrOpen');
+  String get descriptionLabel => _t('descriptionLabel');
+  String get declaredOnLabel => _t('declaredOnLabel');
+  String get noConversations => _t('noConversations');
+  String get noResults => _t('noResults');
+  String get conversationsOpenAfterMatch => _t('conversationsOpenAfterMatch');
+  String get documentTypeUndetected => _t('documentTypeUndetected');
+  String get toVerifyBadge => _t('toVerifyBadge');
+  String get detectedBadge => _t('detectedBadge');
+  String get exampleLastName => _t('exampleLastName');
+  String get exampleFirstName => _t('exampleFirstName');
+  String get exampleDocNumber => _t('exampleDocNumber');
+  String get publicDisplayLabel => _t('publicDisplayLabel');
+  String get dobHint => _t('dobHint');
+  String get scanDocumentTitle => _t('scanDocumentTitle');
+  String get analyzingLabel => _t('analyzingLabel');
+  String get analyzeLabel => _t('analyzeLabel');
+  String get noRestitutions => _t('noRestitutions');
+  String get restitutionsWillAppearHere => _t('restitutionsWillAppearHere');
+  String get completedStat => _t('completedStat');
+  String get averageRatingStat => _t('averageRatingStat');
+  String get restitutionPrefix => _t('restitutionPrefix');
+  String get chooseCertifiedZone => _t('chooseCertifiedZone');
+  String get noCertifiedZonesYet => _t('noCertifiedZonesYet');
+  String get certifiedBadge => _t('certifiedBadge');
+  String get partnerBadge => _t('partnerBadge');
+  String get appLockedTitle => _t('appLockedTitle');
+  String get unlockWithBiometrics => _t('unlockWithBiometrics');
 }
 
 class _AppLocalizationsDelegate

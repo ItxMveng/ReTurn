@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/services/media_service.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_loader.dart';
+import '../../../l10n/app_localizations.dart';
 import '../providers/ocr_notifier.dart';
 
 final _pickedImageProvider = StateProvider.autoDispose<File?>((ref) => null);
@@ -31,26 +32,27 @@ class _OcrScanPageState extends ConsumerState<OcrScanPage> {
   }
 
   Future<void> _chooseSource() async {
+    final l = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Text('Scanner le document',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: Text(l.scanDocumentTitle,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           ),
           ListTile(
             leading: const Icon(Icons.camera_alt_outlined),
-            title: const Text('Prendre une photo'),
-            subtitle: const Text('Utilisez la caméra arrière'),
+            title: Text(l.ocrTakePhoto),
+            subtitle: Text(l.ocrUseBackCamera),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Choisir dans la galerie'),
-            subtitle: const Text('Une photo déjà prise du document'),
+            title: Text(l.ocrChooseGallery),
+            subtitle: Text(l.ocrExistingPhoto),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           const SizedBox(height: 8),
@@ -213,6 +215,7 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       color: const Color(0xFF1A1A1A),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 36),
@@ -220,19 +223,19 @@ class _BottomBar extends StatelessWidget {
         children: [
           _IconBtn(
             icon: Icons.photo_library_outlined,
-            label: 'Galerie',
+            label: l.galleryLabel,
             onPressed: onPickGallery,
           ),
           const SizedBox(width: 8),
           _IconBtn(
             icon: Icons.camera_alt_outlined,
-            label: 'Caméra',
+            label: l.cameraLabel,
             onPressed: onPickCamera,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: AppButton(
-              label: isProcessing ? 'Analyse…' : 'Analyser',
+              label: isProcessing ? l.analyzingLabel : l.analyzeLabel,
               onPressed: hasImage ? onAnalyze : null,
             ),
           ),

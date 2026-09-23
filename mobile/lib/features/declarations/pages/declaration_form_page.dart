@@ -190,9 +190,9 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
       if (num.isNotEmpty) _docs.first.number.text = num;
     });
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Informations pré-remplies — vérifiez puis validez.'),
-      duration: Duration(seconds: 3),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppLocalizations.of(context).prefilledInfoNotice),
+      duration: const Duration(seconds: 3),
     ));
   }
 

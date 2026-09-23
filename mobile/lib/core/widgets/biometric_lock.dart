@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../providers/biometric_provider.dart';
 import '../services/biometric_service.dart';
 
@@ -90,6 +91,7 @@ class _LockScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Positioned.fill(
       child: Material(
         color: cs.surface,
@@ -106,13 +108,13 @@ class _LockScreen extends StatelessWidget {
                 child: Icon(Icons.lock_outline, size: 46, color: cs.primary),
               ),
               const SizedBox(height: 20),
-              Text('ReTurn est verrouillé',
+              Text(l.appLockedTitle,
                   style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface)),
               const SizedBox(height: 8),
-              Text('Déverrouillez avec votre empreinte ou votre visage.',
+              Text(l.unlockWithBiometrics,
                   textAlign: TextAlign.center,
                   style:
                       TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
@@ -126,7 +128,7 @@ class _LockScreen extends StatelessWidget {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.fingerprint),
-                label: const Text('Déverrouiller'),
+                label: Text(l.unlock),
               ),
             ],
           ),

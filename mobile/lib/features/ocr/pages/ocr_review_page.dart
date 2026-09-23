@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../l10n/app_localizations.dart';
 import '../models/ocr_result.dart';
 import '../providers/ocr_notifier.dart';
 
@@ -84,11 +85,12 @@ class _OcrReviewPageState extends ConsumerState<OcrReviewPage> {
     final success = ocrState is OcrSuccess ? ocrState : null;
 
     if (success != null) _populateFromOcr(success);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Vérifier les informations'),
+        title: Text(l.ocrVerifyInfoTitle),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.onSurface,
         elevation: 0,
@@ -131,7 +133,7 @@ class _OcrReviewPageState extends ConsumerState<OcrReviewPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    _kindLabels[_kind] ?? 'Type non détecté',
+                    _kindLabels[_kind] ?? l.documentTypeUndetected,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w700),
                   ),
@@ -145,8 +147,8 @@ class _OcrReviewPageState extends ConsumerState<OcrReviewPage> {
                   ),
                   child: Text(
                       _kind == DocumentKind.unknown
-                          ? 'À vérifier'
-                          : 'Détecté',
+                          ? l.toVerifyBadge
+                          : l.detectedBadge,
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -157,17 +159,17 @@ class _OcrReviewPageState extends ConsumerState<OcrReviewPage> {
             const SizedBox(height: 16),
 
             AppTextField(
-                label: 'Nom', controller: _nomCtrl, hint: 'Ex: MBARGA'),
+                label: l.ocrNameLabel, controller: _nomCtrl, hint: l.exampleLastName),
             const SizedBox(height: 16),
             AppTextField(
-                label: 'Prénom',
+                label: l.ocrFirstNameLabel,
                 controller: _prenomCtrl,
-                hint: 'Ex: Jean-Pierre'),
+                hint: l.exampleFirstName),
             const SizedBox(height: 16),
             AppTextField(
-                label: 'Numéro du document',
+                label: l.ocrDocumentNumberLabel,
                 controller: _numeroCtrl,
-                hint: 'Ex: CM-123456789',
+                hint: l.exampleDocNumber,
                 keyboardType: TextInputType.text),
             if (_numeroCtrl.text.trim().isNotEmpty) ...[
               const SizedBox(height: 6),
@@ -175,26 +177,26 @@ class _OcrReviewPageState extends ConsumerState<OcrReviewPage> {
                 Icon(Icons.lock_outline,
                     size: 13, color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 5),
-                Text('Affichage public : $_maskedNumero',
+                Text('${l.publicDisplayLabel}$_maskedNumero',
                     style: TextStyle(
                         fontSize: 12, color: AppColors.onSurfaceVariant)),
               ]),
             ],
             const SizedBox(height: 16),
             AppTextField(
-                label: 'Date de naissance',
+                label: l.profileDobLabel,
                 controller: _dateCtrl,
-                hint: 'JJ/MM/AAAA',
+                hint: l.dobHint,
                 keyboardType: TextInputType.datetime),
             const SizedBox(height: 32),
             AppButton(
-              label: 'Confirmer les informations',
+              label: l.ocrConfirmInfo,
               expand: true,
               onPressed: _confirm,
             ),
             const SizedBox(height: 12),
             AppButton(
-              label: 'Reprendre la photo',
+              label: l.ocrRetakePhoto,
               expand: true,
               variant: AppButtonVariant.secondary,
               onPressed: () {

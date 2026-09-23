@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/appear.dart';
+import '../../../l10n/app_localizations.dart';
 import '../repositories/zone_repository.dart';
 
 /// Répertoire des zones de récupération certifiées (F-32).
@@ -11,7 +12,7 @@ class ZonesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Zones de récupération')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).recoveryZonesTitle)),
       body: const _ZonesBody(onTap: null),
     );
   }
@@ -29,12 +30,12 @@ Future<Zone?> pickCertifiedZone(BuildContext context) {
       maxChildSize: 0.92,
       builder: (ctx, scroll) => Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Choisir une zone certifiée',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              child: Text(AppLocalizations.of(context).chooseCertifiedZone,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             ),
           ),
           Expanded(
@@ -58,17 +59,18 @@ class _ZonesBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(zonesProvider);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Erreur : $e')),
+      error: (e, _) => Center(child: Text('${l.errorPrefix}$e')),
       data: (zones) => zones.isEmpty
           ? Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.location_off_outlined,
                     size: 52, color: cs.onSurface.withValues(alpha: 0.25)),
                 const SizedBox(height: 12),
-                const Text('Aucune zone certifiée pour le moment',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(l.noCertifiedZonesYet,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ]),
             )
           : ListView.separated(
@@ -152,7 +154,9 @@ class _ZoneTile extends StatelessWidget {
                   : cs.onSurface.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(zone.isCertified ? 'Certifiée' : 'Partenaire',
+            child: Text(zone.isCertified
+                ? AppLocalizations.of(context).certifiedBadge
+                : AppLocalizations.of(context).partnerBadge,
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,

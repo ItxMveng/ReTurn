@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/appear.dart';
+import '../../../l10n/app_localizations.dart';
 import '../models/restitution.dart';
 import '../repositories/restitution_repository.dart';
 
@@ -14,21 +15,22 @@ class RestitutionsHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(restitutionsProvider);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes restitutions')),
+      appBar: AppBar(title: Text(l.myRestitutions)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
+        error: (e, _) => Center(child: Text('${l.errorPrefix}$e')),
         data: (items) => items.isEmpty
             ? Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.history,
                       size: 56, color: cs.onSurface.withValues(alpha: 0.25)),
                   const SizedBox(height: 12),
-                  const Text('Aucune restitution',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text(l.noRestitutions,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Text('Vos restitutions apparaîtront ici.',
+                  Text(l.restitutionsWillAppearHere,
                       style:
                           TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
                 ]),
@@ -61,6 +63,7 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final completed = items.where((r) => r.status == 'completed').length;
     final ongoing = items
         .where((r) => r.status == 'pending' || r.status == 'in_progress')
@@ -97,12 +100,12 @@ class _StatsRow extends StatelessWidget {
         );
 
     return Row(children: [
-      cell('$completed', 'Réussies', cs.primary),
+      cell('$completed', l.completedStat, cs.primary),
       const SizedBox(width: 10),
-      cell('$ongoing', 'En cours', Colors.orange),
+      cell('$ongoing', l.statusInProgress, Colors.orange),
       const SizedBox(width: 10),
       cell(avg == null ? '—' : '★ ${avg.toStringAsFixed(1)}',
-          'Note moyenne', cs.onSurface),
+          l.averageRatingStat, cs.onSurface),
     ]);
   }
 }
@@ -111,20 +114,21 @@ class _Tile extends StatelessWidget {
   final Restitution r;
   const _Tile({required this.r});
 
-  ({Color color, String label, IconData icon}) get _statusInfo => switch (r.status) {
+  ({Color color, String label, IconData icon}) _statusInfo(AppLocalizations l) =>
+      switch (r.status) {
         'completed' => (
             color: Colors.green,
-            label: 'Terminée',
+            label: l.statusCompleted,
             icon: Icons.verified_rounded
           ),
         'cancelled' => (
             color: Colors.red,
-            label: 'Annulée',
+            label: l.statusCancelled,
             icon: Icons.cancel_outlined
           ),
         _ => (
             color: Colors.orange,
-            label: 'En cours',
+            label: l.statusInProgress,
             icon: Icons.schedule
           ),
       };
@@ -132,7 +136,8 @@ class _Tile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final s = _statusInfo;
+    final l = AppLocalizations.of(context);
+    final s = _statusInfo(l);
     final date = r.completedAt ?? r.createdAt;
     return InkWell(
       onTap: () => context.push('/restitution/${r.matchId}'),
@@ -156,7 +161,7 @@ class _Tile extends StatelessWidget {
               children: [
                 Row(children: [
                   Expanded(
-                    child: Text('Restitution ${s.label.toLowerCase()}',
+                    child: Text('${l.restitutionPrefix}${s.label.toLowerCase()}',
                         style:
                             const TextStyle(fontWeight: FontWeight.w700)),
                   ),

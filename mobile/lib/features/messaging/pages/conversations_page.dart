@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../core/widgets/appear.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../../l10n/app_localizations.dart';
 import '../repositories/messaging_repository.dart';
 import '../models/message.dart';
 import '../utils/chat_format.dart';
@@ -29,9 +30,10 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
   Widget build(BuildContext context) {
     final async = ref.watch(_conversationsProvider);
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
+      appBar: AppBar(title: Text(l.messagesTitle)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => AppErrorView(
@@ -52,7 +54,7 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
                   child: TextField(
                     onChanged: (v) => setState(() => _query = v),
                     decoration: InputDecoration(
-                      hintText: 'Rechercher une conversation',
+                      hintText: l.searchConversationHint,
                       prefixIcon: const Icon(Icons.search, size: 20),
                       isDense: true,
                       contentPadding:
@@ -76,14 +78,14 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
                               const SizedBox(height: 16),
                               Text(
                                   convs.isEmpty
-                                      ? 'Aucune conversation'
-                                      : 'Aucun résultat',
+                                      ? l.noConversations
+                                      : l.noResults,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600)),
                               const SizedBox(height: 8),
                               if (convs.isEmpty) ...[
                                 Text(
-                                    'Les conversations s\'ouvrent\naprès confirmation d\'un match',
+                                    l.conversationsOpenAfterMatch,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                         fontSize: 13,
@@ -93,7 +95,7 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
                                 FilledButton.icon(
                                   onPressed: () => context.go('/matches'),
                                   icon: const Icon(Icons.compare_arrows),
-                                  label: const Text('Voir mes matchs'),
+                                  label: Text(l.viewMyMatches),
                                 ),
                               ],
                             ]),
