@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -20,6 +21,15 @@ DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 @pytest_asyncio.fixture(scope="session")
 async def engine():
     engine = create_async_engine(DATABASE_URL, future=True)
+
+    # Les modèles vivent dans le schéma PostgreSQL « docretour » : on l'émule en
+    # attachant une base SQLite mémoire portant ce nom à chaque connexion.
+    @event.listens_for(engine.sync_engine, "connect")
+    def _attach_docretour_schema(dbapi_connection, _record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("ATTACH DATABASE ':memory:' AS docretour")
+        cursor.close()
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine

@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
+from app.core.countries import normalize_country_code
+
 DOCUMENT_TYPES = [
     "cni",
     "passport",
@@ -29,6 +31,7 @@ class DeclarationCreate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     location_description: str | None = None
+    country_code: str | None = None  # ISO 3166-1 alpha-2 (ex. CM, FR)
     event_date: date | None = None  # date of loss (for "lost") or find (for "found")
 
     @field_validator("document_type")
@@ -37,6 +40,11 @@ class DeclarationCreate(BaseModel):
         if v not in DOCUMENT_TYPES:
             raise ValueError(f"document_type must be one of {DOCUMENT_TYPES}")
         return v
+
+    @field_validator("country_code")
+    @classmethod
+    def validate_country_code(cls, v: str | None) -> str | None:
+        return normalize_country_code(v)
 
 
 class DeclarationUpdate(BaseModel):
@@ -59,6 +67,7 @@ class DeclarationRead(BaseModel):
     latitude: float | None
     longitude: float | None
     location_description: str | None
+    country_code: str | None = None
     event_date: date | None
     photo_urls: list[str]
     status: str

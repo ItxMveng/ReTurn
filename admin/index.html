@@ -269,7 +269,7 @@
       <div class="flex items-center gap-3 mb-4">
         <button class="btn btn-primary btn-sm" id="add-zone-btn">+ Nouvelle zone</button>
       </div>
-      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Nom</th><th>Type</th><th>Adresse</th><th>Lat</th><th>Lon</th><th>Certifiée</th><th>Actions</th></tr></thead><tbody id="zones-table"></tbody></table></div></div>
+      <div class="card"><div class="card-body" style="padding:0"><table><thead><tr><th>Nom</th><th>Pays</th><th>Type</th><th>Adresse</th><th>Lat</th><th>Lon</th><th>Certifiée</th><th>Actions</th></tr></thead><tbody id="zones-table"></tbody></table></div></div>
     </section>
 
     <!-- Paramètres plateforme -->
@@ -313,6 +313,7 @@
     </div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Nom de la zone</label><input class="form-input" id="zone-name" placeholder="Ex: Yaoundé Centre-Ville" /></div>
+      <div class="form-group"><label class="form-label">Pays (code ISO à 2 lettres)</label><input class="form-input" id="zone-country" maxlength="2" style="text-transform:uppercase" placeholder="Ex: CM, FR" /></div>
       <div class="form-group"><label class="form-label">Type</label><input class="form-input" id="zone-type" placeholder="Ex: commissariat" /></div>
       <div class="form-group"><label class="form-label">Adresse</label><input class="form-input" id="zone-address" placeholder="Ex: Avenue Kennedy, Yaoundé" /></div>
       <div class="form-row">
@@ -1119,13 +1120,14 @@
     _allZones = await api('/admin/zones');
     document.getElementById('zones-table').innerHTML=_allZones.length ? _allZones.map(z=>`<tr>
       <td><strong>${escapeHtml(z.name)}</strong></td>
+      <td>${escapeHtml(z.country_code||'—')}</td>
       <td>${escapeHtml(z.zone_type||'—')}</td>
       <td>${escapeHtml(z.address||'—')}</td>
       <td class="font-mono">${typeof z.latitude === 'number' ? z.latitude.toFixed(3) : '—'}</td>
       <td class="font-mono">${typeof z.longitude === 'number' ? z.longitude.toFixed(3) : '—'}</td>
       <td>${z.is_certified?'<span class="badge badge-green">Oui</span>':'<span class="badge badge-gray">Non</span>'}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteZone('${String(z.id)}')">Suppr.</button></td>
-    </tr>`).join('') : tableMessage(7, 'Aucune zone certifiée.');
+    </tr>`).join('') : tableMessage(8, 'Aucune zone certifiée.');
   };
   window.deleteZone=async(id)=>{
     const {confirmed} = await confirmTyped({
@@ -1145,6 +1147,7 @@
 
   document.getElementById('add-zone-btn').addEventListener('click',()=>{
     document.getElementById('zone-name').value='';
+    document.getElementById('zone-country').value='';
     document.getElementById('zone-type').value='';
     document.getElementById('zone-address').value='';
     document.getElementById('zone-lat').value='';
@@ -1154,6 +1157,7 @@
   });
   document.getElementById('save-zone-btn').addEventListener('click',async()=>{
     const name=document.getElementById('zone-name').value.trim();
+    const country_code=document.getElementById('zone-country').value.trim().toUpperCase();
     const zone_type=document.getElementById('zone-type').value.trim();
     const address=document.getElementById('zone-address').value.trim();
     const latitude=parseFloat(document.getElementById('zone-lat').value);
@@ -1163,10 +1167,14 @@
       showToast('Remplissez tous les champs');
       return;
     }
+    if(!/^[A-Z]{2}$/.test(country_code)){
+      showToast('Pays : code ISO à 2 lettres (ex. CM, FR)');
+      return;
+    }
     try{
       await api('/admin/zones',{
         method:'POST',
-        body:JSON.stringify({name,zone_type,address,latitude,longitude,is_certified}),
+        body:JSON.stringify({name,zone_type,address,country_code,latitude,longitude,is_certified}),
       });
       showToast('Zone créée');
     }catch(error){

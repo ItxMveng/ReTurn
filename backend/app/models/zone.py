@@ -21,6 +21,9 @@ class Zone(Base):
         String(50), nullable=False, comment="commissariat | mairie | campus | autre"
     )
     address: Mapped[str] = mapped_column(String(500), nullable=False)
+    country_code: Mapped[Optional[str]] = mapped_column(
+        String(2), nullable=True, index=True
+    )
     latitude: Mapped[float]  = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     is_certified: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

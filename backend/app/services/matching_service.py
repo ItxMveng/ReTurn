@@ -16,7 +16,7 @@ from datetime import date
 
 import jellyfish
 from redis.asyncio import Redis
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.declaration import Declaration
@@ -184,14 +184,23 @@ async def run_matching(
     """Find matching candidates and create Match rows for high-confidence pairs."""
     opposite_type = "lost" if new_declaration.declaration_type == "found" else "found"
 
-    result = await db.execute(
-        select(Declaration).where(
-            Declaration.declaration_type == opposite_type,
-            Declaration.document_type == new_declaration.document_type,
-            Declaration.status == "active",
-            Declaration.user_id != new_declaration.user_id,
+    conditions = [
+        Declaration.declaration_type == opposite_type,
+        Declaration.document_type == new_declaration.document_type,
+        Declaration.status == "active",
+        Declaration.user_id != new_declaration.user_id,
+    ]
+    # Un document perdu à Douala ne se retrouve pas à Paris : on ne rapproche que
+    # des déclarations du même pays. Pays inconnu (anciennes données) = tolérant.
+    if new_declaration.country_code:
+        conditions.append(
+            or_(
+                Declaration.country_code.is_(None),
+                Declaration.country_code == new_declaration.country_code,
+            )
         )
-    )
+
+    result = await db.execute(select(Declaration).where(*conditions))
     candidates = list(result.scalars().all())
 
     config = await config_service.get_config(db)

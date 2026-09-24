@@ -90,6 +90,17 @@ _SCHEMA_FIXES = (
     "ALTER TABLE docretour.declarations ADD COLUMN IF NOT EXISTS group_id UUID",
     "CREATE INDEX IF NOT EXISTS ix_declarations_group_id "
     "ON docretour.declarations (group_id)",
+    # Migration 009 — support multi-pays (sans backfill : reconcile tourne à
+    # chaque démarrage, un UPDATE écraserait les pays « inconnus »).
+    "ALTER TABLE docretour.users ADD COLUMN IF NOT EXISTS country_code VARCHAR(2)",
+    "ALTER TABLE docretour.declarations ADD COLUMN IF NOT EXISTS "
+    "country_code VARCHAR(2)",
+    "ALTER TABLE docretour.zones_recuperation ADD COLUMN IF NOT EXISTS "
+    "country_code VARCHAR(2)",
+    "CREATE INDEX IF NOT EXISTS ix_declarations_country_code "
+    "ON docretour.declarations (country_code)",
+    "CREATE INDEX IF NOT EXISTS ix_zones_recuperation_country_code "
+    "ON docretour.zones_recuperation (country_code)",
 )
 
 

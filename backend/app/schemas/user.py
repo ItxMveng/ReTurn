@@ -4,7 +4,10 @@ from datetime import datetime, date
 
 from pydantic import BaseModel, field_validator, model_validator
 
-_PHONE_RE = re.compile(r"^\+?[0-9]{9,15}$")
+from app.core.countries import normalize_country_code
+
+# E.164 : 7 à 15 chiffres, « + » optionnel (numéro international, tout pays).
+_PHONE_RE = re.compile(r"^\+?[0-9]{7,15}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -21,6 +24,7 @@ class UserRead(BaseModel):
     date_of_birth: date | None = None
     national_id_number: str | None = None
     gender: str | None = None
+    country_code: str | None = None
     city: str | None = None
     region: str | None = None
     address: str | None = None
@@ -41,10 +45,16 @@ class UserUpdate(BaseModel):
     date_of_birth: date | None = None
     national_id_number: str | None = None
     gender: str | None = None
+    country_code: str | None = None
     city: str | None = None
     region: str | None = None
     address: str | None = None
     fcm_token: str | None = None
+
+    @field_validator("country_code")
+    @classmethod
+    def validate_country_code(cls, v: str | None) -> str | None:
+        return normalize_country_code(v)
 
     @field_validator("email")
     @classmethod
@@ -63,5 +73,7 @@ class UserUpdate(BaseModel):
             return v
         v = v.strip()
         if not _PHONE_RE.match(v):
-            raise ValueError("Numéro de téléphone invalide (format: +237XXXXXXXXX).")
+            raise ValueError(
+                "Numéro de téléphone invalide (format international, ex. +33612345678)."
+            )
         return v

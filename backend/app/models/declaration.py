@@ -36,6 +36,11 @@ class Declaration(Base):
     location_description: Mapped[str | None] = mapped_column(
         String(200), nullable=True
     )
+    # Pays (ISO 3166-1 alpha-2). Le matching ne rapproche que des déclarations
+    # du même pays lorsqu'il est renseigné.
+    country_code: Mapped[str | None] = mapped_column(
+        String(2), nullable=True, index=True
+    )
     photo_urls: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     status: Mapped[str] = mapped_column(
         String(20), default="active", nullable=False, index=True

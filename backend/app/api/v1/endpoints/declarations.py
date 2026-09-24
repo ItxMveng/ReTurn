@@ -5,6 +5,7 @@ from datetime import date as DateType
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.countries import normalize_country_code
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
@@ -49,6 +50,7 @@ async def create_declaration(
     latitude: float | None = Form(None),
     longitude: float | None = Form(None),
     location_description: str | None = Form(None),
+    country_code: str | None = Form(None, description="ISO 3166-1 alpha-2 ; défaut : pays du profil"),
     event_date: DateType | None = Form(None),
     photos: list[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_db),
@@ -64,17 +66,23 @@ async def create_declaration(
             detail=f"Vous ne pouvez pas avoir plus de {limit} déclarations actives simultanément.",
         )
 
-    data = DeclarationCreate(
-        declaration_type=declaration_type,
-        document_type=document_type,
-        document_number=document_number,
-        owner_name=owner_name,
-        description=description,
-        latitude=latitude,
-        longitude=longitude,
-        location_description=location_description,
-        event_date=event_date,
-    )
+    try:
+        data = DeclarationCreate(
+            declaration_type=declaration_type,
+            document_type=document_type,
+            document_number=document_number,
+            owner_name=owner_name,
+            description=description,
+            latitude=latitude,
+            longitude=longitude,
+            location_description=location_description,
+            country_code=normalize_country_code(country_code) or current_user.country_code,
+            event_date=event_date,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        )
     await storage_service.ensure_bucket()
     decl = await declaration_service.create_declaration(db, current_user, data, photos)
     await run_matching(db, redis, decl)
@@ -92,6 +100,7 @@ async def create_declaration_batch(
     latitude: float | None = Form(None),
     longitude: float | None = Form(None),
     location_description: str | None = Form(None),
+    country_code: str | None = Form(None, description="ISO 3166-1 alpha-2 ; défaut : pays du profil"),
     event_date: DateType | None = Form(None),
     photo_map: str | None = Form(
         None, description="JSON list[int] : index du document pour chaque photo (une photo par document)."
@@ -122,6 +131,13 @@ async def create_declaration_batch(
             detail=f"Un dossier contient entre 1 et {MAX_GROUP_ITEMS} documents.",
         )
 
+    try:
+        group_country = normalize_country_code(country_code) or current_user.country_code
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        )
+
     # Validation de chaque document via le schéma habituel (types, etc.).
     parsed: list[DeclarationCreate] = []
     for i, raw in enumerate(raw_items, start=1):
@@ -142,6 +158,7 @@ async def create_declaration_batch(
                 latitude=latitude,
                 longitude=longitude,
                 location_description=location_description,
+                country_code=group_country,
                 event_date=event_date,
             ))
         except ValueError:

@@ -2,7 +2,7 @@ import re
 
 from pydantic import BaseModel, field_validator
 
-_PHONE_RE = re.compile(r"^\+?[0-9]{9,15}$")
+_PHONE_RE = re.compile(r"^\+?[0-9]{7,15}$")  # E.164, tout pays
 _OTP_RE   = re.compile(r"^\d{6}$")
 
 
@@ -25,7 +25,9 @@ class OTPRequest(BaseModel):
     def validate_phone(cls, v: str) -> str:
         v = v.strip()
         if not _PHONE_RE.match(v):
-            raise ValueError("Numéro de téléphone invalide (format: +237XXXXXXXXX).")
+            raise ValueError(
+                "Numéro de téléphone invalide (format international, ex. +33612345678)."
+            )
         return v
 
 

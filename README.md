@@ -5,7 +5,7 @@
 ### Retrouver. Restituer. Confiance.
 
 **Plateforme mobile de restitution sécurisée des documents perdus, propulsée par l'IA.**
-Quand un document officiel est perdu au Cameroun, ReTurn met en relation — en toute sécurité — la personne qui l'a perdu et celle qui l'a retrouvé.
+Quand un document officiel est perdu (au Cameroun, en France ou n'importe où dans le monde), ReTurn met en relation — en toute sécurité — la personne qui l'a perdu et celle qui l'a retrouvé. Chaque déclaration est rattachée à un pays (ISO 3166-1) : le rapprochement ne se fait qu'entre déclarations d'un même pays, et les zones de restitution sont filtrées par pays.
 
 <br/>
 
@@ -321,5 +321,5 @@ Distribué sous licence **MIT**. Voir le fichier `LICENSE` pour plus d'informati
 
 <div align="center">
 <br/>
-<sub>Construit avec ❤️ pour le Cameroun · <a href="https://itxmveng.github.io/ReTurn/">itxmveng.github.io/ReTurn</a></sub>
+<sub>Construit avec ❤️ au Cameroun, pour le monde · <a href="https://itxmveng.github.io/ReTurn/">itxmveng.github.io/ReTurn</a></sub>
 </div>

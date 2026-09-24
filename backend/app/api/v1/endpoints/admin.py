@@ -41,10 +41,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.countries import normalize_country_code
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin  # source unique
 from app.models.audit_log import AuditLog
@@ -323,8 +324,14 @@ class ZoneCreate(BaseModel):
     latitude: float
     longitude: float
     address: str
+    country_code: Optional[str] = None  # ISO 3166-1 alpha-2 (ex. CM, FR)
     institution_id: Optional[uuid.UUID] = None
     is_certified: bool = True
+
+    @field_validator("country_code")
+    @classmethod
+    def _validate_country(cls, v: Optional[str]) -> Optional[str]:
+        return normalize_country_code(v)
 
 
 class ZoneUpdate(BaseModel):
@@ -333,8 +340,14 @@ class ZoneUpdate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     address: Optional[str] = None
+    country_code: Optional[str] = None
     is_certified: Optional[bool] = None
     institution_id: Optional[uuid.UUID] = None
+
+    @field_validator("country_code")
+    @classmethod
+    def _validate_country(cls, v: Optional[str]) -> Optional[str]:
+        return normalize_country_code(v)
 
 
 class ZoneRead(BaseModel):
@@ -342,6 +355,7 @@ class ZoneRead(BaseModel):
     name: str
     zone_type: str
     address: str
+    country_code: Optional[str] = None
     latitude: float
     longitude: float
     is_certified: bool
@@ -1029,6 +1043,9 @@ async def bulk_import_declarations(
                 description=row.get("description", "").strip() or None,
                 latitude=float(row["latitude"]) if row.get("latitude") else None,
                 longitude=float(row["longitude"]) if row.get("longitude") else None,
+                # Colonne optionnelle « country_code » (ISO, ex. CM, FR).
+                country_code=normalize_country_code(row.get("country_code"))
+                or admin.country_code,
                 status="active",
             )
             db.add(decl)
@@ -1248,6 +1265,7 @@ async def create_zone(
 ):
     zone = Zone(id=uuid.uuid4(), name=body.name, zone_type=body.zone_type,
                 latitude=body.latitude, longitude=body.longitude, address=body.address,
+                country_code=body.country_code,
                 institution_id=body.institution_id, is_certified=body.is_certified)
     db.add(zone)
     await _audit(db, admin, "zone.create", "zone", zone.id, _get_ip(request),

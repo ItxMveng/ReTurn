@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="DocRetour API",
     version=settings.APP_VERSION,
-    description="API de restitution sécurisée de documents perdus au Cameroun.",
+    description="API de restitution sécurisée de documents perdus (multi-pays).",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,

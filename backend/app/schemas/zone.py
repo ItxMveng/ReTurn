@@ -10,6 +10,7 @@ class ZonePublic(BaseModel):
     name: str
     zone_type: str
     address: str
+    country_code: str | None = None
     latitude: float
     longitude: float
     is_certified: bool

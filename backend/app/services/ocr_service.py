@@ -22,8 +22,10 @@ _ENDPOINT = "https://api.mistral.ai/v1/chat/completions"
 _VISION_MODEL = "pixtral-12b-2409"
 
 _PROMPT = """Tu es un expert en lecture de documents d'identité et d'état civil \
-camerounais (carte nationale d'identité, passeport, visa, permis de conduire, \
-acte de naissance manuscrit ou imprimé, carte grise, diplôme).
+de n'importe quel pays (ex. Cameroun, France, autres), rédigés dans n'importe \
+quelle langue : carte nationale d'identité, passeport, visa, titre de séjour, \
+permis de conduire, acte de naissance manuscrit ou imprimé, carte grise, \
+diplôme.
 
 Analyse l'image et extrais les informations de la PERSONNE TITULAIRE du document.
 
@@ -37,7 +39,8 @@ Règles importantes :
 - "numero" = numéro du document (sans espaces). Pour un passeport c'est le \
 numéro type AA123456 ; pour une CNI le long numéro d'identification.
 - Pour un passeport, utilise la zone MRZ (lignes en bas avec des <) si présente.
-- Dates au format JJ/MM/AAAA.
+- Dates au format JJ/MM/AAAA, quelle que soit la convention d'écriture du pays \
+émetteur (convertis-les si besoin ; mets null si l'ordre jour/mois est ambigu).
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans aucun texte autour :
 {
