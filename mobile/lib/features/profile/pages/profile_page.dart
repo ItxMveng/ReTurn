@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/data/countries.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/media_url.dart';
 import '../../../core/widgets/app_loader.dart';
+import '../../../core/widgets/country_picker.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/application/auth_notifier.dart';
 import '../providers/profile_provider.dart';
@@ -497,6 +499,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   late String? _gender = _genders.contains(widget.profile.gender)
       ? widget.profile.gender
       : null;
+  late String? _country = widget.profile.countryCode;
   bool _saving = false;
   String? _error;
 
@@ -538,12 +541,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     if (picked != null) setState(() => _dob = picked);
   }
 
-  String _normalizePhone(String v) {
-    final p = v.trim().replaceAll(RegExp(r'\s'), '');
-    if (p.startsWith('+')) return p;
-    if (p.startsWith('237')) return '+$p';
-    return '+237$p';
-  }
+  String _normalizePhone(String v) =>
+      toInternationalPhone(v, countryCode: _country);
 
   Future<void> _save() async {
     final p = widget.profile;
@@ -552,6 +551,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     final identity = <String, dynamic>{};
     final name = _nameCtrl.text.trim();
     if (name.isNotEmpty && name != p.fullName) identity['full_name'] = name;
+    if (_country != null && _country != p.countryCode) {
+      identity['country_code'] = _country;
+    }
     if (_cityCtrl.text.trim() != (p.city ?? '')) {
       identity['city'] = _cityCtrl.text.trim();
     }
@@ -756,6 +758,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             ),
             const SizedBox(height: 14),
 
+            CountryField(
+              code: _country,
+              label: l.countryLabel,
+              onChanged: (c) => setState(() => _country = c.code),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: _cityCtrl,
               textCapitalization: TextCapitalization.words,

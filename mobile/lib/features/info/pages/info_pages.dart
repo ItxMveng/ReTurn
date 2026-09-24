@@ -19,8 +19,8 @@ class HelpPage extends StatelessWidget {
         _Intro(
           icon: Icons.help_outline,
           text:
-              'ReTurn vous aide à retrouver et restituer des documents perdus '
-              'au Cameroun, en toute sécurité.',
+              'ReTurn vous aide à retrouver et restituer des documents perdus, '
+              'partout dans le monde (Cameroun, France, etc.), en toute sécurité.',
         ),
         SizedBox(height: 8),
         _Faq(

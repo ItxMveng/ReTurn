@@ -545,7 +545,7 @@ class AppLocalizations {
       'profNameInputLabel': 'Nom complet (nom et prénom)',
       'profNameInputHelper': 'Non modifiable une fois enregistré.',
       'profPhoneLabel': 'Numéro de téléphone',
-      'profAddPhoneLabel': 'Ajouter un numéro (+237…)',
+      'profAddPhoneLabel': 'Ajouter un numéro de téléphone',
       'profAddPhoneHelper': 'Pour vous connecter aussi par SMS.',
       'profEmailLabel': 'Email',
       'profAddEmailLabel': 'Ajouter un email',
@@ -639,7 +639,7 @@ class AppLocalizations {
       'detectedBadge': 'Détecté',
       'exampleLastName': 'Ex: MBARGA',
       'exampleFirstName': 'Ex: Jean-Pierre',
-      'exampleDocNumber': 'Ex: CM-123456789',
+      'exampleDocNumber': 'Ex: AB1234567',
       'publicDisplayLabel': 'Affichage public : ',
       'dobHint': 'JJ/MM/AAAA',
       'scanDocumentTitle': 'Scanner le document',
@@ -656,6 +656,9 @@ class AppLocalizations {
       'partnerBadge': 'Partenaire',
       'appLockedTitle': 'ReTurn est verrouillé',
       'unlockWithBiometrics': 'Déverrouillez avec votre empreinte ou votre visage.',
+      'countryLabel': 'Pays',
+      'countrySearchHint': 'Rechercher un pays',
+      'declCountryLabel': 'Pays du lieu',
     },
     'en': {
       'appName': 'ReTurn',
@@ -1170,7 +1173,7 @@ class AppLocalizations {
       'profNameInputLabel': 'Full name (first and last)',
       'profNameInputHelper': 'Cannot be changed once saved.',
       'profPhoneLabel': 'Phone number',
-      'profAddPhoneLabel': 'Add a number (+237…)',
+      'profAddPhoneLabel': 'Add a phone number',
       'profAddPhoneHelper': 'To also sign in via SMS.',
       'profEmailLabel': 'Email',
       'profAddEmailLabel': 'Add an email',
@@ -1264,7 +1267,7 @@ class AppLocalizations {
       'detectedBadge': 'Detected',
       'exampleLastName': 'E.g.: MBARGA',
       'exampleFirstName': 'E.g.: Jean-Pierre',
-      'exampleDocNumber': 'E.g.: CM-123456789',
+      'exampleDocNumber': 'E.g.: AB1234567',
       'publicDisplayLabel': 'Public display: ',
       'dobHint': 'DD/MM/YYYY',
       'scanDocumentTitle': 'Scan the document',
@@ -1281,6 +1284,9 @@ class AppLocalizations {
       'partnerBadge': 'Partner',
       'appLockedTitle': 'ReTurn is locked',
       'unlockWithBiometrics': 'Unlock with your fingerprint or face.',
+      'countryLabel': 'Country',
+      'countrySearchHint': 'Search a country',
+      'declCountryLabel': 'Country of the place',
     },
   };
 
@@ -1923,6 +1929,9 @@ class AppLocalizations {
   String get partnerBadge => _t('partnerBadge');
   String get appLockedTitle => _t('appLockedTitle');
   String get unlockWithBiometrics => _t('unlockWithBiometrics');
+  String get countryLabel => _t('countryLabel');
+  String get countrySearchHint => _t('countrySearchHint');
+  String get declCountryLabel => _t('declCountryLabel');
 }
 
 class _AppLocalizationsDelegate

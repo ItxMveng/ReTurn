@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/data/countries.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/media_service.dart';
+import '../../../core/widgets/country_picker.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/declarations_provider.dart';
@@ -74,8 +76,15 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
   bool _gpsBusy = false;
   DateTime? _eventDate;
   final List<XFile> _photos = [];
+  // Pays du lieu de perte/découverte ; par défaut : pays du profil.
+  String? _countryCode;
 
   bool get _isFound => widget.declarationType == 'found';
+
+  String? get _effectiveCountry =>
+      _countryCode ??
+      ref.read(profileProvider).valueOrNull?.countryCode ??
+      deviceCountryCode();
 
   @override
   void dispose() {
@@ -213,6 +222,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
           'location_description': _locationCtrl.text.trim(),
         if (_lat != null) 'latitude': _lat,
         if (_lng != null) 'longitude': _lng,
+        if (_effectiveCountry != null) 'country_code': _effectiveCountry,
         if (_eventDate != null)
           'event_date':
               '${_eventDate!.year}-${_eventDate!.month.toString().padLeft(2, '0')}-${_eventDate!.day.toString().padLeft(2, '0')}',
@@ -278,6 +288,7 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
     final l = AppLocalizations.of(context);
     final profileName =
         ref.watch(profileProvider).valueOrNull?.fullName.trim() ?? '';
+    final profileCountry = ref.watch(profileProvider).valueOrNull?.countryCode;
     return Scaffold(
       appBar: AppBar(
         title: Text(l.declFormTitle),
@@ -386,6 +397,13 @@ class _DeclarationFormPageState extends ConsumerState<DeclarationFormPage> {
                 prefixIcon: const Icon(Icons.location_on_outlined),
                 border: const OutlineInputBorder(),
               ),
+            ),
+            const SizedBox(height: 10),
+            CountryField(
+              code: _countryCode ?? profileCountry ?? deviceCountryCode(),
+              label: l.declCountryLabel,
+              outlined: true,
+              onChanged: (c) => setState(() => _countryCode = c.code),
             ),
             const SizedBox(height: 10),
             Row(children: [

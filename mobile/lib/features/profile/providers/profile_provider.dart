@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:return_mobile/core/data/countries.dart';
 import 'package:return_mobile/core/network/dio_provider.dart';
 import 'package:return_mobile/core/services/media_service.dart';
 import 'package:return_mobile/core/services/notification_service.dart';
@@ -15,6 +16,7 @@ class UserProfile {
   final String? dateOfBirth;
   final String? nationalIdNumber;
   final String? gender;
+  final String? countryCode;
   final String? city;
   final String? region;
   final String? address;
@@ -30,6 +32,7 @@ class UserProfile {
     this.dateOfBirth,
     this.nationalIdNumber,
     this.gender,
+    this.countryCode,
     this.city,
     this.region,
     this.address,
@@ -46,6 +49,7 @@ class UserProfile {
         dateOfBirth: json['date_of_birth'] as String?,
         nationalIdNumber: json['national_id_number'] as String?,
         gender: json['gender'] as String?,
+        countryCode: json['country_code'] as String?,
         city: json['city'] as String?,
         region: json['region'] as String?,
         address: json['address'] as String?,
@@ -69,7 +73,24 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
       '/profile/',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    final profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
+    var profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
+
+    // Pays par défaut : région de l'appareil (ex. fr_CM → CM). Modifiable
+    // ensuite dans le profil ; ne bloque jamais le chargement en cas d'échec.
+    if (profile.countryCode == null) {
+      final code = deviceCountryCode();
+      if (code != null) {
+        try {
+          final r = await _dio.patch(
+            '/profile/',
+            data: {'country_code': code},
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          );
+          profile = UserProfile.fromJson(r.data as Map<String, dynamic>);
+        } catch (_) {}
+      }
+    }
+
     _registerFcmToken(token);
     return profile;
   }
