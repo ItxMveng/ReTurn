@@ -27,8 +27,6 @@ mobile/ios/Pods/
 mobile/ios/flutter_export_environment.sh
 mobile/*.iml
 mobile/coverage/
-mobile/**/*.g.dart
-mobile/**/*.freezed.dart
 
 # ── Python ───────────────────────────────────────────────────
 __pycache__/

@@ -54,8 +54,8 @@ jobs:
           echo "$GOOGLE_SERVICES_B64" | base64 -d > android/app/google-services.json
           echo "✓ firebase_options.dart + google-services.json restaurés."
 
-      - name: Générer le code (Freezed / Riverpod / json_serializable)
-        run: dart run build_runner build --delete-conflicting-outputs
+      # Le code généré (Freezed / Riverpod / json_serializable) est versionné : la génération se bloquait sur les
+      # runners GitHub alors qu'elle passe en local. Régénérer en local : dart run build_runner build -d
 
       - name: Configurer la signature release (keystore depuis les secrets)
         env:
